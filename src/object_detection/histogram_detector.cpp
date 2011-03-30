@@ -48,17 +48,26 @@ void HistogramDetector::train(const TrainingData& training_data)
             NUM_SATURATION_BINS, object_mask);
 
     // calculate some statistics
-    cv::Scalar mean, stddev;
-    cv::meanStdDev(hsv_image, mean, stddev, object_mask);
+    cv::Scalar object_mean, object_stddev;
+    cv::meanStdDev(hsv_image, object_mean, object_stddev, object_mask);
     std::cout << "object statistics: " << std::endl;
-    std::cout << "     mean = " << mean[0] << "," << mean[1] << "," << mean[2] << std::endl;
-    std::cout << "   stddev = " << stddev[0] << "," << stddev[1] << "," << stddev[2] << std::endl;
+    std::cout << "     mean = " << object_mean[0] << "," << object_mean[1] << "," << object_mean[2] << std::endl;
+    std::cout << "   stddev = " << object_stddev[0] << "," << object_stddev[1] << "," << object_stddev[2] << std::endl;
 
+    cv::Scalar background_mean, background_stddev;
     cv::Mat background_mask = 255 - object_mask;
-    cv::meanStdDev(hsv_image, mean, stddev, background_mask);
+    cv::meanStdDev(hsv_image, background_mean, background_stddev, background_mask);
     std::cout << "background statistics: " << std::endl;
-    std::cout << "     mean = " << mean[0] << "," << mean[1] << "," << mean[2] << std::endl;
-    std::cout << "   stddev = " << stddev[0] << "," << stddev[1] << "," << stddev[2] << std::endl;
+    std::cout << "     mean = " << background_mean[0] << "," << background_mean[1] << "," << background_mean[2] << std::endl;
+    std::cout << "   stddev = " << background_stddev[0] << "," << background_stddev[1] << "," << background_stddev[2] << std::endl;
+
+//    saturation_threshold_ = object_mean[1] - object_stddev[1];
+//    value_minimum_ = object_mean[2] - object_stddev[2];
+//    value_maximum_ = object_mean[2] + object_stddev[2];
+
+
+//    cv::split
+//    cv::Mat limit = hsv_image
 
     showHSHistogram(object_histogram_, "Object histogram");
 

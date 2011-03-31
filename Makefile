@@ -164,6 +164,19 @@ clean-test-results/fast:
 .PHONY : clean-test-results/fast
 
 #=============================================================================
+# Target rules for targets named histograms
+
+# Build rule for target.
+histograms: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 histograms
+.PHONY : histograms
+
+# fast build rule for target.
+histograms/fast:
+	$(MAKE) -f CMakeFiles/histograms.dir/build.make CMakeFiles/histograms.dir/build
+.PHONY : histograms/fast
+
+#=============================================================================
 # Target rules for targets named object_detection
 
 # Build rule for target.
@@ -320,6 +333,21 @@ tests/fast:
 .PHONY : tests/fast
 
 # target to build an object file
+src/histograms/main.o:
+	$(MAKE) -f CMakeFiles/histograms.dir/build.make CMakeFiles/histograms.dir/src/histograms/main.o
+.PHONY : src/histograms/main.o
+
+# target to preprocess a source file
+src/histograms/main.i:
+	$(MAKE) -f CMakeFiles/histograms.dir/build.make CMakeFiles/histograms.dir/src/histograms/main.i
+.PHONY : src/histograms/main.i
+
+# target to generate assembly for a file
+src/histograms/main.s:
+	$(MAKE) -f CMakeFiles/histograms.dir/build.make CMakeFiles/histograms.dir/src/histograms/main.s
+.PHONY : src/histograms/main.s
+
+# target to build an object file
 src/object_detection/histogram_detector.o:
 	$(MAKE) -f CMakeFiles/object_detection.dir/build.make CMakeFiles/object_detection.dir/src/object_detection/histogram_detector.o
 .PHONY : src/object_detection/histogram_detector.o
@@ -333,6 +361,21 @@ src/object_detection/histogram_detector.i:
 src/object_detection/histogram_detector.s:
 	$(MAKE) -f CMakeFiles/object_detection.dir/build.make CMakeFiles/object_detection.dir/src/object_detection/histogram_detector.s
 .PHONY : src/object_detection/histogram_detector.s
+
+# target to build an object file
+src/object_detection/histogram_utilities.o:
+	$(MAKE) -f CMakeFiles/object_detection.dir/build.make CMakeFiles/object_detection.dir/src/object_detection/histogram_utilities.o
+.PHONY : src/object_detection/histogram_utilities.o
+
+# target to preprocess a source file
+src/object_detection/histogram_utilities.i:
+	$(MAKE) -f CMakeFiles/object_detection.dir/build.make CMakeFiles/object_detection.dir/src/object_detection/histogram_utilities.i
+.PHONY : src/object_detection/histogram_utilities.i
+
+# target to generate assembly for a file
+src/object_detection/histogram_utilities.s:
+	$(MAKE) -f CMakeFiles/object_detection.dir/build.make CMakeFiles/object_detection.dir/src/object_detection/histogram_utilities.s
+.PHONY : src/object_detection/histogram_utilities.s
 
 # target to build an object file
 src/object_detection_test/main.o:
@@ -361,6 +404,7 @@ help:
 	@echo "... ROSBUILD_gensrv_lisp"
 	@echo "... clean-test-results"
 	@echo "... edit_cache"
+	@echo "... histograms"
 	@echo "... object_detection"
 	@echo "... object_detection_test"
 	@echo "... rebuild_cache"
@@ -374,9 +418,15 @@ help:
 	@echo "... test-results"
 	@echo "... test-results-run"
 	@echo "... tests"
+	@echo "... src/histograms/main.o"
+	@echo "... src/histograms/main.i"
+	@echo "... src/histograms/main.s"
 	@echo "... src/object_detection/histogram_detector.o"
 	@echo "... src/object_detection/histogram_detector.i"
 	@echo "... src/object_detection/histogram_detector.s"
+	@echo "... src/object_detection/histogram_utilities.o"
+	@echo "... src/object_detection/histogram_utilities.i"
+	@echo "... src/object_detection/histogram_utilities.s"
 	@echo "... src/object_detection_test/main.o"
 	@echo "... src/object_detection_test/main.i"
 	@echo "... src/object_detection_test/main.s"

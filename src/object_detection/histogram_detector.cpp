@@ -4,19 +4,27 @@
 #include <highgui.h>
 
 #include "histogram_detector.h" 
+#include "histogram_utilities.h"
 #include "detection.h"
 #include "training_data.h"
 #include "utilities.h"
 
 
-using namespace object_detection;
+using object_detection::HistogramDetector;
+using object_detection::Detection;
+using object_detection::TrainingData;
+using object_detection::histogram_utilities::calculateHistogram;
+using object_detection::histogram_utilities::calculateBackprojection;
+using object_detection::histogram_utilities::showHSHistogram;
+using object_detection::histogram_utilities::calculateHistogram;
 
 static const int NUM_HUE_BINS = 30;
 static const int NUM_SATURATION_BINS = 32;
+static const int BACKPROJECTION_THRESHOLD = 10;
 
 // minimum number of pixels that form an object contour.
 // smaller objects are discarded
-static const double CONTOUR_AREA_THRESHOLD = 500;
+static const double CONTOUR_AREA_THRESHOLD = 200;
 
 
 HistogramDetector::HistogramDetector() : is_trained_(false)
@@ -44,22 +52,15 @@ void HistogramDetector::train(const TrainingData& training_data)
     cv::Mat hsv_image;
     cv::cvtColor(training_data.image, hsv_image, CV_BGR2HSV);
 
-    object_histogram_ = calculateHistogram(hsv_image, NUM_HUE_BINS,
+    cv::MatND object_histogram = calculateHistogram(hsv_image, NUM_HUE_BINS,
             NUM_SATURATION_BINS, object_mask);
 
-    // calculate some statistics
-    cv::Scalar object_mean, object_stddev;
-    cv::meanStdDev(hsv_image, object_mean, object_stddev, object_mask);
-    std::cout << "object statistics: " << std::endl;
-    std::cout << "     mean = " << object_mean[0] << "," << object_mean[1] << "," << object_mean[2] << std::endl;
-    std::cout << "   stddev = " << object_stddev[0] << "," << object_stddev[1] << "," << object_stddev[2] << std::endl;
-
-    cv::Scalar background_mean, background_stddev;
     cv::Mat background_mask = 255 - object_mask;
-    cv::meanStdDev(hsv_image, background_mean, background_stddev, background_mask);
-    std::cout << "background statistics: " << std::endl;
-    std::cout << "     mean = " << background_mean[0] << "," << background_mean[1] << "," << background_mean[2] << std::endl;
-    std::cout << "   stddev = " << background_stddev[0] << "," << background_stddev[1] << "," << background_stddev[2] << std::endl;
+    cv::MatND background_histogram = calculateHistogram(hsv_image, NUM_HUE_BINS,
+            NUM_SATURATION_BINS, background_mask);
+
+    object_histogram_ = object_histogram / (background_histogram + 1);
+
 
 //    saturation_threshold_ = object_mean[1] - object_stddev[1];
 //    value_minimum_ = object_mean[2] - object_stddev[2];
@@ -69,7 +70,7 @@ void HistogramDetector::train(const TrainingData& training_data)
 //    cv::split
 //    cv::Mat limit = hsv_image
 
-    showHSHistogram(object_histogram_, "Object histogram");
+    showHSHistogram(object_histogram_, "Object histogram (divided)");
 
     cv::namedWindow("Training image");
     cv::imshow("Training image", training_data.image);
@@ -113,7 +114,7 @@ std::vector<Detection> HistogramDetector::detect(const cv::Mat& image,
 
         // create threshold
         cv::Mat thresholded;
-        cv::threshold(back_projection, thresholded, 100, 255, CV_THRESH_BINARY);
+        cv::threshold(back_projection, thresholded, BACKPROJECTION_THRESHOLD, 255, CV_THRESH_BINARY);
         cv::namedWindow( "Backprojection-thresholded-closed", 1 );
         cv::imshow( "Backprojection-thresholded-closed", thresholded );
      
@@ -169,120 +170,5 @@ std::vector<Detection> HistogramDetector::detect(const cv::Mat& image,
     {
         throw std::runtime_error("HistogramDetector::detect() called without having trained before");
     }
-}
-
-// calculates a two dimensional hue-saturation histogram
-cv::MatND HistogramDetector::calculateHistogram(const cv::Mat& hsv_image,
-        int num_hue_bins, int num_saturation_bins, const cv::Mat& mask)
-{   
-    // we assume that the image is a regular
-    // three channel image
-    CV_Assert(hsv_image.type() == CV_8UC3);
-
-    // dimensions of the histogram
-    int histogram_size[] = {num_hue_bins, num_saturation_bins};
-
-    // ranges for the histogram
-    float hue_ranges[] = {0, 180};
-    float saturation_ranges[] = {0, 256};
-    const float* ranges[] = {hue_ranges, saturation_ranges};
-
-    // channels for wich to compute the histogram (H and S)
-    int channels[] = {0, 1};
-
-    cv::MatND histogram;
-
-    // calculation
-    int num_arrays = 1;
-    int dimensions = 2;
-    cv::calcHist(&hsv_image, num_arrays, channels, mask, histogram, dimensions,
-            histogram_size, ranges);
-
-    return histogram;
-}
-
-cv::Mat HistogramDetector::calculateBackprojection(const cv::MatND& histogram,
-        const cv::Mat& hsv_image)
-{
-    // we assume that the image is a regular
-    // three channel image
-    CV_Assert(hsv_image.type() == CV_8UC3);
-
-    // channels for wich to compute the histogram (H and S)
-    int channels[] = {0, 1};
-
-    // ranges for the histogram
-    float hue_ranges[] = {0, 180};
-    float saturation_ranges[] = {0, 256};
-    const float* ranges[] = {hue_ranges, saturation_ranges};
-
-    cv::Mat back_projection;
-    int num_arrays = 1;
-    cv::calcBackProject(&hsv_image, num_arrays, channels, histogram,
-           back_projection, ranges);
-
-    return back_projection;
-}
-
-
-void HistogramDetector::showHSHistogram(const cv::Mat& image,
-        int num_hue_bins, int num_saturation_bins, const cv::Mat& mask,
-        const std::string& name)
-{
-    // we assume that the image is a regular
-    // three channel image
-    CV_Assert(image.type() == CV_8UC3);
-    
-    cv::Mat hsv_image;
-    cv::cvtColor(image, hsv_image, CV_BGR2HSV);
-
-    cv::MatND histogram = calculateHistogram(hsv_image, num_hue_bins,
-            num_saturation_bins, mask);
-    showHSHistogram(histogram, name);
-}
- 
-void HistogramDetector::showHSHistogram(const cv::MatND& histogram,
-        const std::string& name)
-{
-    int num_hue_bins = histogram.cols;
-    int num_saturation_bins = histogram.rows;
-
-    // visualization
-    double max_value = 0;
-    cv::minMaxLoc(histogram, 0, &max_value, 0, 0);
-    int scale = 10;
-    cv::Mat histogram_image_hsv = 
-        cv::Mat::zeros((num_saturation_bins + 1) * scale, (num_hue_bins + 1) * scale, CV_8UC3);
-
-    // paint x axis
-    for( int h = 1; h < num_hue_bins + 1; h++ )
-        cv::rectangle( histogram_image_hsv, cv::Point(h*scale, 0),
-                cv::Point((h + 1)*scale - 1, scale - 1),
-                cv::Scalar(1.0 * (h - 1) / num_hue_bins * 180.0, 255, 255, 0),
-                CV_FILLED);
-
-    // paint y axis
-    for( int s = 1; s < num_saturation_bins + 1; s++ )
-        cv::rectangle( histogram_image_hsv, cv::Point(0, s * scale),
-                cv::Point(scale - 1, (s + 1)*scale - 1),
-                cv::Scalar(180, 1.0 * (s - 1) / num_saturation_bins * 255.0, 255, 0),
-                CV_FILLED);
-
-    cv::Mat histogram_image;
-    cv::cvtColor(histogram_image_hsv, histogram_image, CV_HSV2BGR);
-
-    for( int h = 1; h < num_hue_bins + 1; h++ )
-        for( int s = 1; s < num_saturation_bins + 1; s++ )
-        {
-            float binVal = histogram.at<float>(h - 1, s - 1);
-            int intensity = cvRound(binVal * 255 / max_value);
-            cv::rectangle( histogram_image, cv::Point(h*scale, s*scale),
-                cv::Point( (h+1)*scale - 1, (s+1)*scale - 1),
-                cv::Scalar::all(intensity),
-                CV_FILLED );
-         }
-
-    cv::namedWindow( name );
-    cv::imshow( name, histogram_image );
 }
 

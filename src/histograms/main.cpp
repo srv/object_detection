@@ -50,12 +50,7 @@ int main(int argc, char** argv)
     // create object and background masks
     cv::Mat object_mask = cv::Mat::zeros(image.rows, image.cols, CV_8UC1);
     object_detection::paintFilledRotatedRectangle(object_mask, object_pose, cv::Scalar(255));
-    cv::namedWindow("Object mask");
-    cv::imshow("Object mask", object_mask);
-    
     cv::Mat background_mask = 255 - object_mask;
-    cv::namedWindow("background mask");
-    cv::imshow("background mask", background_mask);
 
     cv::Mat hsv_image;
     cv::cvtColor(image, hsv_image, CV_BGR2HSV);

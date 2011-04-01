@@ -27,7 +27,7 @@ std::vector<cv::Point> computeRectanglePoints(const cv::RotatedRect& rotated_rec
 
     const float scale = 1.0;
     cv::Mat rotation_matrix = 
-        cv::getRotationMatrix2D(cv::Point2f(0.0, 0.0), rotated_rect.angle, scale);
+        cv::getRotationMatrix2D(cv::Point2f(0.0, 0.0), -rotated_rect.angle, scale);
 
     cv::Mat rotated_points_matrix;
     cv::transform(points_matrix, rotated_points_matrix, rotation_matrix);

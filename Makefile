@@ -348,19 +348,19 @@ src/histograms/main.s:
 .PHONY : src/histograms/main.s
 
 # target to build an object file
-src/object_detection/histogram_detector.o:
-	$(MAKE) -f CMakeFiles/object_detection.dir/build.make CMakeFiles/object_detection.dir/src/object_detection/histogram_detector.o
-.PHONY : src/object_detection/histogram_detector.o
+src/object_detection/histogram_backprojection.o:
+	$(MAKE) -f CMakeFiles/object_detection.dir/build.make CMakeFiles/object_detection.dir/src/object_detection/histogram_backprojection.o
+.PHONY : src/object_detection/histogram_backprojection.o
 
 # target to preprocess a source file
-src/object_detection/histogram_detector.i:
-	$(MAKE) -f CMakeFiles/object_detection.dir/build.make CMakeFiles/object_detection.dir/src/object_detection/histogram_detector.i
-.PHONY : src/object_detection/histogram_detector.i
+src/object_detection/histogram_backprojection.i:
+	$(MAKE) -f CMakeFiles/object_detection.dir/build.make CMakeFiles/object_detection.dir/src/object_detection/histogram_backprojection.i
+.PHONY : src/object_detection/histogram_backprojection.i
 
 # target to generate assembly for a file
-src/object_detection/histogram_detector.s:
-	$(MAKE) -f CMakeFiles/object_detection.dir/build.make CMakeFiles/object_detection.dir/src/object_detection/histogram_detector.s
-.PHONY : src/object_detection/histogram_detector.s
+src/object_detection/histogram_backprojection.s:
+	$(MAKE) -f CMakeFiles/object_detection.dir/build.make CMakeFiles/object_detection.dir/src/object_detection/histogram_backprojection.s
+.PHONY : src/object_detection/histogram_backprojection.s
 
 # target to build an object file
 src/object_detection/histogram_utilities.o:
@@ -421,9 +421,9 @@ help:
 	@echo "... src/histograms/main.o"
 	@echo "... src/histograms/main.i"
 	@echo "... src/histograms/main.s"
-	@echo "... src/object_detection/histogram_detector.o"
-	@echo "... src/object_detection/histogram_detector.i"
-	@echo "... src/object_detection/histogram_detector.s"
+	@echo "... src/object_detection/histogram_backprojection.o"
+	@echo "... src/object_detection/histogram_backprojection.i"
+	@echo "... src/object_detection/histogram_backprojection.s"
 	@echo "... src/object_detection/histogram_utilities.o"
 	@echo "... src/object_detection/histogram_utilities.i"
 	@echo "... src/object_detection/histogram_utilities.s"

@@ -3,7 +3,7 @@
 #include <cv.h>
 #include <highgui.h>
 
-#include "histogram_detector.h"
+#include "histogram_backprojection.h"
 #include "detection.h"
 #include "training_data.h"
 #include "utilities.h"
@@ -59,22 +59,20 @@ int main(int argc, char** argv)
 
     
 
-    object_detection::HistogramDetector detector;
-    detector.train(training_data);
+    object_detection::HistogramBackprojection interest_operator;
+    interest_operator.train(training_data);
     
-    std::vector<object_detection::Detection> detections = 
-        detector.detect(test_image);
+    std::vector<cv::Rect> rois = interest_operator.computeRegionsOfInterest(test_image);
 
-    for(std::vector<object_detection::Detection>::const_iterator iter = detections.begin();
-            iter != detections.end(); ++iter)
+    for(std::vector<cv::Rect>::const_iterator iter = rois.begin();
+            iter != rois.end(); ++iter)
     {
-        object_detection::paintRotatedRectangle(test_image, iter->bounding_rotated_rect, 
-                cv::Scalar(255, 255, 0, 0));
+        cv::rectangle(test_image, *iter, cv::Scalar(255, 255, 0, 0));
     }
 
-    cv::namedWindow("detection results", CV_WINDOW_AUTOSIZE);
+    cv::namedWindow("ROIs", CV_WINDOW_AUTOSIZE);
 
-    cv::imshow("detection results", test_image);
+    cv::imshow("ROIs", test_image);
 
     
     cv::waitKey();

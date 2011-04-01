@@ -3,14 +3,14 @@
 #include <stdexcept>
 #include <highgui.h>
 
-#include "histogram_detector.h" 
+#include "histogram_backprojection.h" 
 #include "histogram_utilities.h"
 #include "detection.h"
 #include "training_data.h"
 #include "utilities.h"
 
 
-using object_detection::HistogramDetector;
+using object_detection::HistogramBackprojection;
 using object_detection::Detection;
 using object_detection::TrainingData;
 using object_detection::histogram_utilities::calculateHistogram;
@@ -27,17 +27,17 @@ static const int BACKPROJECTION_THRESHOLD = 10;
 static const double CONTOUR_AREA_THRESHOLD = 200;
 
 
-HistogramDetector::HistogramDetector() : is_trained_(false)
+HistogramBackprojection::HistogramBackprojection() : is_trained_(false)
 {
 }
 
 
-void HistogramDetector::train(const TrainingData& training_data)
+void HistogramBackprojection::train(const TrainingData& training_data)
 {
     // check input
     if (!training_data.isValid())
     {
-        throw std::runtime_error("HistogramDetector::train(): input data invalid");
+        throw std::runtime_error("HistogramBackprojection::train(): input data invalid");
     }
     // create object mask
     cv::Mat object_mask = cv::Mat::zeros(training_data.image.rows, 
@@ -85,12 +85,10 @@ void HistogramDetector::train(const TrainingData& training_data)
     // TODO compute scoring
 
 
-    object_size_ = training_data.bounding_rotated_rect.size;
-    
     is_trained_ = true;
 }
 
-std::vector<Detection> HistogramDetector::detect(const cv::Mat& image,
+std::vector<cv::Rect> HistogramBackprojection::computeRegionsOfInterest(const cv::Mat& image,
         const std::vector<cv::Rect>& rois)
 {
     showHSHistogram(image, NUM_HUE_BINS, NUM_SATURATION_BINS, cv::Mat(),
@@ -98,6 +96,8 @@ std::vector<Detection> HistogramDetector::detect(const cv::Mat& image,
 
     if (is_trained_)
     {
+
+        //TODO use input ROIs!
     
         // convert input image to hsv
         cv::Mat hsv_image;
@@ -124,6 +124,7 @@ std::vector<Detection> HistogramDetector::detect(const cv::Mat& image,
                 CV_CHAIN_APPROX_SIMPLE);
 
 
+        std::vector<cv::Rect> rois;
         cv::Mat contour_image = cv::Mat::zeros(thresholded.rows, thresholded.cols, CV_8UC1);
         for (size_t i = 0; i < contours.size(); ++i)
         {
@@ -131,12 +132,14 @@ std::vector<Detection> HistogramDetector::detect(const cv::Mat& image,
             double area = cv::contourArea(contour);
             if (area > CONTOUR_AREA_THRESHOLD)
             {
+                rois.push_back(cv::boundingRect(cv::Mat(contours[i])));
                 cv::drawContours(contour_image, contours, i, cv::Scalar(255), CV_FILLED);
             }
         }
 
 
         // cv::CamShift finds the minimum enclosing rotated bounding rectangle
+        /*
         cv::TermCriteria termination_criteria(
                 cv::TermCriteria::MAX_ITER + cv::TermCriteria::EPS,
                 100,
@@ -157,6 +160,7 @@ std::vector<Detection> HistogramDetector::detect(const cv::Mat& image,
             detection.score = 0.1;
             detections.push_back(detection);
         }
+        */
 
         cv::namedWindow( "Backprojection", 1 );
         cv::imshow( "Backprojection", back_projection );
@@ -164,11 +168,11 @@ std::vector<Detection> HistogramDetector::detect(const cv::Mat& image,
         cv::namedWindow( "Contour image" );
         cv::imshow("Contour image", contour_image);
        
-        return detections;
+        return rois;
     }
     else
     {
-        throw std::runtime_error("HistogramDetector::detect() called without having trained before");
+        throw std::runtime_error("HistogramBackprojection::computeRegionsOfInterest() called without having trained before");
     }
 }
 

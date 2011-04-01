@@ -3,7 +3,6 @@
 #include <cv.h>
 #include <highgui.h>
 
-#include "histogram_detector.h"
 #include "detection.h"
 #include "training_data.h"
 #include "utilities.h"

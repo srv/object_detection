@@ -1,9 +1,13 @@
 #ifndef TRAININGDATA_H 
 #define TRAININGDATA_H 
 
+#include <vector>
+
 namespace cv {
     class Mat;
     class RotatedRect;
+    template<typename T> class Point_;
+    typedef Point_<int> Point;
 }
 
 namespace object_detection {
@@ -12,26 +16,25 @@ namespace object_detection {
  * \struct TrainingData
  * \author Stephan Wirth
  * \brief Data structure for training data that is used by Detectors.
- * The training data consists of an image and a rotated rectangle that describes
- * the location of the object that has to be detected.
+ * The training data consists of an image and an outline of an object of 
+ * interest.
  */
 struct TrainingData 
 {
     /// the image on which the object is visible
     cv::Mat image;
 
-    /// the region that describes the exact location of the object in the image
-    cv::RotatedRect bounding_rotated_rect;
+    /// The polygon that describes the object outline in the image.
+    /// The last point is connected to the first one.
+    std::vector<cv::Point> object_outline;
 
     /**
-     * \return true if the data is valid (image and rect dimensions != 0),
-     * false otherwise
+     * \return true if the data is valid, false otherwise
      */
     bool isValid() const
     {
         return (image.cols != 0 && image.rows != 0 &&
-                bounding_rotated_rect.size.width != 0 &&
-                bounding_rotated_rect.size.height != 0);
+                object_outline.size() > 2);
     }
 };
 

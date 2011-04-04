@@ -76,6 +76,40 @@ void paintFilledRotatedRectangle(cv::Mat& img, const cv::RotatedRect& rect,
     cv::fillConvexPoly(img, points, size, color, lineType, shift);
 }
 
+/**
+ * Paints a polygon on given image using cv::polylines
+ * \param image the image to draw on
+ * \param points the polygon outline points
+ * \param color the color to use
+ * \param thickness the thickness of the line
+ * \param lineType type of line (passed to cv::polylines)
+ * \param shift shifting of the drawing (passed to cv::polylines)
+ */
+void paintPolygon(cv::Mat& img, const std::vector<cv::Point>& points,
+       const cv::Scalar& color, int thickness=1, int lineType=8, int shift=0)
+{
+    bool is_closed = true;
+    const cv::Point* point_data = points.data();
+    int size = points.size();
+    cv::polylines(img, &point_data, &size, 1, is_closed, color, thickness, lineType, shift);
+}
+
+/**
+ * Paints a filled polygon on given image using cv::fillPoly
+ * \param image the image to draw on
+ * \param points the polygon outline points
+ * \param color the color to use
+ * \param lineType type of line (passed to cv::fillConvexPoly)
+ * \param shift shifting of the drawing (passed to cv::fillConvexPoly)
+ */
+void paintFilledPolygon(cv::Mat& img, const std::vector<cv::Point>& points,
+       const cv::Scalar& color, int lineType=8, int shift=0)
+{
+    const cv::Point* point_data = points.data();
+    int size = points.size();
+    cv::fillPoly(img, &point_data, &size, 1, color, lineType, shift);
+}
+
 
 
 } // namespace object_detection

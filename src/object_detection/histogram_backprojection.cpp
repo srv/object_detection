@@ -42,8 +42,9 @@ void HistogramBackprojection::train(const TrainingData& training_data)
     // create object mask
     cv::Mat object_mask = cv::Mat::zeros(training_data.image.rows, 
             training_data.image.cols, CV_8UC1);
-    paintFilledRotatedRectangle(object_mask, training_data.bounding_rotated_rect,
+    paintFilledPolygon(object_mask, training_data.object_outline,
             cv::Scalar(255));
+
 
     cv::namedWindow("Mask");
     cv::imshow("Mask", object_mask);

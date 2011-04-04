@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 
 #include <cv.h>
 #include <highgui.h>
@@ -8,36 +9,61 @@
 #include "training_data.h"
 #include "utilities.h"
 
+std::vector<cv::Point> readPolygonData(std::istream& in)
+{
+    std::vector<cv::Point> points;
+    while (in.good())
+    {
+        int x, y;
+        in >> x;
+        in >> y;
+        points.push_back(cv::Point(x, y));
+    }
+    return points;
+}
+
 int main(int argc, char** argv)
 {
-    if (argc < 3)
+    if (argc < 4)
     {
-        std::cerr << "ERROR: no image file specified!" << std::endl;
-        std::cerr << "Usage: " << argv[0] << " <training image file name> <object x> <object y> <object width> <object height> <object angle> <test image file name>" << std::endl;
-        std::cerr << "  where <object angle> is given in degrees" << std::endl;
+        std::cerr << "ERROR: wrong number of arguments!" << std::endl;
+        std::cerr << "Usage: " << argv[0] << " <training image file name> <polygon points file> <test image file name>" << std::endl;
         return -1;
     }
     const char* training_image_name = argv[1];
-    int object_x = atoi(argv[2]);
-    int object_y = atoi(argv[3]);
-    int object_width = atoi(argv[4]);
-    int object_height = atoi(argv[5]);
-    int object_angle = atoi(argv[6]);
-
-    const char* test_image_name = argv[7];
+    const char* polygon_points_file = argv[2];
+    const char* test_image_name = argv[3];
 
     std::cout << "Training image: " << training_image_name << std::endl;
+    std::cout << "Polygon points file: " << polygon_points_file << std::endl;
     std::cout << "Test image: " << test_image_name << std::endl;
-    std::cout << "Object center: " << object_x << ", " << object_y << std::endl;
-    std::cout << "Object dimensions: " << object_width << " x "
-        << object_height << std::endl;
-    std::cout << "Object angle: " << object_angle << std::endl;
 
+    // read polygon data
+    ifstream in(polygon_points_file);
+    if (!in.is_open())
+    {
+        std::cerr << "Error opening poygon points file!" << std::endl;
+        return -2;
+    }
+
+    std::vector<cv::Point> object_outline = readPolygonData(in);
+    std::cout << "read points: " << std::endl;
+    for (size_t i = 0; i < object_outline.size(); ++i)
+    {
+        std::cout << " (" << object_outline[i].x << "," << object_outline[i].y << ")" << std::endl;
+    }
 
     // read and display images
     cv::Mat training_image = cv::imread(training_image_name);
     cv::namedWindow("Training image");
     cv::imshow("Training image", training_image);
+
+    cv::Mat training_image_with_marked_object = training_image.clone();
+    object_detection::paintPolygon(training_image_with_marked_object,
+            object_outline, cv::Scalar(0, 255, 0));
+    cv::namedWindow("Training image with marked object");
+    cv::imshow("Training image with marked object", training_image_with_marked_object);
+
 
     cv::Mat test_image = cv::imread(test_image_name);
     cv::namedWindow("Test image");
@@ -46,17 +72,7 @@ int main(int argc, char** argv)
     // prepare traing data
     object_detection::TrainingData training_data;
     training_data.image = training_image;
-    cv::Point2f     object_center(object_x, object_y);
-    cv::Size        object_size(object_width, object_height);
-    cv::RotatedRect object_pose(object_center, object_size, object_angle);
-    training_data.bounding_rotated_rect = object_pose;
- 
-    cv::Mat training_image_with_marked_object = training_image.clone();
-    object_detection::paintRotatedRectangle(training_image_with_marked_object,
-            object_pose, cv::Scalar(0, 255, 0));
-    cv::namedWindow("Training image with marked object");
-    cv::imshow("Training image with marked object", training_image_with_marked_object);
-
+    training_data.object_outline = object_outline;
     
 
     object_detection::HistogramBackprojection interest_operator;

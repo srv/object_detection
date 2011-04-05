@@ -60,16 +60,9 @@ void HistogramBackprojection::train(const TrainingData& training_data)
     cv::MatND background_histogram = calculateHistogram(hsv_image, NUM_HUE_BINS,
             NUM_SATURATION_BINS, background_mask);
 
+    // divide the histograms so that only those colors remain
+    // that are representative for the object
     object_histogram_ = object_histogram / (background_histogram + 1);
-
-
-//    saturation_threshold_ = object_mean[1] - object_stddev[1];
-//    value_minimum_ = object_mean[2] - object_stddev[2];
-//    value_maximum_ = object_mean[2] + object_stddev[2];
-
-
-//    cv::split
-//    cv::Mat limit = hsv_image
 
     showHSHistogram(object_histogram_, "Object histogram (divided)");
 
@@ -90,19 +83,34 @@ void HistogramBackprojection::train(const TrainingData& training_data)
 }
 
 std::vector<cv::Rect> HistogramBackprojection::computeRegionsOfInterest(const cv::Mat& image,
-        const std::vector<cv::Rect>& rois)
+        const std::vector<cv::Rect>& input_rois)
 {
     showHSHistogram(image, NUM_HUE_BINS, NUM_SATURATION_BINS, cv::Mat(),
             "Image Histogram");
 
     if (is_trained_)
     {
+        // mask out anything outside input ROIs
+        cv::Mat mask = cv::Mat::zeros(image.rows, image.cols, CV_8UC1);
+        if (input_rois.size() > 0)
+        {
+            for (size_t i = 0; i < input_rois.size(); ++i)
+            {
+                cv::rectangle(mask, input_rois[i], cv::Scalar(255), CV_FILLED);
+            }
+        }
+        else
+        {
+            // no roi given, set all to 255
+            mask = cv::Scalar(255);
+        }
 
-        //TODO use input ROIs!
+        cv::Mat image_masked;
+        image.copyTo(image_masked, mask);
     
         // convert input image to hsv
         cv::Mat hsv_image;
-        cv::cvtColor(image, hsv_image, CV_BGR2HSV);
+        cv::cvtColor(image_masked, hsv_image, CV_BGR2HSV);
 
         // perform back projection
         cv::Mat back_projection = calculateBackprojection(object_histogram_, hsv_image);
@@ -137,31 +145,6 @@ std::vector<cv::Rect> HistogramBackprojection::computeRegionsOfInterest(const cv
                 cv::drawContours(contour_image, contours, i, cv::Scalar(255), CV_FILLED);
             }
         }
-
-
-        // cv::CamShift finds the minimum enclosing rotated bounding rectangle
-        /*
-        cv::TermCriteria termination_criteria(
-                cv::TermCriteria::MAX_ITER + cv::TermCriteria::EPS,
-                100,
-                3);
-
-        cv::Rect roi(0, 0, image.cols, image.rows);
-        cv::RotatedRect object_rect = cv::CamShift(contour_image, roi,
-               termination_criteria);
-
-
-        std::vector<Detection> detections;
-        if (object_rect.size.width > 0 && object_rect.size.height > 0)
-        {
-
-            Detection detection;
-            detection.label = "object";
-            detection.bounding_rotated_rect = object_rect;
-            detection.score = 0.1;
-            detections.push_back(detection);
-        }
-        */
 
         cv::namedWindow( "Backprojection", 1 );
         cv::imshow( "Backprojection", back_projection );

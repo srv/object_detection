@@ -378,6 +378,21 @@ src/object_detection/histogram_utilities.s:
 .PHONY : src/object_detection/histogram_utilities.s
 
 # target to build an object file
+src/object_detection/interest_operator_factory.o:
+	$(MAKE) -f CMakeFiles/object_detection.dir/build.make CMakeFiles/object_detection.dir/src/object_detection/interest_operator_factory.o
+.PHONY : src/object_detection/interest_operator_factory.o
+
+# target to preprocess a source file
+src/object_detection/interest_operator_factory.i:
+	$(MAKE) -f CMakeFiles/object_detection.dir/build.make CMakeFiles/object_detection.dir/src/object_detection/interest_operator_factory.i
+.PHONY : src/object_detection/interest_operator_factory.i
+
+# target to generate assembly for a file
+src/object_detection/interest_operator_factory.s:
+	$(MAKE) -f CMakeFiles/object_detection.dir/build.make CMakeFiles/object_detection.dir/src/object_detection/interest_operator_factory.s
+.PHONY : src/object_detection/interest_operator_factory.s
+
+# target to build an object file
 src/object_detection_test/main.o:
 	$(MAKE) -f CMakeFiles/object_detection_test.dir/build.make CMakeFiles/object_detection_test.dir/src/object_detection_test/main.o
 .PHONY : src/object_detection_test/main.o
@@ -427,6 +442,9 @@ help:
 	@echo "... src/object_detection/histogram_utilities.o"
 	@echo "... src/object_detection/histogram_utilities.i"
 	@echo "... src/object_detection/histogram_utilities.s"
+	@echo "... src/object_detection/interest_operator_factory.o"
+	@echo "... src/object_detection/interest_operator_factory.i"
+	@echo "... src/object_detection/interest_operator_factory.s"
 	@echo "... src/object_detection_test/main.o"
 	@echo "... src/object_detection_test/main.i"
 	@echo "... src/object_detection_test/main.s"

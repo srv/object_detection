@@ -20,11 +20,11 @@ using object_detection::histogram_utilities::calculateHistogram;
 
 static const int NUM_HUE_BINS = 30;
 static const int NUM_SATURATION_BINS = 32;
-static const int BACKPROJECTION_THRESHOLD = 10;
+static const double BACKPROJECTION_THRESHOLD = 10.0 / 255.0;
 
 // minimum number of pixels that form an object contour.
 // smaller objects are discarded
-static const double CONTOUR_AREA_THRESHOLD = 200;
+static const double CONTOUR_AREA_THRESHOLD = 20;
 
 
 HistogramBackprojection::HistogramBackprojection() : is_trained_(false)
@@ -45,10 +45,6 @@ void HistogramBackprojection::train(const TrainingData& training_data)
     paintFilledPolygon(object_mask, training_data.object_outline,
             cv::Scalar(255));
 
-
-    cv::namedWindow("Mask");
-    cv::imshow("Mask", object_mask);
-
     // convert image to hsv
     cv::Mat hsv_image;
     cv::cvtColor(training_data.image, hsv_image, CV_BGR2HSV);
@@ -63,18 +59,19 @@ void HistogramBackprojection::train(const TrainingData& training_data)
     // divide the histograms so that only those colors remain
     // that are representative for the object
     object_histogram_ = object_histogram / (background_histogram + 1);
+    // adjust range
+    double max;
+    cv::minMaxLoc(object_histogram_, NULL, &max);
+    object_histogram_ = object_histogram / max;
 
-    showHSHistogram(object_histogram_, "Object histogram (divided)");
-
-    cv::namedWindow("Training image");
-    cv::imshow("Training image", training_data.image);
+    showHSHistogram(object_histogram_, "Significant Object Colors");
 
     cv::Mat hsv_training_image;
     cv::cvtColor(training_data.image, hsv_training_image, CV_BGR2HSV);
     cv::Mat self_back_projection = calculateBackprojection(object_histogram_,
             hsv_training_image);
     cv::namedWindow("Self backprojection");
-    cv::imshow("Self backprojection", self_back_projection);
+    cv::imshow("Self backprojection", self_back_projection * 255);
     
     // TODO compute scoring
 
@@ -147,7 +144,7 @@ std::vector<cv::Rect> HistogramBackprojection::computeRegionsOfInterest(const cv
         }
 
         cv::namedWindow( "Backprojection", 1 );
-        cv::imshow( "Backprojection", back_projection );
+        cv::imshow( "Backprojection", back_projection * 255);
         
         cv::namedWindow( "Contour image" );
         cv::imshow("Contour image", contour_image);

@@ -81,13 +81,13 @@ void showHSHistogram(const cv::Mat& image,
 void showHSHistogram(const cv::MatND& histogram,
         const std::string& name)
 {
-    int num_hue_bins = histogram.cols;
-    int num_saturation_bins = histogram.rows;
+    int num_hue_bins = histogram.rows;
+    int num_saturation_bins = histogram.cols;
 
     // visualization
     double max_value = 0;
     cv::minMaxLoc(histogram, 0, &max_value, 0, 0);
-    int scale = 10;
+    int scale = 8;
     cv::Mat histogram_image_hsv = 
         cv::Mat::zeros((num_saturation_bins + 1) * scale, (num_hue_bins + 1) * scale, CV_8UC3);
 

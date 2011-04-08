@@ -18,13 +18,14 @@ using object_detection::histogram_utilities::calculateBackprojection;
 using object_detection::histogram_utilities::showHSHistogram;
 using object_detection::histogram_utilities::calculateHistogram;
 
-static const int NUM_HUE_BINS = 30;
+static const int NUM_HUE_BINS = 32;
 static const int NUM_SATURATION_BINS = 32;
-static const double BACKPROJECTION_THRESHOLD = 10.0 / 255.0;
+static const double BACKPROJECTION_THRESHOLD = 30.0;
+//static const double BACKPROJECTION_THRESHOLD = 10.0 / 255.0;
 
 // minimum number of pixels that form an object contour.
 // smaller objects are discarded
-static const double CONTOUR_AREA_THRESHOLD = 20;
+static const double CONTOUR_AREA_THRESHOLD = 100;
 
 
 HistogramBackprojection::HistogramBackprojection() : is_trained_(false)
@@ -60,9 +61,9 @@ void HistogramBackprojection::train(const TrainingData& training_data)
     // that are representative for the object
     object_histogram_ = object_histogram / (background_histogram + 1);
     // adjust range
-    double max;
-    cv::minMaxLoc(object_histogram_, NULL, &max);
-    object_histogram_ = object_histogram / max;
+//    double max;
+//    cv::minMaxLoc(object_histogram_, NULL, &max);
+//    object_histogram_ = object_histogram / max;
 
     showHSHistogram(object_histogram_, "Significant Object Colors");
 
@@ -71,7 +72,8 @@ void HistogramBackprojection::train(const TrainingData& training_data)
     cv::Mat self_back_projection = calculateBackprojection(object_histogram_,
             hsv_training_image);
     cv::namedWindow("Self backprojection");
-    cv::imshow("Self backprojection", self_back_projection * 255);
+    //cv::imshow("Self backprojection", self_back_projection * 255);
+    cv::imshow("Self backprojection", self_back_projection);
     
     // TODO compute scoring
 
@@ -116,11 +118,12 @@ std::vector<cv::Rect> HistogramBackprojection::computeRegionsOfInterest(const cv
         int element_size = 5;
         cv::Mat element = cv::Mat::zeros(element_size, element_size, CV_8UC1);
         cv::circle(element, cv::Point(element_size / 2, element_size / 2), element_size / 2, cv::Scalar(255), -1);
-        cv::morphologyEx(back_projection, back_projection, cv::MORPH_CLOSE, element);
+        cv::Mat back_projection_closed;
+        cv::morphologyEx(back_projection, back_projection_closed, cv::MORPH_CLOSE, element);
 
         // create threshold
         cv::Mat thresholded;
-        cv::threshold(back_projection, thresholded, BACKPROJECTION_THRESHOLD, 255, CV_THRESH_BINARY);
+        cv::threshold(back_projection_closed, thresholded, BACKPROJECTION_THRESHOLD, 255, CV_THRESH_BINARY);
         cv::namedWindow( "Backprojection-thresholded-closed", 1 );
         cv::imshow( "Backprojection-thresholded-closed", thresholded );
      
@@ -144,7 +147,8 @@ std::vector<cv::Rect> HistogramBackprojection::computeRegionsOfInterest(const cv
         }
 
         cv::namedWindow( "Backprojection", 1 );
-        cv::imshow( "Backprojection", back_projection * 255);
+        cv::imshow( "Backprojection", back_projection);
+        //cv::imshow( "Backprojection", back_projection * 255);
         
         cv::namedWindow( "Contour image" );
         cv::imshow("Contour image", contour_image);

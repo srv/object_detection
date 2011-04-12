@@ -4,6 +4,11 @@
 #include <string>
 #include <vector>
 
+#include <boost/shared_ptr.hpp>
+
+#include "trainable.h"
+#include "statistics.h"
+
 namespace cv {
     class Mat;
     template<typename T> class Rect_;
@@ -12,31 +17,31 @@ namespace cv {
 
 namespace object_detection {
 
-struct TrainingData;
 struct Detection;
+class Classifier;
 
 /**
  * \class Detector
  * \author Stephan Wirth
- * \brief Interface for object detectors.
+ * \brief The object detector.
  * For the detection (usage) of the detector, it takes as input an image
  * and (optionally) some regions
  * that define a search space. The output is a list of detections that contain
  * name and location of detected objects (\see Detection).
  */
-class Detector
+class Detector : public Trainable
 {
 public:
 
     /**
-     * Virtual destructor (empty)
+     * Constructor
      */
-	virtual ~Detector() {};
+    Detector();
 
-	/**
-	 * \return name of the detector
-	 */
-	virtual std::string getName() const = 0;
+    /**
+     * Destructor
+     */
+	~Detector() {};
 
 	/**
 	 * \brief Run the object detector.
@@ -44,8 +49,26 @@ public:
      * \param rois array of regions of interest that the detector should use
      * \return a list of detections, empty if nothing detected
 	 */
-	virtual std::vector<Detection> detect(const cv::Mat& image, 
-            const std::vector<cv::Rect>& rois) = 0;
+    std::vector<Detection> detect(const cv::Mat& image, 
+            const std::vector<cv::Rect>& rois = std::vector<cv::Rect>());
+
+    void train(const TrainingData& training_data);
+
+    bool isTrained() const { return is_trained_; };
+
+private:
+
+    // stores if the detector was trained
+    bool is_trained_;
+
+    // the set of classifiers
+    std::vector<boost::shared_ptr<Classifier> > classifiers_;
+
+    // stores object statistics
+    Statistics object_statistics_;
+
+    // stores background statistics
+    Statistics background_statistics_;
     
 };
 

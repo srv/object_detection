@@ -29,7 +29,18 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 #rosbuild_add_executable(example examples/example.cpp)
 #target_link_libraries(example ${PROJECT_NAME})
 
-rosbuild_add_library(object_detection src/object_detection/histogram_backprojection.cpp src/object_detection/histogram_utilities.cpp src/object_detection/interest_operator_factory.cpp)
+set(LIB_SOURCES 
+    src/object_detection/color_classifier.cpp
+    src/object_detection/histogram_backprojection.cpp 
+    src/object_detection/histogram_utilities.cpp 
+    src/object_detection/interest_operator_factory.cpp
+    src/object_detection/utilities.cpp
+    src/object_detection/detector.cpp
+    src/object_detection/statistics.cpp
+   )
+
+
+rosbuild_add_library(object_detection ${LIB_SOURCES})
 rosbuild_add_executable(object_detection_test src/object_detection_test/main.cpp)
 rosbuild_add_executable(histograms src/histograms/main.cpp)
 

@@ -8,6 +8,7 @@
 #include "detection.h"
 #include "training_data.h"
 #include "utilities.h"
+#include "detector.h"
 
 std::vector<cv::Point> readPolygonData(std::istream& in)
 {
@@ -55,9 +56,6 @@ int main(int argc, char** argv)
 
     // read and display images
     cv::Mat training_image = cv::imread(training_image_name);
-    cv::namedWindow("Training image");
-    cv::imshow("Training image", training_image);
-
     cv::Mat training_image_with_marked_object = training_image.clone();
     object_detection::paintPolygon(training_image_with_marked_object,
             object_outline, cv::Scalar(0, 255, 0));
@@ -74,7 +72,7 @@ int main(int argc, char** argv)
     training_data.image = training_image;
     training_data.object_outline = object_outline;
     
-
+/*
     object_detection::HistogramBackprojection interest_operator;
     interest_operator.train(training_data);
     
@@ -87,9 +85,13 @@ int main(int argc, char** argv)
     }
 
     cv::namedWindow("ROIs", CV_WINDOW_AUTOSIZE);
-
     cv::imshow("ROIs", test_image);
+    */
 
+    // detector interface
+    object_detection::Detector detector;
+    detector.train(training_data);
+    detector.detect(test_image);
     
     cv::waitKey();
 

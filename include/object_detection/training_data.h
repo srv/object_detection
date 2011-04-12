@@ -5,7 +5,6 @@
 
 namespace cv {
     class Mat;
-    class RotatedRect;
     template<typename T> class Point_;
     typedef Point_<int> Point;
 }

@@ -9,8 +9,8 @@ namespace histogram_utilities
 {
 
 // calculates a two dimensional hue-saturation histogram
-cv::MatND calculateHistogram(const cv::Mat& hsv_image,
-        int num_hue_bins, int num_saturation_bins, const cv::Mat& mask)
+cv::MatND calculateHistogram(const cv::Mat& hsv_image, int num_hue_bins, 
+        int num_saturation_bins, const cv::Mat& mask)
 {   
     // we assume that the image is a regular
     // three channel image
@@ -37,6 +37,35 @@ cv::MatND calculateHistogram(const cv::Mat& hsv_image,
 
     return histogram;
 }
+
+// calculates a two dimensional hue-saturation histogram and accumulates
+void accumulateHistogram(const cv::Mat& hsv_image, int num_hue_bins, 
+        int num_saturation_bins, const cv::Mat& mask, cv::MatND& histogram)
+{   
+    // we assume that the image is a regular
+    // three channel image
+    CV_Assert(hsv_image.type() == CV_8UC3);
+
+    // dimensions of the histogram
+    int histogram_size[] = {num_hue_bins, num_saturation_bins};
+
+    // ranges for the histogram
+    float hue_ranges[] = {0, 180};
+    float saturation_ranges[] = {0, 256};
+    const float* ranges[] = {hue_ranges, saturation_ranges};
+
+    // channels for wich to compute the histogram (H and S)
+    int channels[] = {0, 1};
+
+    // calculation
+    int num_arrays = 1;
+    int dimensions = 2;
+    bool uniform = true;
+    bool accumulate = true;
+    cv::calcHist(&hsv_image, num_arrays, channels, mask, histogram, dimensions,
+            histogram_size, ranges, uniform, accumulate);
+}
+
 
 cv::Mat calculateBackprojection(const cv::MatND& histogram,
         const cv::Mat& hsv_image)

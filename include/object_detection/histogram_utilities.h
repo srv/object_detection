@@ -15,9 +15,22 @@ namespace histogram_utilities {
      * \param mask a mask to use
      * \return histogram of input image (Hue-Saturation-Histogram)
      */
-    cv::MatND calculateHistogram(const cv::Mat& hsv_image,
-            int num_hue_bins, int num_saturation_bins, const cv::Mat& mask);
+    cv::MatND calculateHistogram(const cv::Mat& hsv_image, int num_hue_bins, 
+            int num_saturation_bins, const cv::Mat& mask);
 
+    /**
+     * \brief calculates a histogram, accumulates it to a given one.
+     * \param hsv_image input image, must be in HSV color format, 8UC3
+     * \param num_hue_bins number of bins to use to sample the hue channel
+     * \param num_saturation_bins number of bins to sample the saturation
+     *        channel
+     * \param mask a mask to use
+     * \param histogram the output histogram, must be unallocated or size
+     *        num_hue_bins * num_saturation_bins
+     */
+    void accumulateHistogram(const cv::Mat& hsv_image, int num_hue_bins, 
+        int num_saturation_bins, const cv::Mat& mask, cv::MatND& histogram);
+ 
      /**
      * \brief performs a backprojection of a histogram on an image
      * \param histogram the histogram to project, as produced by

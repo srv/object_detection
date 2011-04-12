@@ -348,6 +348,36 @@ src/histograms/main.s:
 .PHONY : src/histograms/main.s
 
 # target to build an object file
+src/object_detection/color_classifier.o:
+	$(MAKE) -f CMakeFiles/object_detection.dir/build.make CMakeFiles/object_detection.dir/src/object_detection/color_classifier.o
+.PHONY : src/object_detection/color_classifier.o
+
+# target to preprocess a source file
+src/object_detection/color_classifier.i:
+	$(MAKE) -f CMakeFiles/object_detection.dir/build.make CMakeFiles/object_detection.dir/src/object_detection/color_classifier.i
+.PHONY : src/object_detection/color_classifier.i
+
+# target to generate assembly for a file
+src/object_detection/color_classifier.s:
+	$(MAKE) -f CMakeFiles/object_detection.dir/build.make CMakeFiles/object_detection.dir/src/object_detection/color_classifier.s
+.PHONY : src/object_detection/color_classifier.s
+
+# target to build an object file
+src/object_detection/detector.o:
+	$(MAKE) -f CMakeFiles/object_detection.dir/build.make CMakeFiles/object_detection.dir/src/object_detection/detector.o
+.PHONY : src/object_detection/detector.o
+
+# target to preprocess a source file
+src/object_detection/detector.i:
+	$(MAKE) -f CMakeFiles/object_detection.dir/build.make CMakeFiles/object_detection.dir/src/object_detection/detector.i
+.PHONY : src/object_detection/detector.i
+
+# target to generate assembly for a file
+src/object_detection/detector.s:
+	$(MAKE) -f CMakeFiles/object_detection.dir/build.make CMakeFiles/object_detection.dir/src/object_detection/detector.s
+.PHONY : src/object_detection/detector.s
+
+# target to build an object file
 src/object_detection/histogram_backprojection.o:
 	$(MAKE) -f CMakeFiles/object_detection.dir/build.make CMakeFiles/object_detection.dir/src/object_detection/histogram_backprojection.o
 .PHONY : src/object_detection/histogram_backprojection.o
@@ -393,6 +423,36 @@ src/object_detection/interest_operator_factory.s:
 .PHONY : src/object_detection/interest_operator_factory.s
 
 # target to build an object file
+src/object_detection/statistics.o:
+	$(MAKE) -f CMakeFiles/object_detection.dir/build.make CMakeFiles/object_detection.dir/src/object_detection/statistics.o
+.PHONY : src/object_detection/statistics.o
+
+# target to preprocess a source file
+src/object_detection/statistics.i:
+	$(MAKE) -f CMakeFiles/object_detection.dir/build.make CMakeFiles/object_detection.dir/src/object_detection/statistics.i
+.PHONY : src/object_detection/statistics.i
+
+# target to generate assembly for a file
+src/object_detection/statistics.s:
+	$(MAKE) -f CMakeFiles/object_detection.dir/build.make CMakeFiles/object_detection.dir/src/object_detection/statistics.s
+.PHONY : src/object_detection/statistics.s
+
+# target to build an object file
+src/object_detection/utilities.o:
+	$(MAKE) -f CMakeFiles/object_detection.dir/build.make CMakeFiles/object_detection.dir/src/object_detection/utilities.o
+.PHONY : src/object_detection/utilities.o
+
+# target to preprocess a source file
+src/object_detection/utilities.i:
+	$(MAKE) -f CMakeFiles/object_detection.dir/build.make CMakeFiles/object_detection.dir/src/object_detection/utilities.i
+.PHONY : src/object_detection/utilities.i
+
+# target to generate assembly for a file
+src/object_detection/utilities.s:
+	$(MAKE) -f CMakeFiles/object_detection.dir/build.make CMakeFiles/object_detection.dir/src/object_detection/utilities.s
+.PHONY : src/object_detection/utilities.s
+
+# target to build an object file
 src/object_detection_test/main.o:
 	$(MAKE) -f CMakeFiles/object_detection_test.dir/build.make CMakeFiles/object_detection_test.dir/src/object_detection_test/main.o
 .PHONY : src/object_detection_test/main.o
@@ -436,6 +496,12 @@ help:
 	@echo "... src/histograms/main.o"
 	@echo "... src/histograms/main.i"
 	@echo "... src/histograms/main.s"
+	@echo "... src/object_detection/color_classifier.o"
+	@echo "... src/object_detection/color_classifier.i"
+	@echo "... src/object_detection/color_classifier.s"
+	@echo "... src/object_detection/detector.o"
+	@echo "... src/object_detection/detector.i"
+	@echo "... src/object_detection/detector.s"
 	@echo "... src/object_detection/histogram_backprojection.o"
 	@echo "... src/object_detection/histogram_backprojection.i"
 	@echo "... src/object_detection/histogram_backprojection.s"
@@ -445,6 +511,12 @@ help:
 	@echo "... src/object_detection/interest_operator_factory.o"
 	@echo "... src/object_detection/interest_operator_factory.i"
 	@echo "... src/object_detection/interest_operator_factory.s"
+	@echo "... src/object_detection/statistics.o"
+	@echo "... src/object_detection/statistics.i"
+	@echo "... src/object_detection/statistics.s"
+	@echo "... src/object_detection/utilities.o"
+	@echo "... src/object_detection/utilities.i"
+	@echo "... src/object_detection/utilities.s"
 	@echo "... src/object_detection_test/main.o"
 	@echo "... src/object_detection_test/main.i"
 	@echo "... src/object_detection_test/main.s"

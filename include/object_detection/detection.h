@@ -16,8 +16,14 @@ struct Detection
     /// label to identify an object
     std::string label;
 
-    /// the rotated bounding rectangle
-    cv::RotatedRect bounding_rotated_rect;
+    /// the rotation with respect to the trained object
+    double angle;
+
+    /// the object center 
+    cv::Point center;
+
+    /// the scale of the object with respect to the trained object
+    double scale;
     
     /// some score (usually between 0 and 1) that tells the
     /// quality of the detection

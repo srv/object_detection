@@ -20,12 +20,12 @@ using object_detection::histogram_utilities::calculateHistogram;
 
 static const int NUM_HUE_BINS = 32;
 static const int NUM_SATURATION_BINS = 32;
-static const double BACKPROJECTION_THRESHOLD = 30.0;
+static const double BACKPROJECTION_THRESHOLD = 5.0;
 //static const double BACKPROJECTION_THRESHOLD = 10.0 / 255.0;
 
 // minimum number of pixels that form an object contour.
 // smaller objects are discarded
-static const double CONTOUR_AREA_THRESHOLD = 100;
+static const double CONTOUR_AREA_THRESHOLD = 10;
 
 
 HistogramBackprojection::HistogramBackprojection() : is_trained_(false)

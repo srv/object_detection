@@ -23,8 +23,11 @@ struct Statistics
     /// center of mass
     cv::Point center_of_mass;
 
-    /// moments
-    cv::Moments moments;
+    /// main axis angle (computed from moments)
+    double main_axis_angle;
+
+    /// area (computed from moments)
+    double area;
 };
     
 /**
@@ -33,7 +36,7 @@ struct Statistics
  * \param mask input mask
  * \return statistics
  */
-Statistics computeStatistics(const cv::Mat& image, const cv::Mat& mask);
+Statistics computeStatistics(const cv::Mat& image, const cv::Mat& mask = cv::Mat());
 
 /**
  * \brief computes x coordinates of intersection points of two gauss graphs

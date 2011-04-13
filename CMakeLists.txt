@@ -36,6 +36,7 @@ set(LIB_SOURCES
     src/object_detection/interest_operator_factory.cpp
     src/object_detection/utilities.cpp
     src/object_detection/detector.cpp
+    src/object_detection/detection.cpp
     src/object_detection/statistics.cpp
    )
 

@@ -363,6 +363,21 @@ src/object_detection/color_classifier.s:
 .PHONY : src/object_detection/color_classifier.s
 
 # target to build an object file
+src/object_detection/detection.o:
+	$(MAKE) -f CMakeFiles/object_detection.dir/build.make CMakeFiles/object_detection.dir/src/object_detection/detection.o
+.PHONY : src/object_detection/detection.o
+
+# target to preprocess a source file
+src/object_detection/detection.i:
+	$(MAKE) -f CMakeFiles/object_detection.dir/build.make CMakeFiles/object_detection.dir/src/object_detection/detection.i
+.PHONY : src/object_detection/detection.i
+
+# target to generate assembly for a file
+src/object_detection/detection.s:
+	$(MAKE) -f CMakeFiles/object_detection.dir/build.make CMakeFiles/object_detection.dir/src/object_detection/detection.s
+.PHONY : src/object_detection/detection.s
+
+# target to build an object file
 src/object_detection/detector.o:
 	$(MAKE) -f CMakeFiles/object_detection.dir/build.make CMakeFiles/object_detection.dir/src/object_detection/detector.o
 .PHONY : src/object_detection/detector.o
@@ -499,6 +514,9 @@ help:
 	@echo "... src/object_detection/color_classifier.o"
 	@echo "... src/object_detection/color_classifier.i"
 	@echo "... src/object_detection/color_classifier.s"
+	@echo "... src/object_detection/detection.o"
+	@echo "... src/object_detection/detection.i"
+	@echo "... src/object_detection/detection.s"
 	@echo "... src/object_detection/detector.o"
 	@echo "... src/object_detection/detector.i"
 	@echo "... src/object_detection/detector.s"

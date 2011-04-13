@@ -58,18 +58,20 @@ public:
 
 private:
 
+    struct ClassifierWithInfo
+    {
+        boost::shared_ptr<Classifier> classifier;
+        double threshold;
+        Statistics object_statistics;
+        std::vector<cv::Point> object_outline;
+    };
+
     // stores if the detector was trained
     bool is_trained_;
 
     // the set of classifiers
-    std::vector<boost::shared_ptr<Classifier> > classifiers_;
+    std::vector<ClassifierWithInfo> classifiers_with_info_;
 
-    // stores object statistics
-    Statistics object_statistics_;
-
-    // stores background statistics
-    Statistics background_statistics_;
-    
 };
 
 }

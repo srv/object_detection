@@ -1,6 +1,7 @@
 #ifndef DETECTION_H
 #define DETECTION_H
 
+#include <iostream>
 #include <string>
 #include <cv.h>
 
@@ -28,9 +29,13 @@ struct Detection
     /// some score (usually between 0 and 1) that tells the
     /// quality of the detection
     double score;
+
+    /// the outline of the object as polygon
+    std::vector<cv::Point> outline;
 };
 
 }
 
+std::ostream& operator<< (std::ostream& out, const object_detection::Detection& detection);
 
 #endif /* DETECTION_H */

@@ -10,6 +10,8 @@
 #include "utilities.h"
 #include "detector.h"
 
+using object_detection::Detection;
+
 std::vector<cv::Point> readPolygonData(std::istream& in)
 {
     std::vector<cv::Point> points;
@@ -91,10 +93,20 @@ int main(int argc, char** argv)
     // detector interface
     object_detection::Detector detector;
     detector.train(training_data);
-    detector.detect(test_image);
-    
-    cv::waitKey();
+    std::vector<Detection> detections = detector.detect(test_image);
 
+    // paint the results
+    for (size_t i = 0; i < detections.size(); ++i)
+    {
+        std::cout << "Detection " << i << ":\n" << detections[i] << std::endl;
+        cv::circle(test_image, detections[i].center, 100 * detections[i].scale,
+                cv::Scalar(0, 255, 0), 2);
+    }
+    
+    cv::namedWindow("Detections");
+    cv::imshow("Detections", test_image);
+   
+    cv::waitKey();
     return 0;
 }
 

@@ -58,9 +58,11 @@ public:
 
 private:
 
+    typedef boost::shared_ptr<Classifier> ClassifierPtr;
+
     struct ClassifierWithInfo
     {
-        boost::shared_ptr<Classifier> classifier;
+        ClassifierPtr classifier;
         double threshold;
         Statistics object_statistics;
         std::vector<cv::Point> object_outline;

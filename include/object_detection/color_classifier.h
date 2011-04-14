@@ -26,8 +26,7 @@ public:
 
 	std::string getName() const { return "ColorClassifier"; };
 
-    bool train(const std::vector<cv::Mat>& images,
-                       const std::vector<cv::Mat>& masks);
+    void train(const cv::Mat& image, const cv::Mat& mask);
 	
 	cv::Mat classify(const cv::Mat& image, 
             const std::vector<cv::Rect>& rois = std::vector<cv::Rect>()) const;
@@ -36,6 +35,12 @@ private:
 
     // stores the histogram of the object
     cv::MatND object_histogram_;
+
+    // stores the histogram of the background
+    cv::MatND background_histogram_;
+
+    // stores the histogram of significant colors
+    cv::MatND significant_colors_histogram_;
 
     // stores if the classifier is trained
     bool is_trained_;

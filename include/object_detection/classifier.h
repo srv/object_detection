@@ -34,32 +34,12 @@ public:
 
     /**
      * \brief trains the classifier.
-     * \param images the input training images
-     * \param the input training masks. A value = 0 in the mask means the
-     *        corresponding pixel in the image is background, a value != 0 
-     *        means the pixel belongs to the object.
-     * images.size() must be equal to masks.size()
-     * \return true if training successful, false otherwise.
-     */
-    virtual bool train(const std::vector<cv::Mat>& images,
-                       const std::vector<cv::Mat>& masks) = 0;
-    /**
-     * \brief trains the classifier.
-     * Provided for convenience, calls the above method.
      * \param image the input training image
      * \param the input training mask. A value = 0 in the mask means the
      *        corresponding pixel in the image is background, a value != 0 
      *        means the pixel belongs to the object.
-     * \return true if training successful, false otherwise.
      */
-    bool train(const cv::Mat& image,
-                       const cv::Mat& mask) {
-        std::vector<cv::Mat> images(1);
-        images[0] = image;
-        std::vector<cv::Mat> masks(1);
-        masks[0] = mask;
-        return train(images, masks);
-    }
+    virtual void train(const cv::Mat& image, const cv::Mat& mask) = 0;
     
 	/**
 	 * \brief Runs the classifier.

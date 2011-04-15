@@ -95,6 +95,8 @@ int main(int argc, char** argv)
     detector.train(training_data);
     std::vector<Detection> detections = detector.detect(test_image);
 
+    std::cout << "Detector made " << detections.size() << " detections." << std::endl;
+
     // paint the results
     for (size_t i = 0; i < detections.size(); ++i)
     {

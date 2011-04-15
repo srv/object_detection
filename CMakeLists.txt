@@ -30,13 +30,13 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 #target_link_libraries(example ${PROJECT_NAME})
 
 set(LIB_SOURCES 
-    src/object_detection/color_classifier.cpp
-    src/object_detection/histogram_backprojection.cpp 
-    src/object_detection/histogram_utilities.cpp 
-    src/object_detection/interest_operator_factory.cpp
-    src/object_detection/utilities.cpp
     src/object_detection/detector.cpp
     src/object_detection/detection.cpp
+    src/object_detection/object_parts_detector.cpp
+    src/object_detection/histogram_based_parts_classifier.cpp
+    src/object_detection/colored_parts_classifier.cpp
+    src/object_detection/histogram_utilities.cpp 
+    src/object_detection/utilities.cpp
     src/object_detection/statistics.cpp
    )
 

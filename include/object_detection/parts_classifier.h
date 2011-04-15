@@ -1,5 +1,5 @@
-#ifndef CLASSIFIER_H
-#define CLASSIFIER_H
+#ifndef PARTS_CLASSIFIER_H
+#define PARTS_CLASSIFIER_H
 
 #include <string>
 #include <vector>
@@ -9,26 +9,29 @@
 namespace object_detection {
 
 /**
- * \class Classifier
+ * \class PartsClassifier
  * \author Stephan Wirth
- * \brief Interface for classifier.
- * A classifier takes an image together with a binary image as training input.
- * It learns two classes: object and background.
+ * \brief Interface for classifiers that train and classify parts of an object.
+ * A parts classifier takes an image together with a binary image as training
+ * input.
+ * It learns two classes: object parts and background by identifying those
+ * parts of the object that differ very much from the background.
  * For classification it takes an image as input and classifies each pixel as
- * belonging to object or to background. The output is a probability map in which
- * for each pixel the probability belonging to the object is marked.
+ * belonging to the trained object parts or to background. 
+ * The output is a probability map in which
+ * for each pixel the probability belonging to parts of the object is marked.
  */
-class Classifier
+class PartsClassifier
 {
 public:
 
     /**
      * Virtual destructor (empty)
      */
-	virtual ~Classifier() {};
+	virtual ~PartsClassifier() {};
 
 	/**
-	 * \return name of the Classifier
+	 * \return name of the PartsClassifier
 	 */
 	virtual std::string getName() const = 0;
 
@@ -57,5 +60,5 @@ public:
 }
 
 
-#endif /* CLASSIFIER_H */
+#endif /* PARTS_CLASSIFIER_H */
 

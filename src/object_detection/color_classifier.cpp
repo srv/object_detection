@@ -14,6 +14,7 @@ using object_detection::ColorClassifier;
 using object_detection::histogram_utilities::calculateHistogram;
 using object_detection::histogram_utilities::calculateBackprojection;
 using object_detection::histogram_utilities::accumulateHistogram;
+using object_detection::histogram_utilities::showHSHistogram;
 
 static const int NUM_HUE_BINS = 32;
 static const int NUM_SATURATION_BINS = 32;
@@ -28,16 +29,21 @@ void ColorClassifier::train(const cv::Mat& image, const cv::Mat& mask)
     cv::Mat hsv_image;
     cv::cvtColor(image, hsv_image, CV_BGR2HSV);
 
-    accumulateHistogram(hsv_image, NUM_HUE_BINS,
-            NUM_SATURATION_BINS, mask, object_histogram_);
+    object_histogram_ = calculateHistogram(hsv_image, NUM_HUE_BINS,
+            NUM_SATURATION_BINS, mask);
 
     cv::Mat background_mask = 255 - mask;
-    accumulateHistogram(hsv_image, NUM_HUE_BINS,
-            NUM_SATURATION_BINS, background_mask, background_histogram_);
+    background_histogram_ = calculateHistogram(hsv_image, NUM_HUE_BINS,
+            NUM_SATURATION_BINS, background_mask);
 
     // divide the histograms so that only those colors remain
     // that are representative for the object
     significant_colors_histogram_ = object_histogram_ / (background_histogram_ + 1);
+
+    showHSHistogram(background_histogram_, "background colors");
+    showHSHistogram(object_histogram_, "object colors");
+    showHSHistogram(significant_colors_histogram_, "significant object colors");
+
     is_trained_ = true;
  }
 

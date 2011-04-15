@@ -1,13 +1,11 @@
 #ifndef DETECTOR_H
 #define DETECTOR_H
 
-#include <string>
 #include <vector>
 
 #include <boost/shared_ptr.hpp>
 
 #include "trainable.h"
-#include "statistics.h"
 
 namespace cv {
     class Mat;
@@ -18,7 +16,7 @@ namespace cv {
 namespace object_detection {
 
 struct Detection;
-class Classifier;
+class ObjectPartsDetector;
 
 /**
  * \class Detector
@@ -58,21 +56,11 @@ public:
 
 private:
 
-    typedef boost::shared_ptr<Classifier> ClassifierPtr;
-
-    struct ClassifierWithInfo
-    {
-        ClassifierPtr classifier;
-        double threshold;
-        Statistics object_statistics;
-        std::vector<cv::Point> object_outline;
-    };
-
     // stores if the detector was trained
     bool is_trained_;
 
-    // the set of classifiers
-    std::vector<ClassifierWithInfo> classifiers_with_info_;
+    // the set of object part detectors 
+    std::vector<boost::shared_ptr<ObjectPartsDetector> > object_parts_detectors_;
 
 };
 

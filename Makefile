@@ -348,19 +348,19 @@ src/histograms/main.s:
 .PHONY : src/histograms/main.s
 
 # target to build an object file
-src/object_detection/color_classifier.o:
-	$(MAKE) -f CMakeFiles/object_detection.dir/build.make CMakeFiles/object_detection.dir/src/object_detection/color_classifier.o
-.PHONY : src/object_detection/color_classifier.o
+src/object_detection/colored_parts_classifier.o:
+	$(MAKE) -f CMakeFiles/object_detection.dir/build.make CMakeFiles/object_detection.dir/src/object_detection/colored_parts_classifier.o
+.PHONY : src/object_detection/colored_parts_classifier.o
 
 # target to preprocess a source file
-src/object_detection/color_classifier.i:
-	$(MAKE) -f CMakeFiles/object_detection.dir/build.make CMakeFiles/object_detection.dir/src/object_detection/color_classifier.i
-.PHONY : src/object_detection/color_classifier.i
+src/object_detection/colored_parts_classifier.i:
+	$(MAKE) -f CMakeFiles/object_detection.dir/build.make CMakeFiles/object_detection.dir/src/object_detection/colored_parts_classifier.i
+.PHONY : src/object_detection/colored_parts_classifier.i
 
 # target to generate assembly for a file
-src/object_detection/color_classifier.s:
-	$(MAKE) -f CMakeFiles/object_detection.dir/build.make CMakeFiles/object_detection.dir/src/object_detection/color_classifier.s
-.PHONY : src/object_detection/color_classifier.s
+src/object_detection/colored_parts_classifier.s:
+	$(MAKE) -f CMakeFiles/object_detection.dir/build.make CMakeFiles/object_detection.dir/src/object_detection/colored_parts_classifier.s
+.PHONY : src/object_detection/colored_parts_classifier.s
 
 # target to build an object file
 src/object_detection/detection.o:
@@ -393,19 +393,19 @@ src/object_detection/detector.s:
 .PHONY : src/object_detection/detector.s
 
 # target to build an object file
-src/object_detection/histogram_backprojection.o:
-	$(MAKE) -f CMakeFiles/object_detection.dir/build.make CMakeFiles/object_detection.dir/src/object_detection/histogram_backprojection.o
-.PHONY : src/object_detection/histogram_backprojection.o
+src/object_detection/histogram_based_parts_classifier.o:
+	$(MAKE) -f CMakeFiles/object_detection.dir/build.make CMakeFiles/object_detection.dir/src/object_detection/histogram_based_parts_classifier.o
+.PHONY : src/object_detection/histogram_based_parts_classifier.o
 
 # target to preprocess a source file
-src/object_detection/histogram_backprojection.i:
-	$(MAKE) -f CMakeFiles/object_detection.dir/build.make CMakeFiles/object_detection.dir/src/object_detection/histogram_backprojection.i
-.PHONY : src/object_detection/histogram_backprojection.i
+src/object_detection/histogram_based_parts_classifier.i:
+	$(MAKE) -f CMakeFiles/object_detection.dir/build.make CMakeFiles/object_detection.dir/src/object_detection/histogram_based_parts_classifier.i
+.PHONY : src/object_detection/histogram_based_parts_classifier.i
 
 # target to generate assembly for a file
-src/object_detection/histogram_backprojection.s:
-	$(MAKE) -f CMakeFiles/object_detection.dir/build.make CMakeFiles/object_detection.dir/src/object_detection/histogram_backprojection.s
-.PHONY : src/object_detection/histogram_backprojection.s
+src/object_detection/histogram_based_parts_classifier.s:
+	$(MAKE) -f CMakeFiles/object_detection.dir/build.make CMakeFiles/object_detection.dir/src/object_detection/histogram_based_parts_classifier.s
+.PHONY : src/object_detection/histogram_based_parts_classifier.s
 
 # target to build an object file
 src/object_detection/histogram_utilities.o:
@@ -423,19 +423,19 @@ src/object_detection/histogram_utilities.s:
 .PHONY : src/object_detection/histogram_utilities.s
 
 # target to build an object file
-src/object_detection/interest_operator_factory.o:
-	$(MAKE) -f CMakeFiles/object_detection.dir/build.make CMakeFiles/object_detection.dir/src/object_detection/interest_operator_factory.o
-.PHONY : src/object_detection/interest_operator_factory.o
+src/object_detection/object_parts_detector.o:
+	$(MAKE) -f CMakeFiles/object_detection.dir/build.make CMakeFiles/object_detection.dir/src/object_detection/object_parts_detector.o
+.PHONY : src/object_detection/object_parts_detector.o
 
 # target to preprocess a source file
-src/object_detection/interest_operator_factory.i:
-	$(MAKE) -f CMakeFiles/object_detection.dir/build.make CMakeFiles/object_detection.dir/src/object_detection/interest_operator_factory.i
-.PHONY : src/object_detection/interest_operator_factory.i
+src/object_detection/object_parts_detector.i:
+	$(MAKE) -f CMakeFiles/object_detection.dir/build.make CMakeFiles/object_detection.dir/src/object_detection/object_parts_detector.i
+.PHONY : src/object_detection/object_parts_detector.i
 
 # target to generate assembly for a file
-src/object_detection/interest_operator_factory.s:
-	$(MAKE) -f CMakeFiles/object_detection.dir/build.make CMakeFiles/object_detection.dir/src/object_detection/interest_operator_factory.s
-.PHONY : src/object_detection/interest_operator_factory.s
+src/object_detection/object_parts_detector.s:
+	$(MAKE) -f CMakeFiles/object_detection.dir/build.make CMakeFiles/object_detection.dir/src/object_detection/object_parts_detector.s
+.PHONY : src/object_detection/object_parts_detector.s
 
 # target to build an object file
 src/object_detection/statistics.o:
@@ -511,24 +511,24 @@ help:
 	@echo "... src/histograms/main.o"
 	@echo "... src/histograms/main.i"
 	@echo "... src/histograms/main.s"
-	@echo "... src/object_detection/color_classifier.o"
-	@echo "... src/object_detection/color_classifier.i"
-	@echo "... src/object_detection/color_classifier.s"
+	@echo "... src/object_detection/colored_parts_classifier.o"
+	@echo "... src/object_detection/colored_parts_classifier.i"
+	@echo "... src/object_detection/colored_parts_classifier.s"
 	@echo "... src/object_detection/detection.o"
 	@echo "... src/object_detection/detection.i"
 	@echo "... src/object_detection/detection.s"
 	@echo "... src/object_detection/detector.o"
 	@echo "... src/object_detection/detector.i"
 	@echo "... src/object_detection/detector.s"
-	@echo "... src/object_detection/histogram_backprojection.o"
-	@echo "... src/object_detection/histogram_backprojection.i"
-	@echo "... src/object_detection/histogram_backprojection.s"
+	@echo "... src/object_detection/histogram_based_parts_classifier.o"
+	@echo "... src/object_detection/histogram_based_parts_classifier.i"
+	@echo "... src/object_detection/histogram_based_parts_classifier.s"
 	@echo "... src/object_detection/histogram_utilities.o"
 	@echo "... src/object_detection/histogram_utilities.i"
 	@echo "... src/object_detection/histogram_utilities.s"
-	@echo "... src/object_detection/interest_operator_factory.o"
-	@echo "... src/object_detection/interest_operator_factory.i"
-	@echo "... src/object_detection/interest_operator_factory.s"
+	@echo "... src/object_detection/object_parts_detector.o"
+	@echo "... src/object_detection/object_parts_detector.i"
+	@echo "... src/object_detection/object_parts_detector.s"
 	@echo "... src/object_detection/statistics.o"
 	@echo "... src/object_detection/statistics.i"
 	@echo "... src/object_detection/statistics.s"

@@ -22,6 +22,17 @@ public:
 
     cv::Mat backprojectHistogram(const cv::MatND& histogram,
             const cv::Mat& image) const;
+
+private:
+
+    /**
+    * performs the necessary preprocessing on the image
+    * \param image input image
+    * \return preprocessed image
+    */
+    static cv::Mat preprocessImage(const cv::Mat& image);
+
+
 };
 
 }

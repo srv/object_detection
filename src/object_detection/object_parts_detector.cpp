@@ -53,41 +53,46 @@ void ObjectPartsDetector::train(const cv::Mat& image, const cv::Mat& object_mask
     thresholded.copyTo(masked_prob_image, object_mask);
     object_shapes_ = extractShapes(masked_prob_image);
 
-    std::cout << "object has " << object_shapes_.size() << " shapes." << std::endl;
+    cv::Mat object_shapes_image = cv::Mat::zeros(image.rows, image.cols, CV_8UC1);
+    cv::drawContours(object_shapes_image, object_shapes_, -1, cv::Scalar(255), CV_FILLED);
 
-    cv::Mat biggestContoursImage = cv::Mat::zeros(image.rows, image.cols, CV_8UC1);
-    cv::drawContours(biggestContoursImage, object_shapes_, -1, cv::Scalar(255));
+    cv::imshow(parts_classifier_->getName() + " object shapes", object_shapes_image);
 
-    cv::imshow(parts_classifier_->getName() + " main object parts", biggestContoursImage);
-
-    object_statistics_ = computeStatistics(biggestContoursImage);
+    object_statistics_ = computeStatistics(object_shapes_image);
 }
 
 std::vector<Detection> ObjectPartsDetector::detect(const cv::Mat& image)
 {
+    assert(!image.empty());
+    std::vector<Detection> detections;
+    if (object_shapes_.size() == 0)
+    {
+        return detections;
+    }
+
     cv::Mat prob_image = parts_classifier_->classify(image);
     cv::imshow(parts_classifier_->getName() + " object parts prob image", prob_image);
-    cv::Mat binary;
-    cv::threshold(prob_image, binary, threshold_, 1.0, CV_THRESH_BINARY);
-    cv::imshow(parts_classifier_->getName() + " object parts prob image thresholded", binary);
-    std::vector<std::vector<cv::Point> > shapes = extractShapes(binary);
+    cv::Mat prob_image_thresholded;
+    cv::threshold(prob_image, prob_image_thresholded, threshold_, 1.0, CV_THRESH_BINARY);
+    cv::imshow(parts_classifier_->getName() + " object parts prob image thresholded", prob_image_thresholded);
+    std::vector<std::vector<cv::Point> > detected_shapes = extractShapes(prob_image_thresholded);
+    cv::Mat shapes_image = cv::Mat::zeros(image.rows, image.cols, CV_8UC1);
+    cv::drawContours(shapes_image, detected_shapes, -1, cv::Scalar(255), CV_FILLED);
+    cv::imshow(parts_classifier_->getName() + " detected shapes", shapes_image);
 
-    cv::Mat biggestPartsImage = cv::Mat::zeros(image.rows, image.cols, CV_8UC1);
-    cv::drawContours(biggestPartsImage, shapes, -1, cv::Scalar(255));
-    cv::imshow(parts_classifier_->getName() + " detected object parts", biggestPartsImage);
+    // TODO more sophisticated shape matching
 
-    std::vector<Detection> detections;
-    if (shapes.size() > 0)
+    // did we detect some shapes?
+    if (detected_shapes.size() > 0)
     {
-        Statistics detected_object_statistics = computeStatistics(biggestPartsImage);
-        std::cout << "object statistics: " << object_statistics_ << std::endl;
-        std::cout << "detected object statistics: " << detected_object_statistics << std::endl;
-        // TODO shape matching etc.
+        Statistics detected_object_statistics = computeStatistics(shapes_image);
+        double distance = cv::matchShapes(cv::Mat(object_shapes_[0]), cv::Mat(detected_shapes[0]), CV_CONTOURS_MATCH_I1, 0.0);
+        double score = exp(-distance);
         Detection detection;
-        detection.angle = 0.0;
+        detection.angle = detected_object_statistics.main_axis_angle - object_statistics_.main_axis_angle;
         detection.center = detected_object_statistics.center_of_mass;
         detection.scale = detected_object_statistics.area / object_statistics_.area;
-        detection.score = 0.0;
+        detection.score = score;
         detection.label = "object1";
         detections.push_back(detection);
     }
@@ -99,9 +104,6 @@ double ObjectPartsDetector::computeBestThreshold(const cv::Mat& image,
 {
     Statistics object_statistics = computeStatistics(image, mask);
     Statistics background_statistics = computeStatistics(image, 255 - mask);
-
-    std::cout << "object_statistics: " << object_statistics << std::endl;
-    std::cout << "background_statistics: " << background_statistics << std::endl;
 
     // TODO !!
     if (background_statistics.mean < 0.000001)
@@ -119,8 +121,6 @@ double ObjectPartsDetector::computeBestThreshold(const cv::Mat& image,
      
     double threshold = *(std::max_element(gauss_intersections.begin(), 
                                           gauss_intersections.end()));
-
-    std::cout << "threshold: " << threshold << std::endl;
     return threshold;
 }
 
@@ -131,7 +131,6 @@ ObjectPartsDetector::extractShapes(const cv::Mat& image)
     image.convertTo(image_copy, CV_8UC1);
     std::vector<std::vector<cv::Point> > contours;
     cv::findContours(image_copy, contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
-    std::cout << contours.size() << " contours" << std::endl;
     return getBiggestShapes(contours);
 }
 

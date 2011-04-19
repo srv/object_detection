@@ -18,18 +18,33 @@ using object_detection::histogram_utilities::showHSHistogram;
 
 static const int NUM_HUE_BINS = 32;
 static const int NUM_SATURATION_BINS = 32;
+static const int MIN_COLOR_VALUE = 10;
 
 ColorClassifier::ColorClassifier() : is_trained_(false)
 {
 }
 
-void ColorClassifier::train(const cv::Mat& image, const cv::Mat& mask)
+cv::Mat ColorClassifier::preprocessImage(const cv::Mat& image)
 {
     // convert image to hsv
     cv::Mat hsv_image;
     cv::cvtColor(image, hsv_image, CV_BGR2HSV);
 
-    object_histogram_ = calculateHistogram(hsv_image, NUM_HUE_BINS,
+    // discard too dark and too bright values
+    std::vector<cv::Mat> hsv_channels = cv::split(hsv_image);
+    cv::threshold(hsv_channels[2], hsv_channels[2], MIN_COLOR_VALUE, CV_THRESH_TOZERO);
+
+    imshow("after preprocessing", hsv_channels[2]);
+
+    cv::Mat preprocessed_image;
+    cv::merge(hsv_channels, preprocessed_image);
+    return preprocessed_image;
+}
+
+void ColorClassifier::train(const cv::Mat& image, const cv::Mat& mask)
+{
+    cv::Mat preprocessed_image = preprocessImage(image);
+    object_histogram_ = calculateHistogram(preprocessed_image, NUM_HUE_BINS,
             NUM_SATURATION_BINS, mask);
 
     cv::Mat background_mask = 255 - mask;
@@ -73,13 +88,11 @@ cv::Mat ColorClassifier::classify(const cv::Mat& image,
     cv::Mat image_masked;
     image.copyTo(image_masked, mask);
 
-    // convert input image to hsv
-    cv::Mat hsv_image;
-    cv::cvtColor(image_masked, hsv_image, CV_BGR2HSV);
+    cv::Mat preprocessed_image = preprocessImage(image_masked);
 
     // perform back projection
     cv::Mat back_projection = 
-        calculateBackprojection(significant_colors_histogram_, hsv_image);
+        calculateBackprojection(significant_colors_histogram_, preprocessed_image);
 
     cv::Mat probability_image;
     back_projection.convertTo(probability_image, CV_32F, 1.0/255.0);

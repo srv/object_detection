@@ -33,6 +33,13 @@ public:
 
 private:
 
+    /**
+    * performs the necessary preprocessing on the image
+    * \param image input image
+    * \return preprocessed image
+    */
+    static cv::Mat preprocessImage(const cv::Mat& image);
+
     // stores the histogram of the object
     cv::MatND object_histogram_;
 

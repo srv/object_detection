@@ -94,6 +94,8 @@ std::vector<Detection> ObjectPartsDetector::detect(const cv::Mat& image)
         detection.scale = detected_object_statistics.area / object_statistics_.area;
         detection.score = score;
         detection.label = "object1";
+        // TODO use real input object polygon!
+        detection.outline = detected_shapes[0]; 
         detections.push_back(detection);
     }
     return detections;

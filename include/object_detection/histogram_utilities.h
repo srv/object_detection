@@ -62,6 +62,14 @@ namespace histogram_utilities {
     */
     void showHSHistogram(const cv::MatND& histogram,
         const std::string& name);
+
+    /**
+    * \brief paints 1D and 2D histograms
+    * \param histogram the histogram, must have a one or two-channels.
+    * \param name the name of the window title where the histogram will be shown
+    */
+    void showHistogram(const cv::MatND& histogram,
+        const std::string& name);
  
 
 } // namespace histogram_utilities

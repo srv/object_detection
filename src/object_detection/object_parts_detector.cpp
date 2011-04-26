@@ -12,6 +12,9 @@ using object_detection::PartsClassifier;
 using object_detection::Detection;
 using object_detection::Statistics;
 
+// possible scale range
+static const double MIN_SCALE = 0.5;
+static const double MAX_SCALE = 2.0;
 
 bool compareShapeArea(const std::vector<cv::Point>& shape1,
                       const std::vector<cv::Point>& shape2)
@@ -41,31 +44,37 @@ void ObjectPartsDetector::train(const cv::Mat& image, const cv::Mat& object_mask
     // train the classifier
     parts_classifier_->train(image, object_mask);
 
-    // apply directly to training image to get object description
+    // apply directly to training image to get object part description
     cv::Mat prob_image = parts_classifier_->classify(image);
     threshold_ = computeBestThreshold(prob_image, object_mask);
+
+    cv::imshow(parts_classifier_->getName() + " training prob image", prob_image);
 
     cv::Mat thresholded;
     cv::threshold(prob_image, thresholded, threshold_, 1.0, CV_THRESH_BINARY);
 
+    cv::imshow(parts_classifier_->getName() + " training thresh image", thresholded);
+
     // store shapes as object description
     cv::Mat masked_prob_image;
     thresholded.copyTo(masked_prob_image, object_mask);
-    object_shapes_ = extractShapes(masked_prob_image);
+    object_part_shapes_ = extractShapes(masked_prob_image);
 
     cv::Mat object_shapes_image = cv::Mat::zeros(image.rows, image.cols, CV_8UC1);
-    cv::drawContours(object_shapes_image, object_shapes_, -1, cv::Scalar(255), CV_FILLED);
+    cv::drawContours(object_shapes_image, object_part_shapes_, -1, cv::Scalar(255), CV_FILLED);
 
     cv::imshow(parts_classifier_->getName() + " object shapes", object_shapes_image);
 
-    object_statistics_ = computeStatistics(object_shapes_image);
+    object_part_statistics_ = computeStatistics(object_shapes_image);
+
+    full_object_statistics_ = computeStatistics(object_mask);
 }
 
 std::vector<Detection> ObjectPartsDetector::detect(const cv::Mat& image)
 {
     assert(!image.empty());
     std::vector<Detection> detections;
-    if (object_shapes_.size() == 0)
+    if (object_part_shapes_.size() == 0)
     {
         return detections;
     }
@@ -86,17 +95,20 @@ std::vector<Detection> ObjectPartsDetector::detect(const cv::Mat& image)
     if (detected_shapes.size() > 0)
     {
         Statistics detected_object_statistics = computeStatistics(shapes_image);
-        double distance = cv::matchShapes(cv::Mat(object_shapes_[0]), cv::Mat(detected_shapes[0]), CV_CONTOURS_MATCH_I1, 0.0);
-        double score = exp(-distance);
-        Detection detection;
-        detection.angle = detected_object_statistics.main_axis_angle - object_statistics_.main_axis_angle;
-        detection.center = detected_object_statistics.center_of_mass;
-        detection.scale = detected_object_statistics.area / object_statistics_.area;
-        detection.score = score;
-        detection.label = "object1";
-        // TODO use real input object polygon!
-        detection.outline = detected_shapes[0]; 
-        detections.push_back(detection);
+        double scale = detected_object_statistics.area / object_part_statistics_.area;
+        // check if detection is plausible
+        if (scale >= MIN_SCALE && scale <= MAX_SCALE)
+        {
+            double distance = cv::matchShapes(cv::Mat(object_part_shapes_[0]), cv::Mat(detected_shapes[0]), CV_CONTOURS_MATCH_I1, 0.0);
+            double score = exp(-distance);
+            Detection detection;
+            detection.angle = detected_object_statistics.main_axis_angle - object_part_statistics_.main_axis_angle;
+            detection.center = detected_object_statistics.center_of_mass;
+            detection.scale = detected_object_statistics.area / object_part_statistics_.area;
+            detection.score = score;
+            detection.label = "object1";
+            detections.push_back(detection);
+        }
     }
     return detections;
 }
@@ -107,7 +119,6 @@ double ObjectPartsDetector::computeBestThreshold(const cv::Mat& image,
     Statistics object_statistics = computeStatistics(image, mask);
     Statistics background_statistics = computeStatistics(image, 255 - mask);
 
-    // TODO !!
     if (background_statistics.mean < 0.000001)
     {
         return object_statistics.mean / 2;

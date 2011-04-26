@@ -4,10 +4,13 @@
 #include <cv.h>
 
 #include "histogram_based_parts_classifier.h"
+#include "histogram_utilities.h"
 
 using object_detection::HistogramBasedPartsClassifier; 
+using object_detection::histogram_utilities::showHistogram;
+using object_detection::histogram_utilities::showHSHistogram;
 
-
+/*
 void HistogramBasedPartsClassifier::train(const cv::Mat& image, const cv::Mat& mask)
 {
     // compute histograms of foreground and background and divide them
@@ -15,8 +18,26 @@ void HistogramBasedPartsClassifier::train(const cv::Mat& image, const cv::Mat& m
     cv::MatND object_histogram = computeHistogram(image, mask);
     cv::MatND background_histogram = computeHistogram(image, 255 - mask);
     significant_elements_histogram_ = object_histogram / (background_histogram + 1);
+
+    showHistogram(object_histogram, getName() + "-object histogram");
+    showHistogram(background_histogram, getName() + "-background histogram");
+    showHistogram(significant_elements_histogram_, getName() + "-significant elements histogram");
 }
-    
+*/
+ 
+void HistogramBasedPartsClassifier::train(const cv::Mat& image, const cv::Mat& mask)
+{
+    // compute histograms of object and whole image and divide them
+    // (virtual function calls)
+    cv::MatND object_histogram = computeHistogram(image, mask);
+    cv::MatND image_histogram = computeHistogram(image, cv::Mat());
+    significant_elements_histogram_ = object_histogram / (image_histogram + 1);
+
+    showHistogram(object_histogram, getName() + "-object histogram");
+    showHistogram(image_histogram, getName() + "-image histogram");
+    showHistogram(significant_elements_histogram_, getName() + "-significant elements histogram");
+}
+   
 cv::Mat HistogramBasedPartsClassifier::classify(const cv::Mat& image, 
             const std::vector<cv::Rect>& rois) const
 {

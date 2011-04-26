@@ -152,6 +152,54 @@ void showHSHistogram(const cv::MatND& histogram,
     cv::imshow( name, histogram_image );
 }
 
+void showHistogram(const cv::MatND& histogram,
+        const std::string& name)
+{
+    assert(histogram.dims == 1 || histogram.dims == 2);
+    assert(histogram.type() == CV_32FC1);
+
+    double max_value = 0;
+    cv::minMaxLoc(histogram, 0, &max_value, 0, 0);
+ 
+    cv::Mat histogram_image;
+
+    if (histogram.dims == 1)
+    {
+        int x_scale = 4;
+        int y_scale = 100;
+        histogram_image.create(y_scale, histogram.size[0] * x_scale, CV_8UC1);
+        histogram_image = cv::Scalar(0);
+        for (int x = 0; x < histogram.size[0]; ++x)
+        {
+            float binVal = histogram.at<float>(x);
+            int height = cvRound(binVal * y_scale / max_value);
+            cv::rectangle(histogram_image, cv::Point(x*x_scale, y_scale-1),
+                cv::Point((x+1)*x_scale-1, y_scale-height),
+                cv::Scalar::all(255),
+                CV_FILLED );
+        }
+    }
+    else if (histogram.dims == 2)
+    {
+        int scale = 8; // pixel size for a bin
+        histogram_image.create(histogram.size[0] * scale, histogram.size[1] * scale, CV_8UC1);
+        histogram_image = cv::Scalar(0);
+        for( int y = 0; y < histogram.rows; y++ )
+            for( int x = 0; x < histogram.cols; x++ )
+            {
+                float binVal = histogram.at<float>(y, x);
+                int intensity = cvRound(binVal * 255 / max_value);
+                cv::rectangle( histogram_image, cv::Point(x*scale, y*scale),
+                    cv::Point( (x+1)*scale - 1, (y+1)*scale - 1),
+                    cv::Scalar::all(intensity),
+                    CV_FILLED );
+            }
+    }
+
+    cv::namedWindow( name );
+    cv::imshow( name, histogram_image );
+}
+
 } // namespace object_detection
 } // namespace histogram_utilities
 

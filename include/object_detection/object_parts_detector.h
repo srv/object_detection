@@ -88,10 +88,13 @@ private:
     double threshold_;
 
     /// the parts of the object that the detector can detect
-    std::vector<std::vector<cv::Point> > object_shapes_;
+    std::vector<std::vector<cv::Point> > object_part_shapes_;
 
-    /// statistics of the object shapes
-    Statistics object_statistics_;
+    /// statistics of the object part shapes
+    Statistics object_part_statistics_;
+
+    /// statistics of the full object
+    Statistics full_object_statistics_;
 
 };
 

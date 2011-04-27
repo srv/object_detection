@@ -268,6 +268,32 @@ rospack_gensrv/fast:
 .PHONY : rospack_gensrv/fast
 
 #=============================================================================
+# Target rules for targets named shape_matching_test
+
+# Build rule for target.
+shape_matching_test: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 shape_matching_test
+.PHONY : shape_matching_test
+
+# fast build rule for target.
+shape_matching_test/fast:
+	$(MAKE) -f CMakeFiles/shape_matching_test.dir/build.make CMakeFiles/shape_matching_test.dir/build
+.PHONY : shape_matching_test/fast
+
+#=============================================================================
+# Target rules for targets named shape_matching_test_result
+
+# Build rule for target.
+shape_matching_test_result: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 shape_matching_test_result
+.PHONY : shape_matching_test_result
+
+# fast build rule for target.
+shape_matching_test_result/fast:
+	$(MAKE) -f CMakeFiles/shape_matching_test_result.dir/build.make CMakeFiles/shape_matching_test_result.dir/build
+.PHONY : shape_matching_test_result/fast
+
+#=============================================================================
 # Target rules for targets named test
 
 # Build rule for target.
@@ -320,6 +346,19 @@ test-results-run/fast:
 .PHONY : test-results-run/fast
 
 #=============================================================================
+# Target rules for targets named test_shape_matching_test
+
+# Build rule for target.
+test_shape_matching_test: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 test_shape_matching_test
+.PHONY : test_shape_matching_test
+
+# fast build rule for target.
+test_shape_matching_test/fast:
+	$(MAKE) -f CMakeFiles/test_shape_matching_test.dir/build.make CMakeFiles/test_shape_matching_test.dir/build
+.PHONY : test_shape_matching_test/fast
+
+#=============================================================================
 # Target rules for targets named tests
 
 # Build rule for target.
@@ -346,6 +385,21 @@ src/histograms/main.i:
 src/histograms/main.s:
 	$(MAKE) -f CMakeFiles/histograms.dir/build.make CMakeFiles/histograms.dir/src/histograms/main.s
 .PHONY : src/histograms/main.s
+
+# target to build an object file
+src/object_detection/clipper.o:
+	$(MAKE) -f CMakeFiles/object_detection.dir/build.make CMakeFiles/object_detection.dir/src/object_detection/clipper.o
+.PHONY : src/object_detection/clipper.o
+
+# target to preprocess a source file
+src/object_detection/clipper.i:
+	$(MAKE) -f CMakeFiles/object_detection.dir/build.make CMakeFiles/object_detection.dir/src/object_detection/clipper.i
+.PHONY : src/object_detection/clipper.i
+
+# target to generate assembly for a file
+src/object_detection/clipper.s:
+	$(MAKE) -f CMakeFiles/object_detection.dir/build.make CMakeFiles/object_detection.dir/src/object_detection/clipper.s
+.PHONY : src/object_detection/clipper.s
 
 # target to build an object file
 src/object_detection/colored_parts_classifier.o:
@@ -438,6 +492,21 @@ src/object_detection/object_parts_detector.s:
 .PHONY : src/object_detection/object_parts_detector.s
 
 # target to build an object file
+src/object_detection/shape_matching.o:
+	$(MAKE) -f CMakeFiles/object_detection.dir/build.make CMakeFiles/object_detection.dir/src/object_detection/shape_matching.o
+.PHONY : src/object_detection/shape_matching.o
+
+# target to preprocess a source file
+src/object_detection/shape_matching.i:
+	$(MAKE) -f CMakeFiles/object_detection.dir/build.make CMakeFiles/object_detection.dir/src/object_detection/shape_matching.i
+.PHONY : src/object_detection/shape_matching.i
+
+# target to generate assembly for a file
+src/object_detection/shape_matching.s:
+	$(MAKE) -f CMakeFiles/object_detection.dir/build.make CMakeFiles/object_detection.dir/src/object_detection/shape_matching.s
+.PHONY : src/object_detection/shape_matching.s
+
+# target to build an object file
 src/object_detection/statistics.o:
 	$(MAKE) -f CMakeFiles/object_detection.dir/build.make CMakeFiles/object_detection.dir/src/object_detection/statistics.o
 .PHONY : src/object_detection/statistics.o
@@ -482,6 +551,21 @@ src/object_detection_test/main.s:
 	$(MAKE) -f CMakeFiles/object_detection_test.dir/build.make CMakeFiles/object_detection_test.dir/src/object_detection_test/main.s
 .PHONY : src/object_detection_test/main.s
 
+# target to build an object file
+test/shape_matching_test.o:
+	$(MAKE) -f CMakeFiles/shape_matching_test.dir/build.make CMakeFiles/shape_matching_test.dir/test/shape_matching_test.o
+.PHONY : test/shape_matching_test.o
+
+# target to preprocess a source file
+test/shape_matching_test.i:
+	$(MAKE) -f CMakeFiles/shape_matching_test.dir/build.make CMakeFiles/shape_matching_test.dir/test/shape_matching_test.i
+.PHONY : test/shape_matching_test.i
+
+# target to generate assembly for a file
+test/shape_matching_test.s:
+	$(MAKE) -f CMakeFiles/shape_matching_test.dir/build.make CMakeFiles/shape_matching_test.dir/test/shape_matching_test.s
+.PHONY : test/shape_matching_test.s
+
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
@@ -503,14 +587,20 @@ help:
 	@echo "... rospack_genmsg"
 	@echo "... rospack_genmsg_libexe"
 	@echo "... rospack_gensrv"
+	@echo "... shape_matching_test"
+	@echo "... shape_matching_test_result"
 	@echo "... test"
 	@echo "... test-future"
 	@echo "... test-results"
 	@echo "... test-results-run"
+	@echo "... test_shape_matching_test"
 	@echo "... tests"
 	@echo "... src/histograms/main.o"
 	@echo "... src/histograms/main.i"
 	@echo "... src/histograms/main.s"
+	@echo "... src/object_detection/clipper.o"
+	@echo "... src/object_detection/clipper.i"
+	@echo "... src/object_detection/clipper.s"
 	@echo "... src/object_detection/colored_parts_classifier.o"
 	@echo "... src/object_detection/colored_parts_classifier.i"
 	@echo "... src/object_detection/colored_parts_classifier.s"
@@ -529,6 +619,9 @@ help:
 	@echo "... src/object_detection/object_parts_detector.o"
 	@echo "... src/object_detection/object_parts_detector.i"
 	@echo "... src/object_detection/object_parts_detector.s"
+	@echo "... src/object_detection/shape_matching.o"
+	@echo "... src/object_detection/shape_matching.i"
+	@echo "... src/object_detection/shape_matching.s"
 	@echo "... src/object_detection/statistics.o"
 	@echo "... src/object_detection/statistics.i"
 	@echo "... src/object_detection/statistics.s"
@@ -538,6 +631,9 @@ help:
 	@echo "... src/object_detection_test/main.o"
 	@echo "... src/object_detection_test/main.i"
 	@echo "... src/object_detection_test/main.s"
+	@echo "... test/shape_matching_test.o"
+	@echo "... test/shape_matching_test.i"
+	@echo "... test/shape_matching_test.s"
 .PHONY : help
 
 

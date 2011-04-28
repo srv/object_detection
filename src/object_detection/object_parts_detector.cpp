@@ -6,6 +6,7 @@
 #include "parts_classifier.h"
 #include "detection.h"
 #include "statistics.h"
+#include "shape_matching.h"
 
 using object_detection::ObjectPartsDetector;
 using object_detection::PartsClassifier;
@@ -89,24 +90,28 @@ std::vector<Detection> ObjectPartsDetector::detect(const cv::Mat& image)
     cv::drawContours(shapes_image, detected_shapes, -1, cv::Scalar(255), CV_FILLED);
     cv::imshow(parts_classifier_->getName() + " detected shapes", shapes_image);
 
-    // TODO more sophisticated shape matching
-
     // did we detect some shapes?
     if (detected_shapes.size() > 0)
     {
+        double score;
+        ShapeMatching::MatchingParameters match_parameters =
+            ShapeMatching::matchShapes(object_part_shapes_[0],
+                    detected_shapes[0], &score);
         Statistics detected_object_statistics = computeStatistics(shapes_image);
-        double scale = detected_object_statistics.area / object_part_statistics_.area;
         // check if detection is plausible
-        if (scale >= MIN_SCALE && scale <= MAX_SCALE)
+        if (match_parameters.scale >= MIN_SCALE && match_parameters.scale <= MAX_SCALE)
         {
-            double distance = cv::matchShapes(cv::Mat(object_part_shapes_[0]), cv::Mat(detected_shapes[0]), CV_CONTOURS_MATCH_I1, 0.0);
-            double score = exp(-distance);
+            //double distance = cv::matchShapes(cv::Mat(object_part_shapes_[0]), cv::Mat(detected_shapes[0]), CV_CONTOURS_MATCH_I1, 0.0);
+            //double score = exp(-distance);
             Detection detection;
-            detection.angle = detected_object_statistics.main_axis_angle - object_part_statistics_.main_axis_angle;
+            //detection.angle = detected_object_statistics.main_axis_angle - object_part_statistics_.main_axis_angle;
+            detection.angle = match_parameters.rotation;
             detection.center = detected_object_statistics.center_of_mass;
-            detection.scale = detected_object_statistics.area / object_part_statistics_.area;
+            //detection.scale = detected_object_statistics.area / object_part_statistics_.area;
+            detection.scale = match_parameters.scale;
             detection.score = score;
             detection.label = "object1";
+            //detection.outline = detected_shapes[0];
             detections.push_back(detection);
         }
     }

@@ -164,11 +164,23 @@ TEST(ShapeMatching, matchShapes)
     ShapeMatching::MatchingParameters matching_parameters =
         ShapeMatching::matchShapes(shape1, shape2, &score);
 
-    EXPECT_DOUBLE_EQ(score, 1.0);
+    EXPECT_NEAR(score, 1.0, 0.01);
     EXPECT_EQ(shift_x, matching_parameters.shift_x);
     EXPECT_EQ(shift_y, matching_parameters.shift_y);
-    EXPECT_DOUBLE_EQ(angle, matching_parameters.rotation);
-    EXPECT_DOUBLE_EQ(scale, matching_parameters.scale);
+    EXPECT_NEAR(angle, matching_parameters.rotation, M_PI / 180.0);
+    EXPECT_NEAR(scale, matching_parameters.scale, 0.1);
+}
+
+TEST(ShapeMatching, computeMeanDistance)
+{
+    std::vector<cv::Point> shape1;
+    shape1.push_back(cv::Point( 10,  20));
+    shape1.push_back(cv::Point(-10,  20));
+    shape1.push_back(cv::Point(-10, -20));
+    shape1.push_back(cv::Point( 10, -20));
+
+    double distance = ShapeMatching::computeMeanDistance(shape1, cv::Point(0, 0));
+    EXPECT_DOUBLE_EQ(distance, sqrt(500));
 }
 
 

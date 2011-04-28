@@ -81,6 +81,17 @@ public:
     */
     static double computeIntersectionArea(const std::vector<cv::Point>& shape1,
         const std::vector<cv::Point>& shape2);
+
+    /**
+    * Computes the mean distance of a set of points with respect to a reference
+    * point.
+    * \param points the set of points, must have size() != 0
+    * \param reference_point the reference point
+    */
+    static double computeMeanDistance(const std::vector<cv::Point>& points, 
+            const cv::Point& reference_point);
+
+
 };
 
 }

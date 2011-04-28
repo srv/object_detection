@@ -19,13 +19,21 @@ ShapeMatching::MatchingParameters ShapeMatching::matchShapes(
     cv::Point reference_shape_centroid = computeCentroid(reference_shape_moments);
     cv::Point floating_shape_centroid = computeCentroid(floating_shape_moments);
  
-    double reference_shape_area = reference_shape_moments.m00;
-    double floating_shape_area = floating_shape_moments.m00;
+    double reference_shape_mean_distance = computeMeanDistance(reference_shape,
+            reference_shape_centroid);
+    double floating_shape_mean_distance = computeMeanDistance(floating_shape,
+            floating_shape_centroid);
 
-    std::cout << "reference shape area = " << reference_shape_area << std::endl;
-    std::cout << "floating shape area = " << floating_shape_area << std::endl;
+    /*
+    std::cout << "reference shape: area=" << reference_shape_area 
+              << " centroid=" << reference_shape_centroid 
+              << " mean distance=" << reference_shape_mean_distance << std::endl;
+    std::cout << "floating shape: area=" << floating_shape_area 
+              << " centroid=" << floating_shape_centroid 
+              << " mean distance=" << floating_shape_mean_distance << std::endl;
+              */
 
-    double scale = reference_shape_area / floating_shape_area / 2.0;
+    double scale = reference_shape_mean_distance / floating_shape_mean_distance;
 
     // normalize shapes
     std::vector<cv::Point> normalized_reference_shape(reference_shape.size());
@@ -143,4 +151,21 @@ double ShapeMatching::computeIntersectionArea(
     }
     return 0.0;
 }
+
+double ShapeMatching::computeMeanDistance(
+        const std::vector<cv::Point>& points, const cv::Point& reference_point)
+{
+    assert(points.size() != 0);
+
+    double distance_sum = 0.0;
+    for (size_t i = 0; i < points.size(); ++i)
+    {
+        double x_diff = points[i].x - reference_point.x;
+        double y_diff = points[i].y - reference_point.y;
+        double distance = sqrt(x_diff*x_diff + y_diff*y_diff);
+        distance_sum += distance;
+    }
+    return distance_sum / points.size();
+}
+
 

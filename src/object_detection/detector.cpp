@@ -44,6 +44,12 @@ void Detector::train(const TrainingData& training_data)
         object_parts_detectors_[i]->train(training_data.image, object_mask);
     }
 
+    cv::Mat outline_points_matrix = cv::Mat(training_data.object_outline);
+    cv::Scalar centroid = cv::mean(outline_points_matrix);
+     
+    cv::Mat centered_outline_points_matrix = outline_points_matrix - centroid;
+    centered_object_outline_ = cv::Mat_<cv::Point>(centered_outline_points_matrix);
+
     is_trained_ = true;
 }
 
@@ -60,24 +66,27 @@ std::vector<Detection> Detector::detect(const cv::Mat& image,
     for(size_t i = 0; i < object_parts_detectors_.size(); ++i)
     {
         std::vector<Detection> detections = object_parts_detectors_[i]->detect(image);
+
+        // compute outline for detections as parts detector do not know
+        // about outlines
+        // TODO change this!
+        for (size_t i = 0; i < detections.size(); ++i)
+        {
+            Detection& detection = detections[i]; 
+            cv::Mat rotation_matrix = cv::getRotationMatrix2D(cv::Point2f(0.0, 0.0),
+                    -detection.angle / M_PI * 180.0, detection.scale);
+            cv::Mat rotated_points_matrix;
+            cv::transform(cv::Mat(centered_object_outline_), rotated_points_matrix, 
+                    rotation_matrix);
+            cv::add(rotated_points_matrix, 
+                    cv::Scalar(detection.center.x, detection.center.y), 
+                    rotated_points_matrix);
+            detection.outline = cv::Mat_<cv::Point>(rotated_points_matrix);
+            cv::Scalar new_center = cv::mean(cv::Mat(detection.outline));
+            detection.center.x = new_center[0];
+            detection.center.y = new_center[1];
+        }
         all_detections.insert(all_detections.end(), detections.begin(), detections.end());
-
-        // rotate polygon outline
-        /*
-        cv::Mat points = cv::Mat(classifiers_with_info_[i].object_outline);
-        cv::Mat centered_points;
-        cv::subtract(points, 
-                cv::Scalar(classifiers_with_info_[i].object_statistics.center_of_mass.x,
-                           classifiers_with_info_[i].object_statistics.center_of_mass.y), centered_points); 
-        cv::Mat rotation_matrix =
-            cv::getRotationMatrix2D(cv::Point2f(0.0, 0.0), -detection.angle / M_PI * 180.0, detection.scale);
-        cv::Mat rotated_points_matrix;
-        cv::transform(centered_points, rotated_points_matrix, rotation_matrix);
-        cv::add(rotated_points_matrix, cv::Scalar(detection.center.x, detection.center.y), rotated_points_matrix);
-        detection.outline = cv::Mat_<cv::Point>(rotated_points_matrix);
-
-        detections.push_back(detection);
-        */
     }
     return all_detections;
 }

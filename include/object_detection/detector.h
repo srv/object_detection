@@ -62,6 +62,9 @@ private:
     // the set of object part detectors 
     std::vector<boost::shared_ptr<ObjectPartsDetector> > object_parts_detectors_;
 
+    // stores the object outline
+    std::vector<cv::Point> centered_object_outline_;
+
 };
 
 }

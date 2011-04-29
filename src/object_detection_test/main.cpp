@@ -42,7 +42,7 @@ int main(int argc, char** argv)
     std::cout << "Test image: " << test_image_name << std::endl;
 
     // read polygon data
-    ifstream in(polygon_points_file);
+    std::ifstream in(polygon_points_file);
     if (!in.is_open())
     {
         std::cerr << "Error opening poygon points file!" << std::endl;

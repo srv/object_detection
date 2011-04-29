@@ -45,11 +45,9 @@ set(LIB_SOURCES
 
 rosbuild_add_library(object_detection ${LIB_SOURCES})
 rosbuild_add_executable(object_detection_test src/object_detection_test/main.cpp)
-rosbuild_add_executable(histograms src/histograms/main.cpp)
 rosbuild_add_gtest(shape_matching_test test/shape_matching_test.cpp)
 
 target_link_libraries(object_detection_test object_detection)
-target_link_libraries(histograms object_detection)
 target_link_libraries(shape_matching_test object_detection)
 
 include_directories(include/object_detection)

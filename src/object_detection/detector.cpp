@@ -1,3 +1,6 @@
+
+#include <stdexcept>
+
 #include <highgui.h>
 
 #include "detector.h"

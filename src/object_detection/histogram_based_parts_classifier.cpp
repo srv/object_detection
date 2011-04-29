@@ -1,5 +1,6 @@
 #include <string>
 #include <vector>
+#include <stdexcept>
 
 #include <cv.h>
 
@@ -31,7 +32,7 @@ void HistogramBasedPartsClassifier::train(const cv::Mat& image, const cv::Mat& m
     // (virtual function calls)
     cv::MatND object_histogram = computeHistogram(image, mask);
     cv::MatND image_histogram = computeHistogram(image, cv::Mat());
-    significant_elements_histogram_ = object_histogram / (image_histogram + 1);
+    significant_elements_histogram_ = cv::MatND(object_histogram / (image_histogram + 1));
 
     showHistogram(object_histogram, getName() + "-object histogram");
     showHistogram(image_histogram, getName() + "-image histogram");
@@ -41,8 +42,8 @@ void HistogramBasedPartsClassifier::train(const cv::Mat& image, const cv::Mat& m
 cv::Mat HistogramBasedPartsClassifier::classify(const cv::Mat& image, 
             const std::vector<cv::Rect>& rois) const
 {
-    assert(!significant_elements_histogram_.empty());
-    if (significant_elements_histogram_.empty())
+    assert(significant_elements_histogram_.size[0] != 0);
+    if (significant_elements_histogram_.size[0] == 0)
     {
         throw std::runtime_error("HistogramBasedPartsClassifier::classify() called without having trained before");
     }

@@ -110,8 +110,8 @@ void showHSHistogram(const cv::Mat& image,
 void showHSHistogram(const cv::MatND& histogram,
         const std::string& name)
 {
-    int num_hue_bins = histogram.rows;
-    int num_saturation_bins = histogram.cols;
+    int num_hue_bins = histogram.size[0];
+    int num_saturation_bins = histogram.size[1];
 
     // visualization
     double max_value = 0;
@@ -184,8 +184,8 @@ void showHistogram(const cv::MatND& histogram,
         int scale = 8; // pixel size for a bin
         histogram_image.create(histogram.size[0] * scale, histogram.size[1] * scale, CV_8UC1);
         histogram_image = cv::Scalar(0);
-        for( int y = 0; y < histogram.rows; y++ )
-            for( int x = 0; x < histogram.cols; x++ )
+        for( int y = 0; y < histogram.size[0]; y++ )
+            for( int x = 0; x < histogram.size[1]; x++ )
             {
                 float binVal = histogram.at<float>(y, x);
                 int intensity = cvRound(binVal * 255 / max_value);

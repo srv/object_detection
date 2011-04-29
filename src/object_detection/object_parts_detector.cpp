@@ -1,4 +1,5 @@
 
+#include <stdexcept>
 #include <cv.h>
 #include <highgui.h>
 
@@ -122,7 +123,8 @@ double ObjectPartsDetector::computeBestThreshold(const cv::Mat& image,
         const cv::Mat& mask)
 {
     Statistics object_statistics = computeStatistics(image, mask);
-    Statistics background_statistics = computeStatistics(image, 255 - mask);
+    Statistics background_statistics = computeStatistics(image, 
+            cv::Mat(image.rows, image.cols, CV_8UC1, cv::Scalar(255)) - mask);
 
     if (background_statistics.mean < 0.000001)
     {

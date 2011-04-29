@@ -69,7 +69,10 @@ void ObjectPartsDetector::train(const cv::Mat& image, const cv::Mat& object_mask
 
     object_part_statistics_ = computeStatistics(object_shapes_image);
 
-    full_object_statistics_ = computeStatistics(object_mask);
+    Statistics full_object_statistics = computeStatistics(object_mask);
+
+    relative_object_center_ = full_object_statistics.center_of_mass -
+        object_part_statistics_.center_of_mass;
 }
 
 std::vector<Detection> ObjectPartsDetector::detect(const cv::Mat& image)
@@ -107,8 +110,17 @@ std::vector<Detection> ObjectPartsDetector::detect(const cv::Mat& image)
             Detection detection;
             //detection.angle = detected_object_statistics.main_axis_angle - object_part_statistics_.main_axis_angle;
             detection.angle = match_parameters.rotation;
-            detection.center = detected_object_statistics.center_of_mass;
-            //detection.scale = detected_object_statistics.area / object_part_statistics_.area;
+            // compute center
+            cv::Point center;
+            double sinAngle = sin(-match_parameters.rotation);
+            double cosAngle = cos(-match_parameters.rotation);
+            center.x = cosAngle * relative_object_center_.x + sinAngle * relative_object_center_.y;
+            center.y = -sinAngle * relative_object_center_.x + cosAngle * relative_object_center_.y;
+            center.x *= match_parameters.scale;
+            center.y *= match_parameters.scale;
+            center.x += detected_object_statistics.center_of_mass.x;
+            center.y += detected_object_statistics.center_of_mass.y;
+            detection.center = center;
             detection.scale = match_parameters.scale;
             detection.score = score;
             detection.label = "object1";

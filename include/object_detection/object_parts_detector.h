@@ -93,9 +93,11 @@ private:
     /// statistics of the object part shapes
     Statistics object_part_statistics_;
 
-    /// statistics of the full object
-    Statistics full_object_statistics_;
+    /// Relative position of the object center from the center
+    /// of the part
+    cv::Point relative_object_center_;
 
+    
 };
 
 }

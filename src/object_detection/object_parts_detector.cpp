@@ -150,7 +150,8 @@ ObjectPartsDetector::extractShapes(const cv::Mat& image)
     cv::Mat image_copy;
     image.convertTo(image_copy, CV_8UC1);
     std::vector<std::vector<cv::Point> > contours;
-    cv::findContours(image_copy, contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
+    //cv::findContours(image_copy, contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
+    cv::findContours(image_copy, contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_TC89_KCOS);
     return getBiggestShapes(contours);
 }
 

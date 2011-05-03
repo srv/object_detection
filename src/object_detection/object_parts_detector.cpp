@@ -14,9 +14,8 @@ using object_detection::PartsClassifier;
 using object_detection::Detection;
 using object_detection::Statistics;
 
-// possible scale range
-static const double MIN_SCALE = 0.5;
-static const double MAX_SCALE = 2.0;
+static const double MIN_SCALE = 0.2;
+static const double MAX_SCALE = 5.0;
 
 bool compareShapeArea(const std::vector<cv::Point>& shape1,
                       const std::vector<cv::Point>& shape2)

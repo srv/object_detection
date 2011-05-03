@@ -91,7 +91,7 @@ int main(int argc, char** argv)
     */
 
     // detector interface
-    object_detection::Detector detector;
+    object_detection::Detector detector("detector.cfg");
     detector.train(training_data);
     std::vector<Detection> detections = detector.detect(test_image);
 

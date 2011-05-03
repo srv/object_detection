@@ -1,16 +1,17 @@
 
-#include "histogram_utilities.h"
 #include "colored_parts_classifier.h"
 
 #include <highgui.h>
 
 
 using object_detection::ColoredPartsClassifier;
-using object_detection::histogram_utilities::calculateHistogram;
-using object_detection::histogram_utilities::calculateBackprojection;
 
-static const int NUM_HUE_BINS = 32;
-static const int NUM_SATURATION_BINS = 16;
+ColoredPartsClassifier::ColoredPartsClassifier() :
+    num_hue_bins_(DEFAULT_NUM_HUE_BINS),
+    num_saturation_bins_(DEFAULT_NUM_SATURATION_BINS),
+    min_saturation_(DEFAULT_MIN_SATURATION)
+{
+}
 
 cv::Mat ColoredPartsClassifier::preprocessImage(const cv::Mat& image)
 {
@@ -23,19 +24,58 @@ cv::Mat ColoredPartsClassifier::preprocessImage(const cv::Mat& image)
 cv::MatND ColoredPartsClassifier::computeHistogram(const cv::Mat& image, 
             const cv::Mat& mask) const
 {
+    // we assume that the image is a regular
+    // three channel image
+    CV_Assert(image.type() == CV_8UC3);
+
     cv::Mat preprocessed_image = preprocessImage(image);
-    return calculateHistogram(preprocessed_image, NUM_HUE_BINS,
-            NUM_SATURATION_BINS, mask);
+    //return calculateHistogram(preprocessed_image, num_hue_bins_,
+    //        num_saturation_bins_, mask);
+
+    // dimensions of the histogram
+    int histogram_size[] = {num_hue_bins_, num_saturation_bins_};
+
+    // ranges for the histogram
+    float hue_ranges[] = {0, 180};
+    float saturation_ranges[] = {min_saturation_, 256};
+    const float* ranges[] = {hue_ranges, saturation_ranges};
+
+    // channels for wich to compute the histogram (H and S)
+    int channels[] = {0, 1};
+
+    cv::MatND histogram;
+
+    // calculation
+    int num_arrays = 1;
+    int dimensions = 2;
+    cv::calcHist(&preprocessed_image, num_arrays, channels, mask, histogram, 
+            dimensions, histogram_size, ranges);
+
+    return histogram;
+
 }
 
 cv::Mat ColoredPartsClassifier::backprojectHistogram(const cv::MatND& histogram,
             const cv::Mat& image) const
 {
+    // we assume that the image is a regular
+    // three channel image
+    CV_Assert(image.type() == CV_8UC3);
+
     cv::Mat preprocessed_image = preprocessImage(image);
 
-    // perform back projection
-    cv::Mat back_projection = 
-        calculateBackprojection(histogram, preprocessed_image);
+    // channels for wich to compute the histogram (H and S)
+    int channels[] = {0, 1};
+
+    // ranges for the histogram
+    float hue_ranges[] = {0, 180};
+    float saturation_ranges[] = {min_saturation_, 256};
+    const float* ranges[] = {hue_ranges, saturation_ranges};
+
+    cv::Mat back_projection;
+    int num_arrays = 1;
+    cv::calcBackProject(&preprocessed_image, num_arrays, channels, histogram,
+           back_projection, ranges);
 
     return back_projection;
 }

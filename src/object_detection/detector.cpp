@@ -1,7 +1,9 @@
-
+#include <fstream>
 #include <stdexcept>
 
 #include <highgui.h>
+
+#include <boost/program_options.hpp>
 
 #include "detector.h"
 #include "detection.h"
@@ -15,18 +17,67 @@ using object_detection::Detector;
 using object_detection::Detection;
 using object_detection::paintFilledPolygon;
 
+namespace po = boost::program_options;
 
-Detector::Detector() : is_trained_(false)
+
+Detector::Detector(const std::string& config_file_name) : 
+    is_trained_(false),
+    config_file_name_(config_file_name)
 {
-    boost::shared_ptr<PartsClassifier> colored_parts_classifier = 
-        boost::shared_ptr<PartsClassifier>(new ColoredPartsClassifier());
+    setup();
+}
+
+void Detector::setup()
+{
+    // read config file
+    std::ifstream config_file_stream(config_file_name_.c_str());
+    if (!config_file_stream.is_open())
+    {
+        std::cerr << "Detector::setup(): ERROR: given config file "
+                << config_file_name_ << " could not be opened." << std::endl;
+    }
+    po::options_description config_file_options;
+    config_file_options.add_options()
+        ("num_hue_bins", po::value<int>(), "set number of hue bins")
+        ("num_saturation_bins", po::value<int>(), "set number of saturation bins")
+        ("min_saturation", po::value<int>(), "set minimum saturation")
+        ;
+    po::variables_map variables_map;
+    po::store(po::parse_config_file(config_file_stream, config_file_options), variables_map);
+    po::notify(variables_map);
+    
+    boost::shared_ptr<ColoredPartsClassifier> colored_parts_classifier = 
+        boost::shared_ptr<ColoredPartsClassifier>(new ColoredPartsClassifier());
+
+    if (variables_map.count("num_hue_bins"))
+    {
+        colored_parts_classifier->setNumHueBins(
+                variables_map["num_hue_bins"].as<int>());
+    }
+    if (variables_map.count("num_saturation_bins"))
+    {
+        colored_parts_classifier->setNumSaturationBins(
+                variables_map["num_saturation_bins"].as<int>());
+    }
+    if (variables_map.count("min_saturation"))
+    {
+        colored_parts_classifier->setMinSaturation(
+                variables_map["min_saturation"].as<int>());
+    }
+
+    std::cout << "Detector::setup(): num_hue_bins set to " <<
+                                     colored_parts_classifier->numHueBins() << std::endl;
+    std::cout << "Detector::setup(): num_saturation_bins set to " <<
+                                     colored_parts_classifier->numSaturationBins() << std::endl;
+    std::cout << "Detector::setup(): min_saturation set to " <<
+                                     colored_parts_classifier->minSaturation() << std::endl;
 
     boost::shared_ptr<ObjectPartsDetector> color_parts_detector =
         boost::shared_ptr<ObjectPartsDetector>(new ObjectPartsDetector(colored_parts_classifier));
 
     object_parts_detectors_.push_back(color_parts_detector);
-}
 
+}
 
 void Detector::train(const TrainingData& training_data)
 {

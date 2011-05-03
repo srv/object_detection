@@ -33,8 +33,9 @@ public:
 
     /**
      * Constructor
+     * \param config_file_name the name of the config file to use
      */
-    Detector();
+    Detector(const std::string& config_file_name);
 
     /**
      * Destructor
@@ -56,8 +57,16 @@ public:
 
 private:
 
+    /**
+    * Setup routine, reads config files and sets parameters
+    */
+    void setup();
+
     // stores if the detector was trained
     bool is_trained_;
+
+    // stores the name of the config file
+    std::string config_file_name_;
 
     // the set of object part detectors 
     std::vector<boost::shared_ptr<ObjectPartsDetector> > object_parts_detectors_;

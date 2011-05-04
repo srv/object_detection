@@ -49,12 +49,8 @@ void ObjectPartsDetector::train(const cv::Mat& image, const cv::Mat& object_mask
     cv::Mat prob_image = parts_classifier_->classify(image);
     threshold_ = computeBestThreshold(prob_image, object_mask);
 
-    cv::imshow(parts_classifier_->getName() + " training prob image", prob_image);
-
     cv::Mat thresholded;
     cv::threshold(prob_image, thresholded, threshold_, 1.0, CV_THRESH_BINARY);
-
-    cv::imshow(parts_classifier_->getName() + " training thresh image", thresholded);
 
     // store shapes as object description
     cv::Mat masked_prob_image;
@@ -84,10 +80,8 @@ std::vector<Detection> ObjectPartsDetector::detect(const cv::Mat& image)
     }
 
     cv::Mat prob_image = parts_classifier_->classify(image);
-    cv::imshow(parts_classifier_->getName() + " object parts prob image", prob_image);
     cv::Mat prob_image_thresholded;
     cv::threshold(prob_image, prob_image_thresholded, threshold_, 1.0, CV_THRESH_BINARY);
-    cv::imshow(parts_classifier_->getName() + " object parts prob image thresholded", prob_image_thresholded);
     std::vector<std::vector<cv::Point> > detected_shapes = extractShapes(prob_image_thresholded);
     cv::Mat shapes_image = cv::Mat::zeros(image.rows, image.cols, CV_8UC1);
     cv::drawContours(shapes_image, detected_shapes, -1, cv::Scalar(255), CV_FILLED);
@@ -123,6 +117,7 @@ std::vector<Detection> ObjectPartsDetector::detect(const cv::Mat& image)
             detection.scale = match_parameters.scale;
             detection.score = score;
             detection.label = "object1";
+            //outline is added in detector
             //detection.outline = detected_shapes[0];
             detections.push_back(detection);
         }

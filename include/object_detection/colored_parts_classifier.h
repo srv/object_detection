@@ -53,6 +53,14 @@ public:
     }
 
     inline int minSaturation() const { return min_saturation_; }
+
+    inline void setMinValue(int min_value)
+    {
+        assert(min_value >= 0 && min_value < 256);
+        min_value_ = min_value;
+    }
+
+    inline int minValue() const { return min_value_; }
     
 private:
 
@@ -61,7 +69,7 @@ private:
     * \param image input image
     * \return preprocessed image
     */
-    static cv::Mat preprocessImage(const cv::Mat& image);
+    cv::Mat preprocessImage(const cv::Mat& image) const;
 
 
     /// default value for number of hue bins
@@ -72,6 +80,9 @@ private:
 
     /// default value for minimum saturation
     static const int DEFAULT_MIN_SATURATION = 0;
+
+    /// default value for minimum value (brightness)
+    static const int DEFAULT_MIN_VALUE = 0;
 
     /// number of bins for the hue channels,
     /// defaults to DEFAULT_NUM_HUE_BINS
@@ -84,6 +95,10 @@ private:
     /// minimum saturation that has to have a color to be
     /// part of the object model, defaults to DEFAULT_MIN_SATURATION
     int min_saturation_;
+
+    /// minimum value that has to have a color to be part of the object
+    /// model, defaults to DEFAULT_MIN_VALUE
+    int min_value_;
 
 };
 

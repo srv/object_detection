@@ -73,15 +73,14 @@ cv::Mat HistogramBasedPartsClassifier::classify(const cv::Mat& image,
     cv::Mat probability_image;
     back_projection.convertTo(probability_image, CV_32F, 1.0/255.0);
 
-    // some closing
-    /*
-    int element_size = 3;
+    // some opening
+    int element_size = 5;
     cv::Mat element = cv::Mat::zeros(element_size, element_size, CV_8UC1);
     cv::circle(element, cv::Point(element_size / 2, element_size / 2), element_size / 2, cv::Scalar(255), -1);
-    cv::morphologyEx(probability_image, probability_image, cv::MORPH_CLOSE, element);
+    //cv::morphologyEx(probability_image, probability_image, cv::MORPH_CLOSE, element);
     cv::morphologyEx(probability_image, probability_image, cv::MORPH_OPEN, element);
 
-    */
+    
     return probability_image;
 }
 

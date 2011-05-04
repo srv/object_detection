@@ -9,16 +9,45 @@ using object_detection::ColoredPartsClassifier;
 ColoredPartsClassifier::ColoredPartsClassifier() :
     num_hue_bins_(DEFAULT_NUM_HUE_BINS),
     num_saturation_bins_(DEFAULT_NUM_SATURATION_BINS),
-    min_saturation_(DEFAULT_MIN_SATURATION)
+    min_saturation_(DEFAULT_MIN_SATURATION),
+    min_value_(DEFAULT_MIN_VALUE)
 {
 }
 
-cv::Mat ColoredPartsClassifier::preprocessImage(const cv::Mat& image)
+cv::Mat ColoredPartsClassifier::preprocessImage(const cv::Mat& image) const
 {
     // convert image to hsv
     cv::Mat hsv_image;
     cv::cvtColor(image, hsv_image, CV_BGR2HSV);
-    return hsv_image;
+
+    // create mask for ivalid values
+    std::vector<cv::Mat> hsv_channels;
+    cv::split(hsv_image, hsv_channels);
+    cv::Mat value = hsv_channels[2];
+
+    cv::imshow("sat", hsv_channels[1]);
+
+    cv::Mat min_value_mask;
+    cv::threshold(value, min_value_mask, min_value_, 255, CV_THRESH_BINARY);
+
+    // we apply the mask to the saturation channel as 0 saturation
+    // is filtered out anyways
+    cv::Mat new_s_channel;
+    hsv_channels[1].copyTo(new_s_channel, min_value_mask);
+
+    cv::imshow("value mask", min_value_mask);
+
+    cv::imshow("new sat", new_s_channel);
+
+    cv::Mat filtered_image;
+    std::vector<cv::Mat> new_channels(3);
+    new_channels[0] = hsv_channels[0];
+    new_channels[1] = new_s_channel;
+    new_channels[2] = hsv_channels[2];
+    cv::merge(new_channels, filtered_image);
+    
+    return filtered_image;
+    //return hsv_image;
 }
 
 cv::MatND ColoredPartsClassifier::computeHistogram(const cv::Mat& image, 

@@ -41,6 +41,7 @@ void Detector::setup()
         ("num_hue_bins", po::value<int>(), "set number of hue bins")
         ("num_saturation_bins", po::value<int>(), "set number of saturation bins")
         ("min_saturation", po::value<int>(), "set minimum saturation")
+        ("min_value", po::value<int>(), "set minimum value")
         ;
     po::variables_map variables_map;
     po::store(po::parse_config_file(config_file_stream, config_file_options), variables_map);
@@ -64,6 +65,11 @@ void Detector::setup()
         colored_parts_classifier->setMinSaturation(
                 variables_map["min_saturation"].as<int>());
     }
+    if (variables_map.count("min_value"))
+    {
+        colored_parts_classifier->setMinValue(
+                variables_map["min_value"].as<int>());
+    }
 
     std::cout << "Detector::setup(): num_hue_bins set to " <<
                                      colored_parts_classifier->numHueBins() << std::endl;
@@ -71,6 +77,9 @@ void Detector::setup()
                                      colored_parts_classifier->numSaturationBins() << std::endl;
     std::cout << "Detector::setup(): min_saturation set to " <<
                                      colored_parts_classifier->minSaturation() << std::endl;
+    std::cout << "Detector::setup(): min_value set to " <<
+                                     colored_parts_classifier->minValue() << std::endl;
+
 
     boost::shared_ptr<ObjectPartsDetector> color_parts_detector =
         boost::shared_ptr<ObjectPartsDetector>(new ObjectPartsDetector(colored_parts_classifier));

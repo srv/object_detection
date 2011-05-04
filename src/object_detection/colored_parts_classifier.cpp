@@ -25,8 +25,6 @@ cv::Mat ColoredPartsClassifier::preprocessImage(const cv::Mat& image) const
     cv::split(hsv_image, hsv_channels);
     cv::Mat value = hsv_channels[2];
 
-    cv::imshow("sat", hsv_channels[1]);
-
     cv::Mat min_value_mask;
     cv::threshold(value, min_value_mask, min_value_, 255, CV_THRESH_BINARY);
 
@@ -34,10 +32,6 @@ cv::Mat ColoredPartsClassifier::preprocessImage(const cv::Mat& image) const
     // is filtered out anyways
     cv::Mat new_s_channel;
     hsv_channels[1].copyTo(new_s_channel, min_value_mask);
-
-    cv::imshow("value mask", min_value_mask);
-
-    cv::imshow("new sat", new_s_channel);
 
     cv::Mat filtered_image;
     std::vector<cv::Mat> new_channels(3);

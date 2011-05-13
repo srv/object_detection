@@ -9,6 +9,7 @@
 #include "detection.h"
 #include "object_parts_detector.h"
 #include "colored_parts_classifier.h"
+#include "textured_parts_classifier.h"
 #include "training_data.h"
 #include "utilities.h"
 #include "statistics.h"
@@ -18,7 +19,6 @@ using object_detection::Detection;
 using object_detection::paintFilledPolygon;
 
 namespace po = boost::program_options;
-
 
 Detector::Detector(const std::string& config_file_name) : 
     is_trained_(false),
@@ -86,6 +86,15 @@ void Detector::setup()
 
     object_parts_detectors_.push_back(color_parts_detector);
 
+    boost::shared_ptr<TexturedPartsClassifier> textured_parts_classifier = 
+        boost::shared_ptr<TexturedPartsClassifier>(new TexturedPartsClassifier());
+    
+    boost::shared_ptr<ObjectPartsDetector> textured_parts_detector =
+        boost::shared_ptr<ObjectPartsDetector>(new ObjectPartsDetector(textured_parts_classifier));
+
+
+    object_parts_detectors_.push_back(textured_parts_detector);
+
 }
 
 void Detector::train(const TrainingData& training_data)
@@ -132,7 +141,7 @@ std::vector<Detection> Detector::detect(const cv::Mat& image,
 
         // compute outline for detections as parts detector do not know
         // about outlines
-        // TODO change this!
+        // TODO change this!?
         for (size_t i = 0; i < detections.size(); ++i)
         {
             Detection& detection = detections[i]; 

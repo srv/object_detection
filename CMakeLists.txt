@@ -35,6 +35,7 @@ set(LIB_SOURCES
     src/object_detection/object_parts_detector.cpp
     src/object_detection/histogram_based_parts_classifier.cpp
     src/object_detection/colored_parts_classifier.cpp
+    src/object_detection/textured_parts_classifier.cpp
     src/object_detection/histogram_utilities.cpp 
     src/object_detection/utilities.cpp
     src/object_detection/statistics.cpp

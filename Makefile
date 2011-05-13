@@ -494,6 +494,21 @@ src/object_detection/statistics.s:
 .PHONY : src/object_detection/statistics.s
 
 # target to build an object file
+src/object_detection/textured_parts_classifier.o:
+	$(MAKE) -f CMakeFiles/object_detection.dir/build.make CMakeFiles/object_detection.dir/src/object_detection/textured_parts_classifier.o
+.PHONY : src/object_detection/textured_parts_classifier.o
+
+# target to preprocess a source file
+src/object_detection/textured_parts_classifier.i:
+	$(MAKE) -f CMakeFiles/object_detection.dir/build.make CMakeFiles/object_detection.dir/src/object_detection/textured_parts_classifier.i
+.PHONY : src/object_detection/textured_parts_classifier.i
+
+# target to generate assembly for a file
+src/object_detection/textured_parts_classifier.s:
+	$(MAKE) -f CMakeFiles/object_detection.dir/build.make CMakeFiles/object_detection.dir/src/object_detection/textured_parts_classifier.s
+.PHONY : src/object_detection/textured_parts_classifier.s
+
+# target to build an object file
 src/object_detection/utilities.o:
 	$(MAKE) -f CMakeFiles/object_detection.dir/build.make CMakeFiles/object_detection.dir/src/object_detection/utilities.o
 .PHONY : src/object_detection/utilities.o
@@ -593,6 +608,9 @@ help:
 	@echo "... src/object_detection/statistics.o"
 	@echo "... src/object_detection/statistics.i"
 	@echo "... src/object_detection/statistics.s"
+	@echo "... src/object_detection/textured_parts_classifier.o"
+	@echo "... src/object_detection/textured_parts_classifier.i"
+	@echo "... src/object_detection/textured_parts_classifier.s"
 	@echo "... src/object_detection/utilities.o"
 	@echo "... src/object_detection/utilities.i"
 	@echo "... src/object_detection/utilities.s"

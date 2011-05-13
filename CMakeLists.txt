@@ -41,17 +41,23 @@ set(LIB_SOURCES
     src/object_detection/statistics.cpp
     src/object_detection/shape_matching.cpp
     src/object_detection/clipper.cpp
+    src/object_detection/glcm.cpp
    )
 
 
 rosbuild_add_library(object_detection ${LIB_SOURCES})
 rosbuild_add_executable(object_detection_test src/object_detection_test/main.cpp)
+rosbuild_add_executable(glcm_extraction src/glcm_extraction/main.cpp)
 rosbuild_add_gtest(shape_matching_test test/shape_matching_test.cpp)
+rosbuild_add_gtest(glcm_test test/glcm_test.cpp)
 
 target_link_libraries(object_detection boost_program_options)
 
 target_link_libraries(object_detection_test object_detection)
+target_link_libraries(glcm_extraction object_detection)
+
 target_link_libraries(shape_matching_test object_detection)
+target_link_libraries(glcm_test object_detection)
 
 include_directories(include/object_detection)
 

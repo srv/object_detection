@@ -31,6 +31,7 @@ cv::Mat TexturedPartsClassifier::preprocessImage(const cv::Mat& image) const
         {
             cv::Rect roi(c, r, window_size, window_size);
             cv::Mat window(bordered_image, roi);
+
             //double min, max;
             //cv::minMaxLoc(window, &min, &max);
             cv::Scalar mean, stddev;

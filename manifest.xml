@@ -8,10 +8,13 @@
   <url>http://ros.org/wiki/object_detection</url>
 
   <depend package="opencv2"/>
-
-  <export>
-    <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -Wl,-rpath,-L${prefix}/lib -lobject_detection"/>
-  </export>
+  <depend package="sensor_msgs"/>
+  <depend package="opencv2"/>
+  <depend package="cv_bridge"/>
+  <depend package="roscpp"/>
+  <depend package="std_msgs"/>
+  <depend package="image_transport"/>
+  <depend package="vision_msgs" />
  
 </package>
 

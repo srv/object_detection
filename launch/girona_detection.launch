@@ -1,0 +1,13 @@
+<launch>
+    <arg name="polygon_file_name" default="$(find object_detector)/testdata/box.poly" />
+     <node pkg="object_detector" name="object_detector_node" 
+          type="object_detector_node" output="screen">
+        <remap from="image" to="/arm5e/image_rect_color"/>
+        <param name="use_training_image" type="bool" value="true"/>
+        <param name="image_file_name" type="string" value="$(find object_detector)/testdata/box.jpg"/>
+        <param name="polygon_file_name" type="string" value="$(arg polygon_file_name)"/>
+        <param name="detection_threshold" value="0.8"/>
+        <param name="detector_config_file" value="$(find object_detector)/cfg/detector.cfg"/>
+    </node>
+    <node pkg="rosbag" name="rosbag_player" type="play" args="-l -s 120 $(env ROS_BAGFILES_PATH)/surveyGirona1.bag"/>
+</launch>

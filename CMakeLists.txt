@@ -61,3 +61,12 @@ target_link_libraries(glcm_test object_detection)
 
 include_directories(include/object_detection)
 
+rosbuild_add_executable(object_detector_node src/nodes/object_detector_node.cpp)
+rosbuild_add_executable(trainer_node src/nodes/trainer_node.cpp)
+rosbuild_add_executable(keypoint_detector_node src/nodes/keypoint_detector_node.cpp)
+rosbuild_add_executable(detection_display_node src/nodes/detection_display_node.cpp)
+
+target_link_libraries(object_detector_node object_detection)
+target_link_libraries(trainer_node object_detection)
+target_link_libraries(keypoint_detector_node object_detection)
+target_link_libraries(detection_display_node object_detection)

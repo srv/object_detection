@@ -1,0 +1,18 @@
+<launch>
+    <node ns="/stereo_camera/right" pkg="image_proc" name="image_proc" type="image_proc" output="screen">
+    </node>
+    <node pkg="image_preprocessing" name="image_resize" type="image_resize" output="screen">
+        <param name="width" type="int" value="320"/>
+        <param name="height" type="int" value="240"/>
+        <remap from="image" to="/stereo_camera/right/image_color"/>
+    </node>
+    <node pkg="object_detector" name="object_detector_node" 
+          type="object_detector_node" output="screen">
+        <remap from="image" to="/resized/image"/>
+        <param name="detection_threshold" value="0.7"/>
+    </node>
+    <node pkg="object_detector" name="trainer_node" type="trainer_node" output="screen">
+        <remap from="image" to="/resized/image"/>
+    </node>
+    <node pkg="rosbag" name="rosbag_player" type="play" args="-l $(env ROS_BAGFILES_PATH)/pool-objects_2011-04-06-15-26-59.bag"/>
+</launch>

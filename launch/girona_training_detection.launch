@@ -2,8 +2,8 @@
     <node pkg="object_detection" name="object_detector_node" 
           type="object_detector_node" output="screen">
         <remap from="image" to="/image_with_time"/>
-        <param name="detector_config_file" value="$(find object_detector)/cfg/detector.cfg"/>
-        <param name="detection_threshold" value="0.0"/>
+        <param name="detector_config_file" value="$(find object_detection)/cfg/detector.cfg"/>
+        <param name="detection_threshold" value="0.5"/>
     </node>
     <node pkg="object_detection" name="trainer_node" type="trainer_node" output="screen">
         <remap from="image" to="/image_with_time"/>

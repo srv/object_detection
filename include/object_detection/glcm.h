@@ -20,6 +20,11 @@ namespace object_detection {
     cv::Mat computeUniformGLCM(const cv::Mat& image, int size = 256);
 
     /**
+    * computes glcm for a big image using sliding windows.
+    */
+    cv::Mat computeSlidingWindowUniformGLCM(const cv::Mat& image, int glcm_size, int window_size);
+
+    /**
     * computes the four glcm features
     * -# dissimilarity
     * -# uniformity

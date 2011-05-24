@@ -86,6 +86,8 @@ void Detector::setup()
 
     object_parts_detectors_.push_back(color_parts_detector);
 
+    /*
+
     boost::shared_ptr<TexturedPartsClassifier> textured_parts_classifier = 
         boost::shared_ptr<TexturedPartsClassifier>(new TexturedPartsClassifier());
     
@@ -95,6 +97,7 @@ void Detector::setup()
 
     object_parts_detectors_.push_back(textured_parts_detector);
 
+    */
 }
 
 void Detector::train(const TrainingData& training_data)

@@ -18,6 +18,7 @@
   <node name="detection_display" pkg="object_detection" type="detection_display_node">
     <remap from="image" to="/usb_cam/image_raw" />
     <remap from="detection" to="/object_detector/detection" />
+    <param name="paint_rectangle" value="false" />
   </node>
 </launch>
 

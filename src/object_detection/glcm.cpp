@@ -4,7 +4,6 @@
 
 #include "glcm.h"
 
-
 cv::Mat object_detection::computeGLCM(const cv::Mat& image, int dx, int dy, int size)
 {
     assert(dx >= 0 && dy >= 0);
@@ -33,6 +32,39 @@ cv::Mat object_detection::computeGLCM(const cv::Mat& image, int dx, int dy, int 
     glcm /= 2 * (image.rows - dy) * (image.cols - dx);
 
     return glcm;
+}
+
+cv::Mat object_detection::computeSlidingWindowUniformGLCM(const cv::Mat& image, int glcm_size, int window_size)
+{
+    assert(image.channels() == 3);
+    assert(image.depth() == CV_8U);
+
+    cv::Mat grayscale_image;
+    cv::cvtColor(image, grayscale_image, CV_BGR2GRAY);
+ 
+    // sliding window glcm
+    int border_size = window_size / 2;
+    cv::Mat bordered_image;
+    cv::copyMakeBorder(grayscale_image, bordered_image, border_size, border_size,
+            border_size, border_size, cv::BORDER_REFLECT_101);
+
+    cv::Mat texture_image(image.rows, image.cols, CV_32FC4);
+
+    for(int r = 0; r < image.rows; ++r)
+    {
+        for(int c = 0; c < image.cols; ++c)
+        {
+            cv::Rect roi(c, r, window_size, window_size);
+            cv::Mat window(bordered_image, roi);
+            cv::Mat glcm = computeUniformGLCM(window, glcm_size);
+            cv::Scalar texture_features = computeGLCMFeatures(glcm);
+            texture_image.at<cv::Vec4f>(r, c)[0] = texture_features[0];
+            texture_image.at<cv::Vec4f>(r, c)[1] = texture_features[1];
+            texture_image.at<cv::Vec4f>(r, c)[2] = texture_features[2];
+            texture_image.at<cv::Vec4f>(r, c)[3] = texture_features[3];
+        }
+    }
+    return texture_image;
 }
 
 cv::Mat object_detection::computeUniformGLCM(const cv::Mat& image, int size)

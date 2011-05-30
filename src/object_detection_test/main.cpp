@@ -60,7 +60,7 @@ int main(int argc, char** argv)
     cv::Mat training_image = cv::imread(training_image_name);
     cv::Mat training_image_with_marked_object = training_image.clone();
     object_detection::paintPolygon(training_image_with_marked_object,
-            object_outline, cv::Scalar(0, 255, 0));
+            object_outline, cv::Scalar(0, 255, 0), 2);
     cv::namedWindow("Training image with marked object");
     cv::imshow("Training image with marked object", training_image_with_marked_object);
 

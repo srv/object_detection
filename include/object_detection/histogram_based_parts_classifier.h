@@ -19,9 +19,27 @@ class HistogramBasedPartsClassifier : public PartsClassifier
 public:
 
     /**
+    * Constructs a new classifier, initializes min_occurences to 0.
+    */
+    HistogramBasedPartsClassifier();
+
+    /**
      * Virtual destructor (empty)
      */
 	virtual ~HistogramBasedPartsClassifier() {};
+
+    /**
+    * Sets the minimum occurences of values in the histogram to min_occurences.
+    * If a value occures less than min_occurences it will not make its way into
+    * the classifier model.
+    */
+    void setMinOccurences(int min_occurences);
+
+    /**
+    * \return the minimum occurences of values in the histogram to be part 
+    *         of the classifier model.
+    */
+    int minOccurences() const;
 
     void train(const cv::Mat& image, const cv::Mat& mask);
     
@@ -39,6 +57,9 @@ private:
     /// stores the histogram of significant elements that is used for 
     /// backprojection
     cv::MatND significant_elements_histogram_;
+
+    /// minimum occurences of a value in a histogram
+    int min_occurences_;
     
 };
 

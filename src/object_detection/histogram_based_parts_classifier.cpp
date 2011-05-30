@@ -11,6 +11,22 @@ using object_detection::HistogramBasedPartsClassifier;
 using object_detection::histogram_utilities::showHistogram;
 using object_detection::histogram_utilities::showHSHistogram;
 
+HistogramBasedPartsClassifier::HistogramBasedPartsClassifier()
+    : min_occurences_(0)
+{
+}
+
+void HistogramBasedPartsClassifier::setMinOccurences(int min_occurences)
+{
+    assert(min_occurences >= 0);
+    min_occurences_ = min_occurences;
+}
+
+int HistogramBasedPartsClassifier::minOccurences() const
+{
+    return min_occurences_;
+}
+
 /*
 void HistogramBasedPartsClassifier::train(const cv::Mat& image, const cv::Mat& mask)
 {
@@ -29,14 +45,17 @@ void HistogramBasedPartsClassifier::train(const cv::Mat& image, const cv::Mat& m
 void HistogramBasedPartsClassifier::train(const cv::Mat& image, const cv::Mat& mask)
 {
     // compute histograms of object and whole image and divide them
-    // (virtual function calls)
     cv::MatND object_histogram = computeHistogram(image, mask);
     cv::MatND image_histogram = computeHistogram(image, cv::Mat());
-    significant_elements_histogram_ = cv::MatND(object_histogram / (image_histogram + 1));
 
-    showHistogram(object_histogram, getName() + "-object histogram");
-    showHistogram(image_histogram, getName() + "-image histogram");
-    showHistogram(significant_elements_histogram_, getName() + "-significant elements histogram");
+    // filter out colors with few occurences
+    cv::threshold(object_histogram, object_histogram, min_occurences_, 255, CV_THRESH_TOZERO);
+
+    significant_elements_histogram_ = cv::MatND(object_histogram / image_histogram);
+
+    showHSHistogram(object_histogram, getName() + "-object histogram");
+    showHSHistogram(image_histogram, getName() + "-image histogram");
+    showHSHistogram(significant_elements_histogram_, getName() + "-significant elements histogram");
 }
    
 cv::Mat HistogramBasedPartsClassifier::classify(const cv::Mat& image, 

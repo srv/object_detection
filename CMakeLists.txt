@@ -29,6 +29,8 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 #rosbuild_add_executable(example examples/example.cpp)
 #target_link_libraries(example ${PROJECT_NAME})
 
+add_subdirectory(test)
+
 set(LIB_SOURCES 
     src/object_detection/detector.cpp
     src/object_detection/detection.cpp
@@ -45,6 +47,7 @@ set(LIB_SOURCES
     src/object_detection/stereo_feature_extractor.cpp
     src/object_detection/surf_extractor.cpp
     src/object_detection/feature_extractor_factory.cpp
+    src/object_detection/object_model.cpp
    )
 
 
@@ -53,22 +56,12 @@ rosbuild_add_executable(object_detection_test src/object_detection_test/main.cpp
 rosbuild_add_executable(pixel_feature_extraction src/pixel_feature_extraction/main.cpp)
 rosbuild_add_executable(glcm_extraction src/glcm_extraction/main.cpp)
 rosbuild_add_executable(stereo_extractor src/stereo_extractor/main.cpp)
-rosbuild_add_gtest(shape_matching_test test/shape_matching_test.cpp)
-rosbuild_add_gtest(glcm_test test/glcm_test.cpp)
-rosbuild_add_gtest(stereo_feature_extractor_test test/stereo_feature_extractor_test.cpp)
-rosbuild_add_gtest(feature_extractors_test test/feature_extractors_test.cpp)
-
 target_link_libraries(object_detection boost_program_options)
 
 target_link_libraries(object_detection_test object_detection)
 target_link_libraries(pixel_feature_extraction object_detection)
 target_link_libraries(glcm_extraction object_detection)
 target_link_libraries(stereo_extractor object_detection)
-
-target_link_libraries(shape_matching_test object_detection)
-target_link_libraries(glcm_test object_detection)
-target_link_libraries(stereo_feature_extractor_test object_detection)
-target_link_libraries(feature_extractors_test object_detection)
 
 include_directories(include/object_detection)
 

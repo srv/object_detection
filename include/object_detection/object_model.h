@@ -1,9 +1,20 @@
 #ifndef OBJECT_MODEL_H
 #define OBJECT_MODEL_H
 
+#include <list>
+
 #include <cv.h>
 
+#include "feature.h"
+
 namespace object_detection {
+
+struct Feature3D
+{
+    cv::Point3d world_point;
+    std::vector<Feature> features;
+    cv::Scalar color;
+};
 
 /**
  * \class ObjectModel
@@ -21,14 +32,17 @@ class ObjectModel
     */
     ObjectModel();
 
+    void addFeature3D(const cv::Point3d& world_point, 
+            const std::vector<Feature>& features, const cv::Scalar& color);
+
+    /**
+    * Renders all points with openGL commands
+    */
+    //void renderGL();
 
   private:
 
-    std::vector<cv::Point3d> world_points_;
-    std::vector<cv::Mat> descriptors_;
-
-    std::vector<std::list<cv::Mat> > world_point_indices_to_descriptors_;
-    std::vector<int> descriptor_index_to_world_point_index_;
+    std::vector<Feature3D> features_3d_;
 };
 
 }

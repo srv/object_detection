@@ -42,7 +42,9 @@ set(LIB_SOURCES
     src/object_detection/shape_matching.cpp
     src/object_detection/clipper.cpp
     src/object_detection/glcm.cpp
-    src/object_detection/stereo_keypoint_extractor.cpp
+    src/object_detection/stereo_feature_extractor.cpp
+    src/object_detection/surf_extractor.cpp
+    src/object_detection/feature_extractor_factory.cpp
    )
 
 
@@ -53,7 +55,8 @@ rosbuild_add_executable(glcm_extraction src/glcm_extraction/main.cpp)
 rosbuild_add_executable(stereo_extractor src/stereo_extractor/main.cpp)
 rosbuild_add_gtest(shape_matching_test test/shape_matching_test.cpp)
 rosbuild_add_gtest(glcm_test test/glcm_test.cpp)
-rosbuild_add_gtest(stereo_keypoint_extractor_test test/stereo_keypoint_extractor_test.cpp)
+rosbuild_add_gtest(stereo_feature_extractor_test test/stereo_feature_extractor_test.cpp)
+rosbuild_add_gtest(feature_extractors_test test/feature_extractors_test.cpp)
 
 target_link_libraries(object_detection boost_program_options)
 
@@ -64,7 +67,8 @@ target_link_libraries(stereo_extractor object_detection)
 
 target_link_libraries(shape_matching_test object_detection)
 target_link_libraries(glcm_test object_detection)
-target_link_libraries(stereo_keypoint_extractor_test object_detection)
+target_link_libraries(stereo_feature_extractor_test object_detection)
+target_link_libraries(feature_extractors_test object_detection)
 
 include_directories(include/object_detection)
 

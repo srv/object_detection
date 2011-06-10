@@ -1,0 +1,17 @@
+<launch>
+    <node pkg="stereo_image_proc" ns="/forward_stereo_camera" 
+          type="stereo_image_proc" name="forward_stereo_image_proc" />
+
+    <node pkg="object_detection" name="stereo_trainer_node" 
+          type="stereo_trainer_node" output="screen">
+        <remap from="image" to="/forward_stereo_camera/left/image_rect_color"/>
+        <remap from="features" to="/forward_stereo_camera/stereo_features"/>
+    </node>
+
+    <node pkg="nodelet" name="stereo_feature_extractor" output="screen"
+          ns="/forward_stereo_camera" type="nodelet" 
+          args="standalone stereo_feature_extraction/stereo_feature_extractor" />
+
+    <node pkg="rosbag" name="rosbag_player" type="play" 
+          args="-l $(env ROS_BAGFILES_PATH)/keyboard_box_narrow_2011-05-26-15-28-33.bag"/>
+</launch>

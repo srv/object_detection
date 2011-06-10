@@ -44,9 +44,6 @@ set(LIB_SOURCES
     src/object_detection/shape_matching.cpp
     src/object_detection/clipper.cpp
     src/object_detection/glcm.cpp
-    src/object_detection/stereo_feature_extractor.cpp
-    src/object_detection/surf_extractor.cpp
-    src/object_detection/feature_extractor_factory.cpp
     src/object_detection/object_model.cpp
    )
 
@@ -55,13 +52,11 @@ rosbuild_add_library(object_detection ${LIB_SOURCES})
 rosbuild_add_executable(object_detection_test src/object_detection_test/main.cpp)
 rosbuild_add_executable(pixel_feature_extraction src/pixel_feature_extraction/main.cpp)
 rosbuild_add_executable(glcm_extraction src/glcm_extraction/main.cpp)
-rosbuild_add_executable(stereo_extractor src/stereo_extractor/main.cpp)
 target_link_libraries(object_detection boost_program_options)
 
 target_link_libraries(object_detection_test object_detection)
 target_link_libraries(pixel_feature_extraction object_detection)
 target_link_libraries(glcm_extraction object_detection)
-target_link_libraries(stereo_extractor object_detection)
 
 include_directories(include/object_detection)
 

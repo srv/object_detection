@@ -9,14 +9,9 @@ ObjectModel::ObjectModel()
 {
 }
 
-void ObjectModel::addFeature3D(const cv::Point3d& world_point,
-        const std::vector<Feature>& features, const cv::Scalar& color)
+void ObjectModel::addFeature3D(const Feature3D& feature3d)
 {
-    Feature3D feature3d;
-    feature3d.world_point = world_point;
-    feature3d.features = features;
-    feature3d.color = color;
-    features_3d_.push_back(feature3d);
+    features3d_.push_back(feature3d);
 }
 
 /*

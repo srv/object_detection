@@ -3,11 +3,7 @@ include_directories(../include/object_detection)
 
 rosbuild_add_gtest(shape_matching_test shape_matching_test.cpp)
 rosbuild_add_gtest(glcm_test glcm_test.cpp)
-rosbuild_add_gtest(stereo_feature_extractor_test stereo_feature_extractor_test.cpp)
-rosbuild_add_gtest(feature_extractors_test feature_extractors_test.cpp)
 
 target_link_libraries(shape_matching_test object_detection)
 target_link_libraries(glcm_test object_detection)
-target_link_libraries(stereo_feature_extractor_test object_detection)
-target_link_libraries(feature_extractors_test object_detection)
 

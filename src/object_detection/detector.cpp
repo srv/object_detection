@@ -133,12 +133,27 @@ void Detector::train(const TrainingData& training_data)
     cv::Mat centered_outline_points_matrix = outline_points_matrix - centroid;
     centered_object_outline_ = cv::Mat_<cv::Point>(centered_outline_points_matrix);
 
+    // 3d information
+    for (size_t i = 0; i < training_data.stereo_features.size(); ++i)
+    {
+        const StereoFeature& stereo_feature = training_data.stereo_features[i];
+        Feature feature;
+        feature.key_point = stereo_feature.key_point;
+        feature.descriptor = stereo_feature.descriptor;
+        object_model_.addFeature(stereo_feature.world_point, feature);
+    }
+
     is_trained_ = true;
 }
 
 std::vector<Detection> Detector::detect(const cv::Mat& image,
+        const std::vector<StereoFeature>& stereo_features,
         const std::vector<cv::Rect>& rois)
 {
+    std::cout << "Detector::detect: " << image.rows << "x" << image.cols 
+        << " image, " << stereo_features.size() << " features, "
+        << rois.size() << " rois." << std::endl;
+
     if (!is_trained_)
     {
         throw std::runtime_error("Error: Detector::detect() called without having trained before!");
@@ -146,6 +161,7 @@ std::vector<Detection> Detector::detect(const cv::Mat& image,
 
     std::vector<Detection> all_detections;
 
+    /*
     for(size_t i = 0; i < object_parts_detectors_.size(); ++i)
     {
         std::vector<Detection> detections = object_parts_detectors_[i]->detect(image);
@@ -171,7 +187,74 @@ std::vector<Detection> Detector::detect(const cv::Mat& image,
         }
         all_detections.insert(all_detections.end(), detections.begin(), detections.end());
     }
+    */
+
+    /*
+
+    if (stereo_features.size() > 0)
+    {
+        // 3d information
+        Model scene;
+        for (size_t i = 0; i < stereo_features.size(); ++i)
+        {
+            Feature feature;
+            feature.key_point = stereo_features[i].key_point;
+            feature.descriptor = stereo_features[i].descriptor;
+            scene.addFeature(stereo_features[i].world_point, feature);
+        }
+    }
+    */
     return all_detections;
 }
 
+bool Detector::estimatePose(const Model& object_model, const Model& scene_model, cv::Mat& transformation)
+{
+    // 3d matching
+    cv::Ptr<cv::DescriptorMatcher> descriptor_matcher = cv::DescriptorMatcher::create("BruteForce");
+    std::vector<std::vector<cv::DMatch> > matches;
+    cv::Mat training_features = scene_model.getFeatureData();
+    cv::Mat query_features = object_model.getFeatureData();
+    descriptor_matcher->knnMatch(query_features, training_features, matches, 2);
+
+    std::vector<cv::Point3f> matched_object_points;
+    std::vector<cv::Point3f> matched_scene_points;
+
+    for (size_t i = 0; i < matches.size(); ++i)
+    {
+        if (matches[i].size() == 2)
+        {
+            const cv::DMatch& match1 = matches[i][0];
+            const cv::DMatch& match2 = matches[i][1];
+            if (match1.distance / match2.distance < 0.8)
+            {
+                matched_scene_points.push_back(scene_model.getWorldPoint(match1.trainIdx));
+                matched_object_points.push_back(object_model.getWorldPoint(match1.queryIdx));
+            }
+        }
+    }
+    std::cout << matched_object_points.size() << " matching object/world points." << std::endl;
+
+    if (matched_object_points.size() > 3)
+    {
+        std::vector<uchar> outliers;
+        double ransac_threshold = 300.0;
+        int ret = cv::estimateAffine3D(cv::Mat(matched_object_points), cv::Mat(matched_scene_points), 
+                transformation, outliers, ransac_threshold, 0.5);
+
+        std::cout << "..............." << ret << "...................." << std::endl;
+        //std::cout << "Transformation: " << transformation << std::endl;
+        int num_outliers = 0;
+        int num_inliers = 0;
+        for (size_t i = 0; i < outliers.size(); ++i)
+        {
+            if (outliers[i] > 0) num_outliers++; else num_inliers++;
+        }
+        std::cout << std::endl << num_outliers << " outliers, " << num_inliers << " inliers." << std::endl;
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}
 

@@ -8,8 +8,8 @@ namespace object_detection {
 
 struct Feature3D
 {
-    cv::Point3d world_point;
-    std::vector<Feature> features;
+    int world_point_index;
+    std::vector<int> feature_indices;
     cv::Vec3b color;
 };
 

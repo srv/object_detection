@@ -6,7 +6,6 @@
 #include <message_filters/synchronizer.h>
 #include <message_filters/sync_policies/exact_time.h>
 
-#include <sensor_msgs/PointCloud2.h>
 #include <sensor_msgs/image_encodings.h>
 
 #include <cv_bridge/cv_bridge.h>
@@ -82,7 +81,7 @@ private:
     }
 
     void trainingInputCallback(const sensor_msgs::ImageConstPtr& image_msg,
-                               const sensor_msgs::PointCloud2ConstPtr& features_msg)
+                               const vision_msgs::StereoFeaturesConstPtr& features_msg)
     {
         // unsubscribe from training data
         ROS_INFO("Training input arrived. Unsubscribing from features.");
@@ -133,7 +132,7 @@ private:
             // Queue size 1 should be OK; 
             // the one that matters is the synchronizer queue size.
             sub_filter_image_.subscribe(it_, "image", 1);
-            sub_filter_features_.subscribe(nh_, "features", 1);
+            sub_filter_features_.subscribe(nh_, "stereo_features", 1);
             ROS_INFO("Waiting for training input");
         }
         else if (key == ' ' && current_mode_ == PAINTING)
@@ -209,7 +208,10 @@ private:
         training_data.object_description = object_description;
         training_data_pub_.publish(training_data);
 
-        ROS_INFO("Training message published.");
+        ROS_INFO("Training message published. "
+                 "%i polygon points, %i stereo features.", 
+                 polygon_points.size(),
+                 training_data.stereo_features.features.size());
     }
 
     ros::NodeHandle nh_;
@@ -219,9 +221,9 @@ private:
 
     // for synchronized subscriptions
     image_transport::SubscriberFilter sub_filter_image_;
-    message_filters::Subscriber<sensor_msgs::PointCloud2> sub_filter_features_;
+    message_filters::Subscriber<vision_msgs::StereoFeatures> sub_filter_features_;
     typedef message_filters::sync_policies::ExactTime<sensor_msgs::Image,
-        sensor_msgs::PointCloud2> ExactPolicy;
+        vision_msgs::StereoFeatures> ExactPolicy;
     typedef message_filters::Synchronizer<ExactPolicy> ExactSync;
     boost::shared_ptr<ExactSync> exact_sync_;
  
@@ -233,7 +235,7 @@ private:
     cv::Point current_mouse_position_;
 
     sensor_msgs::ImageConstPtr training_image_msg_;
-    sensor_msgs::PointCloud2ConstPtr training_features_msg_;
+    vision_msgs::StereoFeaturesConstPtr training_features_msg_;
 
 };
 

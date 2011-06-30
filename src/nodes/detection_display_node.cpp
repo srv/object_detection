@@ -103,20 +103,20 @@ public:
 
     void paintDetection(cv::Mat& image, const vision_msgs::Detection& detection)
     {
-        cv::Point center(detection.pose.x, detection.pose.y);
+        cv::Point center(detection.pose2D.x, detection.pose2D.y);
         if (paint_rectangle_)
         {
             cv::RotatedRect rect(center, 
                     cv::Size(50 * detection.scale, 50 * detection.scale), 
-                    detection.pose.theta / M_PI * 180.0);
+                    detection.pose2D.theta / M_PI * 180.0);
             object_detection::paintRotatedRectangle(image, rect, cv::Scalar(0, 255, 0), 2);
         }
 
         if (paint_direction_)
         {
             double radius = 20;
-            cv::Point direction_point(radius * cos(detection.pose.theta), 
-                    radius * sin(detection.pose.theta));
+            cv::Point direction_point(radius * cos(detection.pose2D.theta), 
+                    radius * sin(detection.pose2D.theta));
             cv::line(image, center, center + direction_point, cv::Scalar(0, 255, 0), 3);
             cv::line(image, center, center + direction_point, cv::Scalar(0, 0, 255), 2);
         }
@@ -149,7 +149,7 @@ public:
             cv::putText(image, ostr.str(), center + cv::Point(5, 20), 
                     FONT, 0.8, cv::Scalar(0, 255, 0));
             ostr.str("");
-            ostr << "angle: " << detection.pose.theta / M_PI * 180.0;
+            ostr << "angle: " << detection.pose2D.theta / M_PI * 180.0;
             cv::putText(image, ostr.str(), center + cv::Point(5, 30), 
                     FONT, 0.8, cv::Scalar(0, 255, 0));
         }

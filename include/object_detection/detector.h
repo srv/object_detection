@@ -6,6 +6,7 @@
 #include <boost/shared_ptr.hpp>
 
 #include "trainable.h"
+#include "model.h"
 
 namespace cv {
     class Mat;
@@ -17,6 +18,7 @@ namespace object_detection {
 
 struct Detection;
 class ObjectPartsDetector;
+class StereoFeature;
 
 /**
  * \class Detector
@@ -45,15 +47,20 @@ public:
 	/**
 	 * \brief Run the object detector.
 	 * \param image input image
+	 * \param stereo_features extracted stereo features
      * \param rois array of regions of interest that the detector should use
      * \return a list of detections, empty if nothing detected
 	 */
     std::vector<Detection> detect(const cv::Mat& image, 
+            const std::vector<StereoFeature>& stereo_features,
             const std::vector<cv::Rect>& rois = std::vector<cv::Rect>());
 
     void train(const TrainingData& training_data);
 
     bool isTrained() const { return is_trained_; };
+
+    static bool estimatePose(const Model& object_model,
+            const Model& scene_model, cv::Mat& transformation);
 
 private:
 
@@ -73,6 +80,9 @@ private:
 
     // stores the object outline
     std::vector<cv::Point> centered_object_outline_;
+
+    // stores the object model
+    Model object_model_;
 
 };
 

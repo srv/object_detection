@@ -44,7 +44,8 @@ set(LIB_SOURCES
     src/object_detection/shape_matching.cpp
     src/object_detection/clipper.cpp
     src/object_detection/glcm.cpp
-    src/object_detection/object_model.cpp
+    src/object_detection/model.cpp
+    src/object_detection/model_builder.cpp
    )
 
 
@@ -65,6 +66,7 @@ rosbuild_add_executable(trainer_node src/nodes/trainer_node.cpp)
 rosbuild_add_executable(stereo_trainer_node src/nodes/stereo_trainer_node.cpp)
 rosbuild_add_executable(keypoint_detector_node src/nodes/keypoint_detector_node.cpp)
 rosbuild_add_executable(detection_display_node src/nodes/detection_display_node.cpp)
+rosbuild_add_executable(movement_calculator_node src/nodes/movement_calculator_node.cpp)
 
 target_link_libraries(object_detector_node object_detection)
 target_link_libraries(trainer_node object_detection)

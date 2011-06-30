@@ -3,17 +3,21 @@
 
 #include <ros/ros.h>
 #include <image_transport/image_transport.h>
+#include <image_transport/subscriber_filter.h>
+#include <message_filters/subscriber.h>
+#include <message_filters/synchronizer.h>
+#include <message_filters/sync_policies/exact_time.h>
 
-#if ROS_VERSION_MINIMUM(1,4,5)
-    #include <cv_bridge/cv_bridge.h>
-#else
-    #include <cv_bridge/CvBridge.h>
-    #include <roslib/Header.h>
-#endif
+
+#include <cv_bridge/cv_bridge.h>
 
 #include <sensor_msgs/image_encodings.h>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
+
+#include <pcl/ros/register_point_struct.h>
+#include <pcl/ros/conversions.h>
+#include <pcl/point_types.h>
 
 #include "object_detection/histogram_backprojection.h"
 #include "object_detection/training_data.h"
@@ -29,13 +33,8 @@
 namespace enc = sensor_msgs::image_encodings;
 using object_detection::TrainingData;
 using object_detection::Detector;
+using object_detection::StereoFeature;
 
-
-#if ROS_VERSION_MINIMUM(1,4,5)
-using std_msgs::Header;
-#else
-using roslib::Header;
-#endif
 
 static const double DEFAULT_DETECTION_THRESHOLD = 0.5;
 
@@ -59,7 +58,15 @@ class DetectorNode
   ros::NodeHandle nh_private_;
   image_transport::ImageTransport it_;
   image_transport::Subscriber image_sub_;
-
+  
+  // for synchronized subscriptions
+  image_transport::SubscriberFilter sub_filter_image_;
+  message_filters::Subscriber<vision_msgs::StereoFeatures> sub_filter_features_;
+  typedef message_filters::sync_policies::ExactTime<sensor_msgs::Image,
+      vision_msgs::StereoFeatures> ExactPolicy;
+  typedef message_filters::Synchronizer<ExactPolicy> ExactSync;
+  boost::shared_ptr<ExactSync> exact_sync_;
+ 
   ros::Subscriber training_data_sub_;
   ros::Publisher detection_pub_;
 
@@ -69,11 +76,6 @@ class DetectorNode
 
   double detection_threshold_;
 
-#if ROS_VERSION_MINIMUM(1,4,5)
-#else
-    sensor_msgs::CvBridge bridge_;
-#endif
-  
 public:
   DetectorNode()
     : nh_private_("~"), it_(nh_), is_trained_(false)
@@ -121,7 +123,17 @@ public:
     }
     image_sub_ = it_.subscribe("image", 1, &DetectorNode::imageCb, this);
     detection_pub_ = nh_private_.advertise<vision_msgs::DetectionStamped>("detection", 1);
-  }
+
+    // Synchronize inputs. 
+    exact_sync_.reset(new ExactSync(ExactPolicy(10),
+                                    sub_filter_image_, sub_filter_features_));
+    exact_sync_->registerCallback(
+            boost::bind(&DetectorNode::detectionInputCb,
+                        this, _1, _2));
+    sub_filter_image_.subscribe(it_, "image", 1);
+    sub_filter_features_.subscribe(nh_, "stereo_features", 1);
+
+ }
 
   ~DetectorNode()
   {
@@ -131,7 +143,6 @@ public:
   void imageCb(const sensor_msgs::ImageConstPtr& image_msg)
   {
     cv::Mat image;
-#if ROS_VERSION_MINIMUM(1,4,5)
     cv_bridge::CvImageConstPtr cv_ptr;
     try
     {
@@ -143,22 +154,11 @@ public:
       ROS_ERROR("cv_bridge exception: %s", e.what());
       return;
     }
-#else
-    try
-    {
-        IplImage *cv_image = NULL;
-        cv_image = bridge_.imgMsgToCv(image_msg, "bgr8");
-        image = cv::cvarrToMat(cv_image).clone();
-    }
-    catch (sensor_msgs::CvBridgeException& e)
-    {
-        ROS_ERROR("CvBridgeException: %s", e.what());
-    }
-#endif
 
     if (is_trained_)
     {
-        std::vector<object_detection::Detection> detections = detector_->detect(image);
+        std::vector<StereoFeature> stereo_features;
+        std::vector<object_detection::Detection> detections = detector_->detect(image, stereo_features);
         cv::Mat image_with_detections = image.clone();
 
         // if we have one good detection
@@ -167,15 +167,66 @@ public:
             publishDetection(detections[0], image_msg->header);
         }
     }
-    cv::waitKey(3);
+    cvWaitKey(3);
   }
 
-    void trainingDataCb(const vision_msgs::TrainingData::ConstPtr& training_data_msg)
+  void detectionInputCb(const sensor_msgs::ImageConstPtr& image_msg,
+          const vision_msgs::StereoFeaturesConstPtr& stereo_features_msg)
+  {
+    try
+    {
+        cv::Mat image;
+        cv_bridge::CvImageConstPtr cv_ptr;
+            cv_ptr = cv_bridge::toCvShare(image_msg, enc::BGR8);
+            image = cv_ptr->image.clone();
+        
+        if (is_trained_)
+        {
+            std::vector<StereoFeature> stereo_features = 
+                getStereoFeatures(*stereo_features_msg);
+            std::vector<object_detection::Detection> detections = 
+                detector_->detect(image, stereo_features);
+
+            // if we have one good detection
+            if (detections.size() == 1 && detections[0].score > detection_threshold_)
+            {
+                publishDetection(detections[0], image_msg->header);
+            }
+        }
+    }
+    catch (cv_bridge::Exception& e)
+    {
+      ROS_ERROR("cv_bridge exception: %s", e.what());
+    }
+  }
+
+    std::vector<StereoFeature> getStereoFeatures(const vision_msgs::StereoFeatures& stereo_features_msg)
+    {
+        pcl::PointCloud<pcl::PointXYZRGB> point_cloud;
+        pcl::fromROSMsg(stereo_features_msg.world_points, point_cloud);
+        assert(stereo_features_msg.features.size() == point_cloud.size());
+        std::vector<StereoFeature> stereo_features(stereo_features_msg.features.size());
+        pcl::PointCloud<pcl::PointXYZRGB>::const_iterator point_iter = 
+            point_cloud.begin();
+        for (size_t i = 0; i < stereo_features_msg.features.size(); ++i)
+        {
+            stereo_features[i].key_point.pt.x = stereo_features_msg.features[i].x;
+            stereo_features[i].key_point.pt.y = stereo_features_msg.features[i].y;
+            stereo_features[i].descriptor = stereo_features_msg.features[i].descriptor;
+            const pcl::PointXYZRGB point = *point_iter;
+            stereo_features[i].world_point.x = point.x;
+            stereo_features[i].world_point.y = point.y;
+            stereo_features[i].world_point.z = point.z;
+            point_iter++;
+        }
+        return stereo_features;
+    }
+
+    void trainingDataCb(const vision_msgs::TrainingDataConstPtr& training_data_msg)
     {
         ROS_INFO("Training Data received");
 
         cv::Mat training_image;
-#if ROS_VERSION_MINIMUM(1,4,5)
         cv_bridge::CvImageConstPtr cv_ptr;
         try
         {
@@ -187,24 +238,6 @@ public:
             ROS_ERROR("cv_bridge exception: %s", e.what());
             return;
         }
-#else
-        try
-        {
-            IplImage *cv_image = NULL;
-            // we have to use depricated fromImage() here because
-            // the message is bare and not in a boost::shared_ptr
-            if(!bridge_.fromImage(training_data_msg->image, "bgr8"))
-            {
-                throw sensor_msgs::CvBridgeException("Conversion to OpenCV image failed");
-            }
-            cv_image = bridge_.toIpl();
-            training_image = cv::cvarrToMat(cv_image).clone();
-        }
-        catch (sensor_msgs::CvBridgeException& e)
-        {
-            ROS_ERROR("CvBridgeException: %s", e.what());
-        }
-#endif
         vision_msgs::Polygon2D polygon = training_data_msg->object_description.outline;
         std::vector<cv::Point> object_polygon;
         for (size_t i = 0; i < polygon.points.size(); ++i)
@@ -216,7 +249,12 @@ public:
         training_data.image = training_image;
         training_data.object_outline = object_polygon;
 
+        // 3d information
+        training_data.stereo_features =  
+            getStereoFeatures(training_data_msg->stereo_features);
+
         train(training_data);
+
     }
 
 
@@ -230,12 +268,13 @@ public:
         }
     }
 
-    void publishDetection(const object_detection::Detection& detection, const Header& header)
+    void publishDetection(const object_detection::Detection& detection, 
+            const std_msgs::Header& header)
     {
         vision_msgs::Detection detection_msg;
-        detection_msg.pose.x = detection.center.x;
-        detection_msg.pose.y = detection.center.y;
-        detection_msg.pose.theta = detection.angle;
+        detection_msg.pose2D.x = detection.center.x;
+        detection_msg.pose2D.y = detection.center.y;
+        detection_msg.pose2D.theta = detection.angle;
         detection_msg.scale = detection.scale;
         detection_msg.id = detection.label;
         detection_msg.score = detection.score;

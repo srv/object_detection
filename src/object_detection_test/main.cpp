@@ -11,6 +11,7 @@
 #include "detector.h"
 
 using object_detection::Detection;
+using object_detection::StereoFeature;
 
 std::vector<cv::Point> readPolygonData(std::istream& in)
 {
@@ -93,7 +94,9 @@ int main(int argc, char** argv)
     // detector interface
     object_detection::Detector detector("detector.cfg");
     detector.train(training_data);
-    std::vector<Detection> detections = detector.detect(test_image);
+
+    std::vector<StereoFeature> stereo_features;
+    std::vector<Detection> detections = detector.detect(test_image, stereo_features);
 
     std::cout << "Detector made " << detections.size() << " detections." << std::endl;
 

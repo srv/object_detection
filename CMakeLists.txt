@@ -69,6 +69,7 @@ rosbuild_add_executable(keypoint_detector_node src/nodes/keypoint_detector_node.
 rosbuild_add_executable(detection_display_node src/nodes/detection_display_node.cpp)
 rosbuild_add_executable(movement_calculator_node src/nodes/movement_calculator_node.cpp)
 rosbuild_add_executable(joiner src/tools/joiner.cpp)
+rosbuild_add_executable(feature_quality src/tools/feature_quality.cpp)
 
 target_link_libraries(object_detector_node object_detection)
 target_link_libraries(trainer_node object_detection)

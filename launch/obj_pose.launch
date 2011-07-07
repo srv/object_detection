@@ -1,0 +1,22 @@
+<launch>
+    <node pkg="stereo_image_proc" ns="/forward_stereo_camera" 
+          type="stereo_image_proc" name="forward_stereo_image_proc" />
+
+    <node pkg="nodelet" name="stereo_feature_extractor" output="screen"
+          ns="/forward_stereo_camera" type="nodelet" 
+          args="standalone stereo_feature_extraction/stereo_feature_extractor" />
+
+    <node pkg="object_detection" name="motion_estimator" 
+          type="movement_calculator_node" output="screen">
+        <remap from="stereo_features" to="/forward_stereo_camera/stereo_features"/>
+    </node>
+
+    <node pkg="rosbag" name="rosbag_player" type="play" 
+          args="-l -s 18 $(env ROS_BAGFILES_PATH)/keyboard_box_narrow_2011-05-26-15-28-33.bag"/>
+
+    <node pkg="tf" name="world_camera_tf_publisher" 
+          type="static_transform_publisher"
+          args="1 0 0 0 1.507 0 world stereo_camera 200"/>
+
+    <node pkg="rviz" name="rviz" type="rviz" />
+</launch>

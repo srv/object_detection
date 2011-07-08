@@ -61,6 +61,7 @@ namespace pcl
     using Registration<PointSource, PointTarget>::final_transformation_;
     using Registration<PointSource, PointTarget>::transformation_;
     using Registration<PointSource, PointTarget>::corr_dist_threshold_;
+    using Registration<PointSource, PointTarget>::inlier_threshold_;
     using Registration<PointSource, PointTarget>::min_number_correspondences_;
     using Registration<PointSource, PointTarget>::max_iterations_;
     using Registration<PointSource, PointTarget>::tree_;
@@ -83,7 +84,7 @@ namespace pcl
     public:
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       /** \brief Constructor. */
-      MySampleConsensusInitialAlignment () : nr_samples_(3)
+      MySampleConsensusInitialAlignment () : nr_samples_(3), feature_matching_threshold_(0.8)
       {
         reg_name_ = "MySampleConsensusInitialAlignment";
         feature_tree_ = boost::make_shared<pcl::KdTreeFLANN<FeatureT> > ();
@@ -120,6 +121,19 @@ namespace pcl
       float getMinSampleDistance () { return (min_sample_distance_); }
 
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+      /** \brief Set the threshold for correspondence selection/rejection
+        * As described in Lowe 2003, "Distinctive Image Features from Scale-Invariant Keypoints", to find a feature
+        * match the first 2 nearest neighbors of a feature are retrieved. If the ratio of the distance to the first
+        * to the distance of the second is below this threshold, the match is assumed as valid.
+        * \param threshold the threshold
+        */
+      void setFeatureMatchingThreshold (float threshold) { feature_matching_threshold_ = threshold; }
+
+      //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+      /** \brief Get the current threshold for feature correspondence rejection */
+      float getFeatureMatchingThreshold () { return (feature_matching_threshold_); }
+
+      //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       /** \brief Set the number of samples to use during each iteration
         * \param nr_samples the number of samples to use during each iteration
         */
@@ -148,6 +162,16 @@ namespace pcl
                           std::vector<int> &sample_indices);
 
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+      /** \brief Selects  nr_samples_ correspondences while making sure that their pairwise distances are greater 
+        * than a user-defined minimum distance (min_sample_distance_).
+        * \param source_indices the resulting indices in the source data
+        * \param target_indices the resulting indices in the target data
+        */
+       void selectCorrespondences (const std::vector<int> &input_matched_indices, 
+               const std::vector<int> &target_matched_indices,
+               std::vector<int> &source_indices, std::vector<int> &target_indices);
+
+      //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       /** \brief For each of the sample points, find a list of points in the target cloud whose features are similar to 
         * the sample points' features. From these, select one randomly which will be considered that sample point's 
         * correspondence. 
@@ -155,8 +179,25 @@ namespace pcl
         * \param sample_indices the indices of each sample point
         * \param corresponding_indices the resulting indices of each sample's corresponding point in the target cloud
         */
-      void findSimilarFeatures(const FeatureCloud &input_features, const std::vector<int> &sample_indices, 
+      void findSimilarFeatures (const FeatureCloud &input_features, const std::vector<int> &sample_indices, 
                                std::vector<int> &corresponding_indices);
+
+      //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+      /** \brief For the given \a input_feature, find its next 2 neighbors in the target feature cloud 
+        * and return the matching index if the ratio of the distances of the 2 neighbors is below the feature matching
+        * threshold.
+        * \param input_feature feature descriptors
+        * \param ratio_threshold threshold for the matching
+        * \param corresponding_index the resulting index in the target cloud, if no correspondence is found, the
+        *        value remains untouched
+        * \return true if a similar feature was found, false otherwise
+        */
+      bool findSimilarFeature (const FeatureT &input_feature, float ratio_threshold, int &corresponding_index);
+
+      //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+       /** \brief finds all matchings between input and target features 
+        */
+       void findAllMatchings(std::vector<int> &input_matched_indices, std::vector<int> & target_matched_indices);
 
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       /** \brief An error metric for that computes the quality of the alignment between the given cloud and the target.
@@ -184,6 +225,9 @@ namespace pcl
 
       /** \brief The minimum distances between samples. */
       float min_sample_distance_;
+
+      /** \brief threshold for feature correspondence acceptance/rejection */
+      float feature_matching_threshold_;
      
       /** \brief The KdTree used to compare feature descriptors. */
       FeatureKdTreePtr feature_tree_;               

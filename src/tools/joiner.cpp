@@ -29,8 +29,10 @@ int main(int argc, char** argv)
         ("output_features,H", po::value<std::string>()->required(), "PCD file for registration result (features)")
         ("num_samples,N", po::value<int>()->default_value(3), "number of samples for RANSAC")
         ("min_sample_distance,D", po::value<double>()->default_value(0.1), "minimum distance of samples")
+        ("ransac_threshold,T", po::value<double>()->default_value(0.05), "ransac outlier rejection threshold")
         ("max_alignment_iterations,I", po::value<int>()->default_value(1000), "maximum number of RANSAC iterations for initial alignment")
-        ("max_icp_iterations,J", po::value<int>()->default_value(1000), "maximum number of RANSAC iterations for icp")
+        ("max_icp_iterations,J", po::value<int>()->default_value(1000), "maximum number of iterations for icp")
+        ("max_icp_distance,M", po::value<double>()->default_value(0.1), "maximum distance for correspondences in ICP");
         ;
 
     po::variables_map vm;
@@ -54,8 +56,10 @@ int main(int argc, char** argv)
     std::string output_features_file = vm["output_features"].as<std::string>();
     int num_samples = vm["num_samples"].as<int>();
     double min_sample_distance = vm["min_sample_distance"].as<double>();
+    double ransac_threshold = vm["ransac_threshold"].as<double>();
     int max_alignment_iterations = vm["max_alignment_iterations"].as<int>();
     int max_icp_iterations = vm["max_icp_iterations"].as<int>();
+    double max_icp_distance = vm["max_icp_distance"].as<double>();
 
 
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr 
@@ -106,6 +110,7 @@ int main(int argc, char** argv)
     sac_ia.setNumberOfSamples(num_samples);
     sac_ia.setMaximumIterations(max_alignment_iterations);
     sac_ia.setMinSampleDistance(min_sample_distance);
+    sac_ia.setRANSACOutlierRejectionThreshold(ransac_threshold);
     std::cout << "number of samples = " << sac_ia.getNumberOfSamples() << std::endl;
     std::cout << "minimum sample distance = " << sac_ia.getMinSampleDistance() << std::endl;
     std::cout << "max iterations = " << sac_ia.getMaximumIterations() << std::endl;
@@ -133,6 +138,7 @@ int main(int argc, char** argv)
     // run ICP
     pcl::IterativeClosestPoint<pcl::PointXYZRGB, pcl::PointXYZRGB> icp;
     icp.setMaximumIterations(max_icp_iterations);
+    icp.setMaxCorrespondenceDistance(max_icp_distance);
     std::cout << "ICP max iterations = " << icp.getMaximumIterations() << std::endl;
     std::cout << "ICP ransac outlier threshold = " << icp.getRANSACOutlierRejectionThreshold() << std::endl;
     std::cout << "ICP max correspondence distance = " << icp.getMaxCorrespondenceDistance() << std::endl;
@@ -143,6 +149,7 @@ int main(int argc, char** argv)
     icp.align(registration_output);
     std::cout << "ICP transformation: \n" << icp.getFinalTransformation() << std::endl;
     std::cout << "ICP fitness score = " << icp.getFitnessScore() << std::endl;
+    std::cout << "has converged = " << icp.hasConverged() << std::endl;
 
     std::cout << "final transformation: \n" << transformation * icp.getFinalTransformation() << std::endl;
 

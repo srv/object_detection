@@ -112,6 +112,16 @@ def runExperiment(experiment):
     if subprocess.call(cmd) != 0:
         print "ERROR running transformation_estimator!"
         sys.exit(2)
+    cmd = ["rosrun", "object_detection", "transformation_error_calculator"]
+    cmd.append("-P")
+    cmd.append(points_file_from)
+    cmd.append("-I")
+    cmd.append(experiment.transformation)
+    cmd.append("-E")
+    cmd.append(estimated_transformation_file)
+    if subprocess.call(cmd) != 0:
+        print "ERROR running transformation_error_calculator!"
+        sys.exit(2)
 
 
 def main(argv):

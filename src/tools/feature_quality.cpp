@@ -59,7 +59,7 @@ int main(int argc, char** argv)
     for (size_t i = 0; i < feature_cloud->points.size(); ++i)
     {
         kd_tree.nearestKSearch(i, k, nn_indices, nn_distances);
-        assert(nn_indices[0] == i); // to be sure...
+        assert(nn_indices[0] == (int)i); // to be sure...
         assert(nn_distances[0] == 0);
         distances[i] = nn_distances[1];
     }

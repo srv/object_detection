@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 
 #include <boost/program_options.hpp>
 #include <pcl/point_cloud.h>
@@ -27,10 +28,11 @@ int main(int argc, char** argv)
         ("model_features,G", po::value<std::string>()->required(), "PCD file for model features")
         ("num_samples,N", po::value<int>()->default_value(3), "number of samples for RANSAC")
         ("min_sample_distance,D", po::value<double>()->default_value(0.1), "minimum distance of samples")
-        ("ransac_threshold,T", po::value<double>()->default_value(0.05), "ransac outlier rejection threshold")
+        ("ransac_threshold,R", po::value<double>()->default_value(0.05), "ransac outlier rejection threshold")
         ("max_alignment_iterations,I", po::value<int>()->default_value(1000), "maximum number of RANSAC iterations for initial alignment")
         ("max_icp_iterations,J", po::value<int>()->default_value(1000), "maximum number of iterations for icp")
-        ("max_icp_distance,M", po::value<double>()->default_value(0.1), "maximum distance for correspondences in ICP");
+        ("max_icp_distance,M", po::value<double>()->default_value(0.1), "maximum distance for correspondences in ICP")
+        ("transform_file,T", po::value<std::string>(), "filename for transformation output")
         ;
 
     po::variables_map vm;
@@ -147,7 +149,26 @@ int main(int argc, char** argv)
     std::cout << "ICP fitness score = " << icp.getFitnessScore() << std::endl;
     std::cout << "has converged = " << icp.hasConverged() << std::endl;
 
-    std::cout << "final transformation: \n" << transformation * icp.getFinalTransformation() << std::endl;
+    Eigen::Matrix4f final_transformation = transformation * icp.getFinalTransformation();
+    std::cout << "final transformation: \n" << final_transformation << std::endl;
+
+    if (vm.count("transform_file"))
+    {
+        std::string filename = vm["transform_file"].as<std::string>();
+        std::ofstream out(filename.c_str());
+        if (!out.is_open()) 
+        {
+            std::cerr << "cannot open " << filename << " for writing." << std::endl;
+            return -2;
+        }
+        for (int r = 0; r < 4; ++r)
+        {
+            for (int c = 0; c < 4; ++c)
+                out << final_transformation(r, c) << " ";
+            out << std::endl;
+        }
+        out.close();
+    }
 
     return 0;
 }

@@ -2,6 +2,7 @@
 import sys
 import subprocess
 import os
+import ConfigParser
 
 class Experiment:
     pass
@@ -57,9 +58,6 @@ def collectExperiments(folder_path):
         from_pair = image_pairs[index]
         to_pair = image_pairs[index + 1]
         transformation_file = folder_path + "/transformations/" + from_pair.numString() + "to" + to_pair.numString() + ".txt"
-        print "from", from_pair.left
-        print "to", to_pair.right
-        print "transformation file", transformation_file
         experiment = Experiment()
         experiment.calibration = calibration_set
         experiment.transformation = transformation_file
@@ -69,7 +67,7 @@ def collectExperiments(folder_path):
     return experiments
 
 
-def runExperiment(experiment):
+def runExperiment(experiment, config):
     points_file_from = "points" + experiment.from_pair.numString() + ".pcd"
     descriptors_file_from = "descriptors" + experiment.from_pair.numString() + ".pcd"
     points_file_to = "points" + experiment.to_pair.numString() + ".pcd"
@@ -88,6 +86,9 @@ def runExperiment(experiment):
     cmd.append(points_file_from)
     cmd.append("-D")
     cmd.append(descriptors_file_from)
+    for (k, v) in config.items("extractor"):
+        cmd.append("--" + k)
+        cmd.append(v)
     print "Running extractor for 'from' image pair..."
     print " ".join(cmd)
     if subprocess.call(cmd) != 0:
@@ -102,7 +103,6 @@ def runExperiment(experiment):
     if subprocess.call(cmd) != 0:
         print "ERROR running extractor!"
         sys.exit(2)
-    print "Running transformation_estimator..."
     cmd = ["rosrun", "object_detection", "transformation_estimator"]
     cmd.append("-P")
     cmd.append(points_file_from)
@@ -114,6 +114,10 @@ def runExperiment(experiment):
     cmd.append(descriptors_file_to)
     cmd.append("-T")
     cmd.append(transform_file)
+    for (k, v) in config.items("transformation_estimator"):
+        cmd.append("--" + k)
+        cmd.append(v)
+    print "Running transformation_estimator..."
     print " ".join(cmd)
     if subprocess.call(cmd) != 0:
         print "ERROR running transformation_estimator!"
@@ -154,6 +158,8 @@ def main(argv):
         return 1
 
     print "Using config file", config_file
+    config = ConfigParser.ConfigParser()
+    config.readfp(open(config_file))
 
     experiments = collectExperiments(data_path)
     num_experiments = len(experiments)
@@ -161,7 +167,7 @@ def main(argv):
     i = 0
     for experiment in experiments:
         print "***** Running experiment {0} of {1}... *****".format(i, num_experiments)
-        runExperiment(experiments[i])
+        runExperiment(experiments[i], config)
         i = i + 1
 
 if __name__ == "__main__":

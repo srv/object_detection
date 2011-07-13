@@ -8,6 +8,42 @@
 
 namespace po = boost::program_options;
 
+class Statistics
+{
+  public:
+    double mean;
+    double min;
+    double max;
+    double variance;
+    int num_values;
+
+    Statistics() :
+        mean(0.0),
+        min(std::numeric_limits<double>::max()),
+        max(-std::numeric_limits<double>::max()),
+        variance(0.0),
+        num_values(0),
+        m2_(0.0)
+    {}
+
+    void record(double val)
+    {
+        num_values++;
+        if (val > max) max = val;
+        if (val < min) min = val;
+
+        // http://en.wikipedia.org/wiki/Algorithms_for_calculating_variance
+        double delta = val - mean;
+        mean += delta / num_values;
+        m2_ += delta * (val - mean);
+        if (num_values > 1) variance = m2_ / (num_values - 1);
+    }
+
+    private:
+        double m2_; // helper for floating variance
+
+};
+
 bool loadTransformation(const std::string& filename, Eigen::Matrix4f& transformation)
 {
     std::ifstream in(filename.c_str());
@@ -98,9 +134,9 @@ int main(int argc, char** argv)
 
     std::cout << "Translation error: " << computeTranslationError(true_transformation, estimated_transformation) << std::endl;
     std::cout << "Rotation axis error (angle between axes): "
-        << computeRotationAxisError(true_transformation, estimated_transformation, verbose) / M_PI * 180.0 << std::endl;
+        << computeRotationAxisError(true_transformation, estimated_transformation, verbose) / M_PI * 180.0 << " deg" << std::endl;
     std::cout << "Rotation angle error (difference in 'amount' of rotation): "
-        << computeRotationAngleError(true_transformation, estimated_transformation, verbose) << std::endl;
+        << computeRotationAngleError(true_transformation, estimated_transformation, verbose) / M_PI * 180.0 << " deg" << std::endl;
 
     if (vm.count("points"))
     {
@@ -117,7 +153,7 @@ int main(int argc, char** argv)
             std::cout << "Loaded " << point_cloud->points.size()
             << " points from " << points_file << "." << std::endl;
         }
-        double error = 0.0;
+        Statistics stats;
         for (size_t i = 0; i < point_cloud->points.size(); ++i)
         {
             pcl::PointXYZ& point = point_cloud->points[i];
@@ -125,10 +161,10 @@ int main(int argc, char** argv)
             Eigen::Vector4f ideal_point = true_transformation * vec;
             Eigen::Vector4f estimated_point = estimated_transformation * vec;
             Eigen::Vector4f dist = ideal_point - estimated_point;
-            error += dist.norm();
+            stats.record(dist.norm());
         }
-        error /= point_cloud->points.size();
-        std::cout << "Mean reprojection error (distance from true to estimated point): " << error << std::endl;
+        std::cout << "reprojection error (distance from true to estimated point) mean/min/max/stddev: " 
+            << stats.mean << " / " << stats.min << " / " << stats.max << " / " << sqrt(stats.variance) << std::endl;
 
     }
     return 0;

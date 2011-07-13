@@ -74,6 +74,7 @@ def runExperiment(experiment):
     descriptors_file_from = "descriptors" + experiment.from_pair.numString() + ".pcd"
     points_file_to = "points" + experiment.to_pair.numString() + ".pcd"
     descriptors_file_to = "descriptors" + experiment.to_pair.numString() + ".pcd"
+    transform_file = experiment.from_pair.numString() + "to" + experiment.to_pair.numString() + "-est.txt"
     cmd = ["rosrun", "stereo_feature_extraction", "extractor"]
     cmd.append("-L")
     cmd.append(experiment.from_pair.left)
@@ -88,6 +89,7 @@ def runExperiment(experiment):
     cmd.append("-D")
     cmd.append(descriptors_file_from)
     print "Running extractor for 'from' image pair..."
+    print " ".join(cmd)
     if subprocess.call(cmd) != 0:
         print "ERROR running extractor!"
         sys.exit(2)
@@ -96,6 +98,7 @@ def runExperiment(experiment):
     cmd[12] = points_file_to
     cmd[14] = descriptors_file_to
     print "Running extractor for 'to' image pair..."
+    print " ".join(cmd)
     if subprocess.call(cmd) != 0:
         print "ERROR running extractor!"
         sys.exit(2)
@@ -109,16 +112,20 @@ def runExperiment(experiment):
     cmd.append(descriptors_file_from)
     cmd.append("-G")
     cmd.append(descriptors_file_to)
+    cmd.append("-T")
+    cmd.append(transform_file)
+    print " ".join(cmd)
     if subprocess.call(cmd) != 0:
         print "ERROR running transformation_estimator!"
         sys.exit(2)
     cmd = ["rosrun", "object_detection", "transformation_error_calculator"]
     cmd.append("-P")
     cmd.append(points_file_from)
-    cmd.append("-I")
+    cmd.append("-T")
     cmd.append(experiment.transformation)
     cmd.append("-E")
-    cmd.append(estimated_transformation_file)
+    cmd.append(transform_file)
+    print " ".join(cmd)
     if subprocess.call(cmd) != 0:
         print "ERROR running transformation_error_calculator!"
         sys.exit(2)

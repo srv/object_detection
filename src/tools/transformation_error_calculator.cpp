@@ -38,7 +38,7 @@ double computeRotationAxisError(const Eigen::Matrix4f& true_transform, const Eig
     Eigen::AngleAxisf aa_est;
     aa_est.fromRotationMatrix(estimated_transform.topLeftCorner<3, 3>());
     if (verbose) std::cout << "Est. Axis: " << aa_est.axis() << std::endl;
-    return 1.0 - aa_est.axis().dot(aa_real.axis());
+    return acos(aa_est.axis().dot(aa_real.axis()));
 }
 
 double computeRotationAngleError(const Eigen::Matrix4f& true_transform, const Eigen::Matrix4f& estimated_transform, bool verbose)
@@ -97,8 +97,8 @@ int main(int argc, char** argv)
     if (verbose) std::cout << "Loaded estimated transformation:\n" << estimated_transformation << std::endl;
 
     std::cout << "Translation error: " << computeTranslationError(true_transformation, estimated_transformation) << std::endl;
-    std::cout << "Rotation axis error (0 = same axis, 1 = perpendicular axes): "
-        << computeRotationAxisError(true_transformation, estimated_transformation, verbose) << std::endl;
+    std::cout << "Rotation axis error (angle between axes): "
+        << computeRotationAxisError(true_transformation, estimated_transformation, verbose) / M_PI * 180.0 << std::endl;
     std::cout << "Rotation angle error (difference in 'amount' of rotation): "
         << computeRotationAngleError(true_transformation, estimated_transformation, verbose) << std::endl;
 

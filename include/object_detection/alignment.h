@@ -207,6 +207,25 @@ namespace pcl
       float computeErrorMetric (const PointCloudSource &cloud, float threshold);
 
     protected:
+
+
+      inline void 
+      computeSampleDistanceThreshold (const PointCloudSource &cloud)
+      {
+        // Compute the principal directions via PCA
+        Eigen::Vector4f xyz_centroid;
+        compute3DCentroid (cloud, xyz_centroid);
+        EIGEN_ALIGN16 Eigen::Matrix3f covariance_matrix;
+        computeCovarianceMatrixNormalized (cloud, xyz_centroid, covariance_matrix);
+        EIGEN_ALIGN16 Eigen::Vector3f eigen_values;
+        EIGEN_ALIGN16 Eigen::Matrix3f eigen_vectors;
+        pcl::eigen33 (covariance_matrix, eigen_vectors, eigen_values);
+
+        // Compute the distance threshold for sample selection
+        sample_dist_thresh_ = eigen_values.array ().sqrt ().sum () / 3.0;
+        //sample_dist_thresh_ *= sample_dist_thresh_;
+      }
+
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       /** \brief Rigid transformation computation method.
         * \param output the transformed input point cloud dataset using the rigid transformation found
@@ -225,6 +244,7 @@ namespace pcl
 
       /** \brief The minimum distances between samples. */
       float min_sample_distance_;
+      float sample_dist_thresh_;
 
       /** \brief threshold for feature correspondence acceptance/rejection */
       float feature_matching_threshold_;

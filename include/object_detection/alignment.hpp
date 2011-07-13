@@ -133,6 +133,7 @@ pcl::MySampleConsensusInitialAlignment<PointSource, PointTarget, FeatureT>::sele
     return;
   }
 
+
   // Iteratively draw random samples until nr_samples is reached
   int iterations_without_a_sample = 0;
   int max_iterations_without_a_sample = 3 * input_->points.size ();
@@ -151,7 +152,8 @@ pcl::MySampleConsensusInitialAlignment<PointSource, PointTarget, FeatureT>::sele
     {
       float distance_between_samples = euclideanDistance (input_->points[sample_index], input_->points[source_indices[i]]);
 
-      if (sample_index == source_indices[i] || distance_between_samples < min_sample_distance_)
+      //if (sample_index == source_indices[i] || distance_between_samples < min_sample_distance_)
+      if (sample_index == source_indices[i] || distance_between_samples < sample_dist_thresh_)
       {
           valid_sample = false;
           break;
@@ -313,6 +315,10 @@ pcl::MySampleConsensusInitialAlignment<PointSource, PointTarget, FeatureT>::comp
   std::vector<int> target_matched_indices;
 
   findAllMatchings(input_matched_indices, target_matched_indices);
+
+  computeSampleDistanceThreshold(*input_);
+  ROS_INFO ("[pcl::%s::computeTransformation] Computed sample distance threshold of %f", 
+             getClassName ().c_str (), sample_dist_thresh_);
 
   for (int i_iter = 0; i_iter < max_iterations_; ++i_iter)
   {

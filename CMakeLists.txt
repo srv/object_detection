@@ -70,6 +70,7 @@ rosbuild_add_executable(detection_display_node src/nodes/detection_display_node.
 rosbuild_add_executable(movement_calculator_node src/nodes/movement_calculator_node.cpp)
 rosbuild_add_executable(joiner src/tools/joiner.cpp)
 rosbuild_add_executable(transformation_estimator src/tools/transformation_estimator.cpp)
+rosbuild_add_executable(transformation_error_calculator src/tools/transformation_error_calculator.cpp)
 rosbuild_add_executable(feature_quality src/tools/feature_quality.cpp)
 
 target_link_libraries(object_detector_node object_detection)

@@ -91,7 +91,7 @@ int main(int argc, char** argv)
     Eigen::Matrix4f estimated_transformation;
     if (!loadTransformation(estimated_transformation_file, estimated_transformation))
     {
-        std::cerr << "Cannot load transformation from " << true_transformation_file << "." << std::endl;
+        std::cerr << "Cannot load transformation from " << estimated_transformation_file << "." << std::endl;
         return -2;
     }
     if (verbose) std::cout << "Loaded estimated transformation:\n" << estimated_transformation << std::endl;

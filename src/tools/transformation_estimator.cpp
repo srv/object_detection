@@ -27,11 +27,8 @@ int main(int argc, char** argv)
         ("model_points,Q", po::value<std::string>()->required(), "PCD file for model points")
         ("model_features,G", po::value<std::string>()->required(), "PCD file for model features")
         ("num_samples,N", po::value<int>()->default_value(3), "number of samples for RANSAC")
-        ("min_sample_distance,D", po::value<double>()->default_value(0.1), "minimum distance of samples")
-        ("ransac_threshold,R", po::value<double>()->default_value(0.05), "ransac outlier rejection threshold")
-        ("max_alignment_iterations,I", po::value<int>()->default_value(1000), "maximum number of RANSAC iterations for initial alignment")
-        ("max_icp_iterations,J", po::value<int>()->default_value(1000), "maximum number of iterations for icp")
-        ("max_icp_distance,M", po::value<double>()->default_value(0.1), "maximum distance for correspondences in ICP")
+        ("ransac_threshold,R", po::value<double>()->default_value(0.05), "RANSAC outlier rejection threshold")
+        ("max_ransac_iterations,I", po::value<int>()->default_value(1000), "maximum number of RANSAC iterations")
         ("transform_file,T", po::value<std::string>(), "filename for transformation output")
         ;
 
@@ -53,12 +50,8 @@ int main(int argc, char** argv)
     std::string model_points_file = vm["model_points"].as<std::string>();
     std::string model_features_file = vm["model_features"].as<std::string>();
     int num_samples = vm["num_samples"].as<int>();
-    double min_sample_distance = vm["min_sample_distance"].as<double>();
     double ransac_threshold = vm["ransac_threshold"].as<double>();
-    int max_alignment_iterations = vm["max_alignment_iterations"].as<int>();
-    int max_icp_iterations = vm["max_icp_iterations"].as<int>();
-    double max_icp_distance = vm["max_icp_distance"].as<double>();
-
+    int max_ransac_iterations = vm["max_ransac_iterations"].as<int>();
 
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr 
         scene_point_cloud(new pcl::PointCloud<pcl::PointXYZRGB>());
@@ -106,11 +99,9 @@ int main(int argc, char** argv)
 
     pcl::MySampleConsensusInitialAlignment<pcl::PointXYZRGB, pcl::PointXYZRGB, Descriptor> sac_ia;
     sac_ia.setNumberOfSamples(num_samples);
-    sac_ia.setMaximumIterations(max_alignment_iterations);
-    sac_ia.setMinSampleDistance(min_sample_distance);
+    sac_ia.setMaximumIterations(max_ransac_iterations);
     sac_ia.setRANSACOutlierRejectionThreshold(ransac_threshold);
     std::cout << "number of samples = " << sac_ia.getNumberOfSamples() << std::endl;
-    std::cout << "minimum sample distance = " << sac_ia.getMinSampleDistance() << std::endl;
     std::cout << "max iterations = " << sac_ia.getMaximumIterations() << std::endl;
     std::cout << "ransac outlier threshold = " << sac_ia.getRANSACOutlierRejectionThreshold() << std::endl;
     std::cout << "max correspondence distance = " << sac_ia.getMaxCorrespondenceDistance() << std::endl;
@@ -120,38 +111,17 @@ int main(int argc, char** argv)
     sac_ia.setInputTarget(scene_point_cloud);
     sac_ia.setTargetFeatures(scene_feature_cloud);
     sac_ia.setMaxCorrespondenceDistance(0.5);
-    sac_ia.setMinSampleDistance(0.0);
     // set point representation of descriptor to use all 64 values (default is 3)
     //pcl::CustomPointRepresentation<Descriptor>::Ptr descriptor_point_representation(64);
     //sac_ia.setPointRepresentation(descriptor_point_representation.makeShared());
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr alignment_output(new pcl::PointCloud<pcl::PointXYZRGB>());
     sac_ia.align(*alignment_output);
-    std::cout << "has converged = " << sac_ia.hasConverged() << std::endl;
 
     Eigen::Matrix4f transformation = sac_ia.getFinalTransformation();
     std::cout << "Transformation: " << std::endl;
     std::cout << transformation << std::endl;
-    std::cout << "fitness score = " << sac_ia.getFitnessScore() << std::endl;
 
-    // run ICP
-    pcl::IterativeClosestPoint<pcl::PointXYZRGB, pcl::PointXYZRGB> icp;
-    icp.setMaximumIterations(max_icp_iterations);
-    icp.setMaxCorrespondenceDistance(max_icp_distance);
-    std::cout << "ICP max iterations = " << icp.getMaximumIterations() << std::endl;
-    std::cout << "ICP ransac outlier threshold = " << icp.getRANSACOutlierRejectionThreshold() << std::endl;
-    std::cout << "ICP max correspondence distance = " << icp.getMaxCorrespondenceDistance() << std::endl;
-    std::cout << "ICP transformation epsilon = " << icp.getTransformationEpsilon() << std::endl;
-    pcl::PointCloud<pcl::PointXYZRGB> registration_output;
-    icp.setInputCloud(alignment_output);
-    icp.setInputTarget(scene_point_cloud);
-    icp.align(registration_output);
-    std::cout << "ICP transformation: \n" << icp.getFinalTransformation() << std::endl;
-    std::cout << "ICP fitness score = " << icp.getFitnessScore() << std::endl;
-    std::cout << "has converged = " << icp.hasConverged() << std::endl;
-
-    Eigen::Matrix4f final_transformation = transformation * icp.getFinalTransformation();
-    std::cout << "final transformation: \n" << final_transformation << std::endl;
-
+    Eigen::Matrix4f final_transformation = transformation;
     if (vm.count("transform_file"))
     {
         std::string filename = vm["transform_file"].as<std::string>();

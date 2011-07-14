@@ -111,16 +111,6 @@ namespace pcl
       inline FeatureCloudConstPtr const getTargetFeatures () { return (target_features_); }
 
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-      /** \brief Set the minimum distances between samples
-        * \param min_sample_distance the minimum distances between samples
-        */
-      void setMinSampleDistance (float min_sample_distance) { min_sample_distance_ = min_sample_distance; }
-
-      //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-      /** \brief Get the minimum distances between samples, as set by the user */
-      float getMinSampleDistance () { return (min_sample_distance_); }
-
-      //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       /** \brief Set the threshold for correspondence selection/rejection
         * As described in Lowe 2003, "Distinctive Image Features from Scale-Invariant Keypoints", to find a feature
         * match the first 2 nearest neighbors of a feature are retrieved. If the ratio of the distance to the first
@@ -243,7 +233,6 @@ namespace pcl
       int nr_samples_;
 
       /** \brief The minimum distances between samples. */
-      float min_sample_distance_;
       float sample_dist_thresh_;
 
       /** \brief threshold for feature correspondence acceptance/rejection */

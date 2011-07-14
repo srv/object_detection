@@ -72,6 +72,7 @@ rosbuild_add_executable(joiner src/tools/joiner.cpp)
 rosbuild_add_executable(transformation_estimator src/tools/transformation_estimator.cpp)
 rosbuild_add_executable(transformation_error_calculator src/tools/transformation_error_calculator.cpp)
 rosbuild_add_executable(feature_quality src/tools/feature_quality.cpp)
+rosbuild_add_executable(sample_distance_threshold_computation src/tools/sample_distance_threshold_computation.cpp)
 
 target_link_libraries(object_detector_node object_detection)
 target_link_libraries(trainer_node object_detection)

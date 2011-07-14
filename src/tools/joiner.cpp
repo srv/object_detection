@@ -28,7 +28,6 @@ int main(int argc, char** argv)
         ("output_points,R", po::value<std::string>()->required(), "PCD file for registration result (points)")
         ("output_features,H", po::value<std::string>()->required(), "PCD file for registration result (features)")
         ("num_samples,N", po::value<int>()->default_value(3), "number of samples for RANSAC")
-        ("min_sample_distance,D", po::value<double>()->default_value(0.1), "minimum distance of samples")
         ("ransac_threshold,T", po::value<double>()->default_value(0.05), "ransac outlier rejection threshold")
         ("max_alignment_iterations,I", po::value<int>()->default_value(1000), "maximum number of RANSAC iterations for initial alignment")
         ("max_icp_iterations,J", po::value<int>()->default_value(1000), "maximum number of iterations for icp")
@@ -55,7 +54,6 @@ int main(int argc, char** argv)
     std::string output_points_file = vm["output_points"].as<std::string>();
     std::string output_features_file = vm["output_features"].as<std::string>();
     int num_samples = vm["num_samples"].as<int>();
-    double min_sample_distance = vm["min_sample_distance"].as<double>();
     double ransac_threshold = vm["ransac_threshold"].as<double>();
     int max_alignment_iterations = vm["max_alignment_iterations"].as<int>();
     int max_icp_iterations = vm["max_icp_iterations"].as<int>();
@@ -109,10 +107,8 @@ int main(int argc, char** argv)
     pcl::MySampleConsensusInitialAlignment<pcl::PointXYZRGB, pcl::PointXYZRGB, Descriptor> sac_ia;
     sac_ia.setNumberOfSamples(num_samples);
     sac_ia.setMaximumIterations(max_alignment_iterations);
-    sac_ia.setMinSampleDistance(min_sample_distance);
     sac_ia.setRANSACOutlierRejectionThreshold(ransac_threshold);
     std::cout << "number of samples = " << sac_ia.getNumberOfSamples() << std::endl;
-    std::cout << "minimum sample distance = " << sac_ia.getMinSampleDistance() << std::endl;
     std::cout << "max iterations = " << sac_ia.getMaximumIterations() << std::endl;
     std::cout << "ransac outlier threshold = " << sac_ia.getRANSACOutlierRejectionThreshold() << std::endl;
     std::cout << "max correspondence distance = " << sac_ia.getMaxCorrespondenceDistance() << std::endl;
@@ -122,7 +118,6 @@ int main(int argc, char** argv)
     sac_ia.setInputTarget(scene_point_cloud);
     sac_ia.setTargetFeatures(scene_feature_cloud);
     sac_ia.setMaxCorrespondenceDistance(0.5);
-    sac_ia.setMinSampleDistance(0.0);
     // set point representation of descriptor to use all 64 values (default is 3)
     //pcl::CustomPointRepresentation<Descriptor>::Ptr descriptor_point_representation(64);
     //sac_ia.setPointRepresentation(descriptor_point_representation.makeShared());

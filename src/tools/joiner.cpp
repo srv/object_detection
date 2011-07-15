@@ -104,31 +104,31 @@ int main(int argc, char** argv)
     std::cerr << "Loaded " << model_feature_cloud->points.size()
         << " model features from " << model_features_file << "." << std::endl;
 
-    pcl::MySampleConsensusInitialAlignment<pcl::PointXYZRGB, pcl::PointXYZRGB, Descriptor> sac_ia;
-    sac_ia.setNumberOfSamples(num_samples);
-    sac_ia.setMaximumIterations(max_alignment_iterations);
-    sac_ia.setRANSACOutlierRejectionThreshold(ransac_threshold);
-    std::cout << "number of samples = " << sac_ia.getNumberOfSamples() << std::endl;
-    std::cout << "max iterations = " << sac_ia.getMaximumIterations() << std::endl;
-    std::cout << "ransac outlier threshold = " << sac_ia.getRANSACOutlierRejectionThreshold() << std::endl;
-    std::cout << "max correspondence distance = " << sac_ia.getMaxCorrespondenceDistance() << std::endl;
-    std::cout << "transformation epsilon = " << sac_ia.getTransformationEpsilon() << std::endl;
-    sac_ia.setInputCloud(model_point_cloud);
-    sac_ia.setSourceFeatures(model_feature_cloud);
-    sac_ia.setInputTarget(scene_point_cloud);
-    sac_ia.setTargetFeatures(scene_feature_cloud);
-    sac_ia.setMaxCorrespondenceDistance(0.5);
+    object_detection::Alignment<pcl::PointXYZRGB, pcl::PointXYZRGB, Descriptor> alignment;
+    alignment.setNumberOfSamples(num_samples);
+    alignment.setMaximumIterations(max_alignment_iterations);
+    alignment.setRANSACOutlierRejectionThreshold(ransac_threshold);
+    std::cout << "number of samples = " << alignment.getNumberOfSamples() << std::endl;
+    std::cout << "max iterations = " << alignment.getMaximumIterations() << std::endl;
+    std::cout << "ransac outlier threshold = " << alignment.getRANSACOutlierRejectionThreshold() << std::endl;
+    std::cout << "max correspondence distance = " << alignment.getMaxCorrespondenceDistance() << std::endl;
+    std::cout << "transformation epsilon = " << alignment.getTransformationEpsilon() << std::endl;
+    alignment.setInputCloud(model_point_cloud);
+    alignment.setSourceFeatures(model_feature_cloud);
+    alignment.setInputTarget(scene_point_cloud);
+    alignment.setTargetFeatures(scene_feature_cloud);
+    alignment.setMaxCorrespondenceDistance(0.5);
     // set point representation of descriptor to use all 64 values (default is 3)
     //pcl::CustomPointRepresentation<Descriptor>::Ptr descriptor_point_representation(64);
-    //sac_ia.setPointRepresentation(descriptor_point_representation.makeShared());
+    //alignment.setPointRepresentation(descriptor_point_representation.makeShared());
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr alignment_output(new pcl::PointCloud<pcl::PointXYZRGB>());
-    sac_ia.align(*alignment_output);
-    std::cout << "has converged = " << sac_ia.hasConverged() << std::endl;
+    alignment.align(*alignment_output);
+    std::cout << "has converged = " << alignment.hasConverged() << std::endl;
 
-    Eigen::Matrix4f transformation = sac_ia.getFinalTransformation();
+    Eigen::Matrix4f transformation = alignment.getFinalTransformation();
     std::cout << "Transformation: " << std::endl;
     std::cout << transformation << std::endl;
-    std::cout << "fitness score = " << sac_ia.getFitnessScore() << std::endl;
+    std::cout << "fitness score = " << alignment.getFitnessScore() << std::endl;
 
     // run ICP
     pcl::IterativeClosestPoint<pcl::PointXYZRGB, pcl::PointXYZRGB> icp;

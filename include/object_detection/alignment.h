@@ -1,38 +1,3 @@
-/*
- * Software License Agreement (BSD License)
- *
- *  Copyright (c) 2010, Willow Garage, Inc.
- *  All rights reserved.
- *
- *  Redistribution and use in source and binary forms, with or without
- *  modification, are permitted provided that the following conditions
- *  are met:
- *
- *   * Redistributions of source code must retain the above copyright
- *     notice, this list of conditions and the following disclaimer.
- *   * Redistributions in binary form must reproduce the above
- *     copyright notice, this list of conditions and the following
- *     disclaimer in the documentation and/or other materials provided
- *     with the distribution.
- *   * Neither the name of Willow Garage, Inc. nor the names of its
- *     contributors may be used to endorse or promote products derived
- *     from this software without specific prior written permission.
- *
- *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- *  FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- *  COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- *  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- *  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- *  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
- *  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- *  LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- *  POSSIBILITY OF SUCH DAMAGE.
- *
- *
- */
 #ifndef ALIGNMENT_H_
 #define ALIGNMENT_H_
 
@@ -41,52 +6,50 @@
 
 // adapted from ia_ransac.h from pcl package
 
-namespace pcl
+namespace object_detection
 {
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  /** \brief @b SampleConsensusInitialAlignment is an implementation of the initial alignment algorithm described in
-   *  section IV of "Fast Point Feature Histograms (FPFH) for 3D Registration," Rusu et al.
-    * \author Radu Bogdan Rusu, Michael Dixon
+  /** \brief Alignment aligns two feature/point sets using ransac 
     */
   template <typename PointSource, typename PointTarget, typename FeatureT>
-  class MySampleConsensusInitialAlignment : public Registration<PointSource, PointTarget>
+  class Alignment : public pcl::Registration<PointSource, PointTarget>
   {
-    using Registration<PointSource, PointTarget>::reg_name_;
-    using Registration<PointSource, PointTarget>::getClassName;
-    using Registration<PointSource, PointTarget>::input_;
-    using Registration<PointSource, PointTarget>::indices_;
-    using Registration<PointSource, PointTarget>::target_;
-    using Registration<PointSource, PointTarget>::final_transformation_;
-    using Registration<PointSource, PointTarget>::transformation_;
-    using Registration<PointSource, PointTarget>::corr_dist_threshold_;
-    using Registration<PointSource, PointTarget>::inlier_threshold_;
-    using Registration<PointSource, PointTarget>::min_number_correspondences_;
-    using Registration<PointSource, PointTarget>::max_iterations_;
-    using Registration<PointSource, PointTarget>::tree_;
+    using pcl::Registration<PointSource, PointTarget>::reg_name_;
+    using pcl::Registration<PointSource, PointTarget>::getClassName;
+    using pcl::Registration<PointSource, PointTarget>::input_;
+    using pcl::Registration<PointSource, PointTarget>::indices_;
+    using pcl::Registration<PointSource, PointTarget>::target_;
+    using pcl::Registration<PointSource, PointTarget>::final_transformation_;
+    using pcl::Registration<PointSource, PointTarget>::transformation_;
+    using pcl::Registration<PointSource, PointTarget>::corr_dist_threshold_;
+    using pcl::Registration<PointSource, PointTarget>::inlier_threshold_;
+    using pcl::Registration<PointSource, PointTarget>::min_number_correspondences_;
+    using pcl::Registration<PointSource, PointTarget>::max_iterations_;
+    using pcl::Registration<PointSource, PointTarget>::tree_;
 
-    typedef typename Registration<PointSource, PointTarget>::PointCloudSource PointCloudSource;
+    typedef typename pcl::Registration<PointSource, PointTarget>::PointCloudSource PointCloudSource;
     typedef typename PointCloudSource::Ptr PointCloudSourcePtr;
     typedef typename PointCloudSource::ConstPtr PointCloudSourceConstPtr;
 
-    typedef typename Registration<PointSource, PointTarget>::PointCloudTarget PointCloudTarget;
+    typedef typename pcl::Registration<PointSource, PointTarget>::PointCloudTarget PointCloudTarget;
 
-    typedef PointIndices::Ptr PointIndicesPtr;
-    typedef PointIndices::ConstPtr PointIndicesConstPtr;
+    typedef pcl::PointIndices::Ptr PointIndicesPtr;
+    typedef pcl::PointIndices::ConstPtr PointIndicesConstPtr;
 
     typedef pcl::PointCloud<FeatureT> FeatureCloud;
     typedef typename FeatureCloud::Ptr FeatureCloudPtr;
     typedef typename FeatureCloud::ConstPtr FeatureCloudConstPtr;
 
-    typedef typename KdTreeFLANN<FeatureT>::Ptr FeatureKdTreePtr; 
+    typedef typename pcl::KdTreeFLANN<FeatureT>::Ptr FeatureKdTreePtr; 
 
     public:
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       /** \brief Constructor. */
-      MySampleConsensusInitialAlignment () : nr_samples_(3), feature_matching_threshold_(0.8)
+      Alignment () : nr_samples_(3), feature_matching_threshold_(0.8)
       {
-        reg_name_ = "MySampleConsensusInitialAlignment";
+        reg_name_ = "Alignment";
         feature_tree_ = boost::make_shared<pcl::KdTreeFLANN<FeatureT> > ();
       };
 
@@ -124,7 +87,7 @@ namespace pcl
       float getFeatureMatchingThreshold () { return (feature_matching_threshold_); }
 
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-      /** \brief Set the number of samples to use during each iteration
+      /** \brief Set the number of samples to use during each iteration (should be 3 always?)
         * \param nr_samples the number of samples to use during each iteration
         */
       void setNumberOfSamples (int nr_samples) { nr_samples_ = nr_samples; }
@@ -141,17 +104,6 @@ namespace pcl
       inline int getRandomIndex (int n) { return (n * (rand () / (RAND_MAX + 1.0))); };
       
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-      /** \brief Select \a nr_samples sample points from cloud while making sure that their pairwise distances are greater 
-        * than a user-defined minimum distance, \a min_sample_distance.
-        * \param cloud the input point cloud
-        * \param nr_samples the number of samples to select
-        * \param min_sample_distance the minimum distance between any two samples
-        * \param sample_indices the resulting sample indices
-        */
-      void selectSamples (const PointCloudSource &cloud, int nr_samples, float min_sample_distance, 
-                          std::vector<int> &sample_indices);
-
-      //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       /** \brief Selects  nr_samples_ correspondences while making sure that their pairwise distances are greater 
         * than a user-defined minimum distance (min_sample_distance_).
         * \param source_indices the resulting indices in the source data
@@ -160,17 +112,6 @@ namespace pcl
        void selectCorrespondences (const std::vector<int> &input_matched_indices, 
                const std::vector<int> &target_matched_indices,
                std::vector<int> &source_indices, std::vector<int> &target_indices);
-
-      //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-      /** \brief For each of the sample points, find a list of points in the target cloud whose features are similar to 
-        * the sample points' features. From these, select one randomly which will be considered that sample point's 
-        * correspondence. 
-        * \param input_features a cloud of feature descriptors
-        * \param sample_indices the indices of each sample point
-        * \param corresponding_indices the resulting indices of each sample's corresponding point in the target cloud
-        */
-      void findSimilarFeatures (const FeatureCloud &input_features, const std::vector<int> &sample_indices, 
-                               std::vector<int> &corresponding_indices);
 
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       /** \brief For the given \a input_feature, find its next 2 neighbors in the target feature cloud 
@@ -189,15 +130,7 @@ namespace pcl
         */
        void findAllMatchings(std::vector<int> &input_matched_indices, std::vector<int> & target_matched_indices);
 
-      //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-      /** \brief An error metric for that computes the quality of the alignment between the given cloud and the target.
-        * \param cloud the input cloud
-        * \param threshold distances greater than this value are capped
-        */
-      float computeErrorMetric (const PointCloudSource &cloud, float threshold);
-
     protected:
-
 
       inline void 
       computeSampleDistanceThreshold (const PointCloudSource &cloud)

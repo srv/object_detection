@@ -1,11 +1,14 @@
+
+namespace od = object_detection;
+
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template <typename PointSource, typename PointTarget, typename FeatureT> void
-pcl::MySampleConsensusInitialAlignment<PointSource, PointTarget, FeatureT>::setSourceFeatures (
+od::Alignment<PointSource, PointTarget, FeatureT>::setSourceFeatures (
       const FeatureCloudConstPtr &features)
 {
   if (features == NULL || features->points.empty ())
   {
-    ROS_ERROR ("[pcl::%s::setSourceFeatures] Invalid or empty point cloud dataset given!", getClassName ().c_str ());
+    ROS_ERROR ("[%s::setSourceFeatures] Invalid or empty point cloud dataset given!", getClassName ().c_str ());
     return;
   }
   input_features_ = features;
@@ -13,12 +16,12 @@ pcl::MySampleConsensusInitialAlignment<PointSource, PointTarget, FeatureT>::setS
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template <typename PointSource, typename PointTarget, typename FeatureT> void
-pcl::MySampleConsensusInitialAlignment<PointSource, PointTarget, FeatureT>::setTargetFeatures (
+od::Alignment<PointSource, PointTarget, FeatureT>::setTargetFeatures (
       const FeatureCloudConstPtr &features)
 {
   if (features == NULL || features->points.empty ())
   {
-    ROS_ERROR ("[pcl::%s::setTargetFeatures] Invalid or empty point cloud dataset given!", getClassName ().c_str ());
+    ROS_ERROR ("[%s::setTargetFeatures] Invalid or empty point cloud dataset given!", getClassName ().c_str ());
     return;
   }
   target_features_ = features;
@@ -28,13 +31,13 @@ pcl::MySampleConsensusInitialAlignment<PointSource, PointTarget, FeatureT>::setT
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template <typename PointSource, typename PointTarget, typename FeatureT> void
-pcl::MySampleConsensusInitialAlignment<PointSource, PointTarget, FeatureT>::selectCorrespondences (
+od::Alignment<PointSource, PointTarget, FeatureT>::selectCorrespondences (
       const std::vector<int>& input_matched_indices, const std::vector<int> &target_matched_indices,
       std::vector<int> &source_indices, std::vector<int> &target_indices)
 {
   if (nr_samples_ > (int) input_->points.size ())
   {
-    ROS_ERROR ("[pcl::%s::selectCorrespondences] The number of samples (%d) must not be greater than the number of points (%d)!",
+    ROS_ERROR ("[%s::selectCorrespondences] The number of samples (%d) must not be greater than the number of points (%d)!",
                getClassName ().c_str (), nr_samples_, (int) input_->points.size ());
     return;
   }
@@ -80,7 +83,7 @@ pcl::MySampleConsensusInitialAlignment<PointSource, PointTarget, FeatureT>::sele
     // If no valid samples can be found, relax the inter-sample distance requirements
     if (iterations_without_a_sample >= max_iterations_without_a_sample)
     {
-      ROS_WARN ("[pcl::%s::selectCorrespondences] No valid sample found after %d iterations. Relaxing sample_dist_thresh_ to %f", 
+      ROS_WARN ("[%s::selectCorrespondences] No valid sample found after %d iterations. Relaxing sample_dist_thresh_ to %f", 
                 getClassName ().c_str (), iterations_without_a_sample, 0.5*sample_dist_thresh_);
       sample_dist_thresh_ *= 0.5;
       iterations_without_a_sample = 0;
@@ -88,29 +91,9 @@ pcl::MySampleConsensusInitialAlignment<PointSource, PointTarget, FeatureT>::sele
   }
 }
 
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-template <typename PointSource, typename PointTarget, typename FeatureT> void
-pcl::MySampleConsensusInitialAlignment<PointSource, PointTarget, FeatureT>::findSimilarFeatures (
-      const FeatureCloud &input_features, const std::vector<int> &sample_indices, std::vector<int> &corresponding_indices)
-{
-  const int k = 1;
-  std::vector<int> nn_indices (k);
-  std::vector<float> nn_distances (k);
-
-  corresponding_indices.resize (sample_indices.size ());
-  for (size_t i = 0; i < sample_indices.size (); ++i)
-  {
-    // Find the next feature to input_features.points[sample_indices[i]]
-    feature_tree_->nearestKSearch (input_features, sample_indices[i], k, nn_indices, nn_distances);
-    // store found index
-    corresponding_indices[i] = nn_indices[0];
-  }
-}
-
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template <typename PointSource, typename PointTarget, typename FeatureT> bool
-pcl::MySampleConsensusInitialAlignment<PointSource, PointTarget, FeatureT>::findSimilarFeature (
+od::Alignment<PointSource, PointTarget, FeatureT>::findSimilarFeature (
       const FeatureT &input_feature, float ratio_threshold, int &corresponding_index)
 {
   const int k = 2;
@@ -130,8 +113,9 @@ pcl::MySampleConsensusInitialAlignment<PointSource, PointTarget, FeatureT>::find
   }
 }
 
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template <typename PointSource, typename PointTarget, typename FeatureT> void
-pcl::MySampleConsensusInitialAlignment<PointSource, PointTarget, FeatureT>::findAllMatchings(
+od::Alignment<PointSource, PointTarget, FeatureT>::findAllMatchings(
         std::vector<int> &input_matched_indices, std::vector<int> &target_matched_indices)
 {
     input_matched_indices.clear();
@@ -145,66 +129,25 @@ pcl::MySampleConsensusInitialAlignment<PointSource, PointTarget, FeatureT>::find
             target_matched_indices.push_back(target_index);
         }
     }
-    ROS_INFO ("[pcl::%s::findAllMatchings] Found %zu matchings, %zu features did not match.",
+    ROS_INFO ("[%s::findAllMatchings] Found %zu matchings, %zu features did not match.",
             getClassName ().c_str (),
             input_matched_indices.size(),
             input_features_->points.size() - input_matched_indices.size());
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-template <typename PointSource, typename PointTarget, typename FeatureT> float
-pcl::MySampleConsensusInitialAlignment<PointSource, PointTarget, FeatureT>::computeErrorMetric (
-      const PointCloudSource &cloud, float threshold)
-{
-  std::vector<int> nn_index (1);
-  std::vector<float> nn_distance (1);
-
-  float error = 0;
-  int num_inliers = 0;
-  int num_outliers = 0;
-  for (size_t i = 0; i < cloud.points.size (); ++i)
-  {
-    // Find the distance between cloud.points[i] and its nearest neighbor in the target point cloud
-    tree_->nearestKSearch (cloud, i, 1, nn_index, nn_distance);
-
-    /*
-    // Huber penalty measure
-    float e = nn_distance[0];
-    if (e <= threshold)
-      error += 0.5 * e*e; 
-    else
-      error += 0.5 * threshold * (2.0 * fabs (e) - threshold);
-    */
-
-    // Truncated error
-    float e = nn_distance[0];
-    if (e <= threshold)
-    {
-      error += e / threshold;
-      num_inliers++;
-    }
-    else
-    {
-      error += 1.0; // penalize outliers
-      num_outliers++;
-    }
-  }
-  return (error);
-}
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template <typename PointSource, typename PointTarget, typename FeatureT> void
-pcl::MySampleConsensusInitialAlignment<PointSource, PointTarget, FeatureT>::computeTransformation (PointCloudSource &output)
+od::Alignment<PointSource, PointTarget, FeatureT>::computeTransformation (PointCloudSource &output)
 {
   if (!input_features_)
   {
-    ROS_ERROR ("[pcl::%s::computeTransformation] No source features were given! Call setSourceFeatures before aligning.", 
+    ROS_ERROR ("[%s::computeTransformation] No source features were given! Call setSourceFeatures before aligning.", 
                getClassName ().c_str ());
     return;
   }
   if (!target_features_)
   {
-    ROS_ERROR ("[pcl::%s::computeTransformation] No target features were given! Call setTargetFeatures before aligning", 
+    ROS_ERROR ("[%s::computeTransformation] No target features were given! Call setTargetFeatures before aligning", 
                getClassName ().c_str ());
     return;
   }
@@ -222,13 +165,13 @@ pcl::MySampleConsensusInitialAlignment<PointSource, PointTarget, FeatureT>::comp
   findAllMatchings(input_matched_indices, target_matched_indices);
   if (input_matched_indices.size() < 8)
   {
-    ROS_ERROR ("[pcl::%s::computeTransformation] Too few matchings (%zu)!", 
+    ROS_ERROR ("[%s::computeTransformation] Too few matchings (%zu)!", 
                 getClassName ().c_str (), input_matched_indices.size());
     return;
   }
 
   computeSampleDistanceThreshold(*input_);
-  ROS_INFO ("[pcl::%s::computeTransformation] Computed sample distance threshold of %f", 
+  ROS_INFO ("[%s::computeTransformation] Computed sample distance threshold of %f", 
              getClassName ().c_str (), sample_dist_thresh_);
 
   unsigned int min_num_inliers = 0.8 * input_matched_indices.size();
@@ -292,10 +235,8 @@ pcl::MySampleConsensusInitialAlignment<PointSource, PointTarget, FeatureT>::comp
         }
   }
   estimateRigidTransformationSVD (*input_, inlier_indices, *target_, inlier_corresponding_indices, final_transformation_);
-  ROS_INFO ("[pcl::%s::computeTransformation] Computed transformation with %zu inliers after %d iterations.", 
+  ROS_INFO ("[%s::computeTransformation] Computed transformation with %zu inliers after %d iterations.", 
              getClassName ().c_str (), inlier_indices.size(), i_iter);
-
-
 
   // Apply the final transformation
   transformPointCloud (*input_, output, final_transformation_);

@@ -166,7 +166,7 @@ def main(argv):
     print "Found data for {0} experiments".format(num_experiments)
     i = 0
     for experiment in experiments:
-        print "***** Running experiment {0} of {1}... *****".format(i, num_experiments)
+        print "***** Running experiment {0} of {1}... *****".format(i+1, num_experiments)
         runExperiment(experiments[i], config)
         i = i + 1
 

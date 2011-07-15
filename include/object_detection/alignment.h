@@ -3,6 +3,8 @@
 
 // PCL includes
 #include "pcl/registration/registration.h"
+#include "pcl/common/eigen.h"
+#include "pcl/features/feature.h"
 
 // adapted from ia_ransac.h from pcl package
 

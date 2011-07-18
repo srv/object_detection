@@ -26,10 +26,12 @@ int main(int argc, char** argv)
         ("scene_features,F", po::value<std::string>()->required(), "PCD file for scene features")
         ("model_points,Q", po::value<std::string>()->required(), "PCD file for model points")
         ("model_features,G", po::value<std::string>()->required(), "PCD file for model features")
+        ("feature_matching_threshold,M", po::value<double>()->default_value(0.8), "feature matching threshold (ratio)")
         ("num_samples,N", po::value<int>()->default_value(3), "number of samples for RANSAC")
         ("ransac_threshold,R", po::value<double>()->default_value(0.05), "RANSAC outlier rejection threshold")
         ("max_ransac_iterations,I", po::value<int>()->default_value(1000), "maximum number of RANSAC iterations")
         ("transform_file,T", po::value<std::string>(), "filename for transformation output")
+        ("verbose,V", "verbose output")
         ;
 
     po::variables_map vm;
@@ -49,9 +51,11 @@ int main(int argc, char** argv)
     std::string scene_features_file = vm["scene_features"].as<std::string>();
     std::string model_points_file = vm["model_points"].as<std::string>();
     std::string model_features_file = vm["model_features"].as<std::string>();
+    double feature_matching_threshold = vm["feature_matching_threshold"].as<double>();
     int num_samples = vm["num_samples"].as<int>();
     double ransac_threshold = vm["ransac_threshold"].as<double>();
     int max_ransac_iterations = vm["max_ransac_iterations"].as<int>();
+    bool verbose = vm.count("verbose");
 
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr 
         scene_point_cloud(new pcl::PointCloud<pcl::PointXYZRGB>());
@@ -60,7 +64,7 @@ int main(int argc, char** argv)
         std::cerr << "Couldn't read file '" << scene_points_file << "'" << std::endl;
         return -1;
     }
-    std::cerr << "Loaded " << scene_point_cloud->points.size()
+    if (verbose) std::cout << "Loaded " << scene_point_cloud->points.size()
         << " scene points from " << scene_points_file << "." << std::endl;
 
     
@@ -72,7 +76,7 @@ int main(int argc, char** argv)
         std::cerr << "Couldn't read file '" << scene_features_file << "'" << std::endl;
         return -1;
     }
-    std::cerr << "Loaded " << scene_feature_cloud->points.size()
+    if (verbose) std::cout << "Loaded " << scene_feature_cloud->points.size()
         << " scene features from " << scene_features_file << "." << std::endl;
      
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr 
@@ -82,7 +86,7 @@ int main(int argc, char** argv)
         std::cerr << "Couldn't read file '" << model_points_file << "'" << std::endl;
         return -1;
     }
-    std::cerr << "Loaded " << model_point_cloud->points.size()
+    if (verbose) std::cout << "Loaded " << model_point_cloud->points.size()
         << " model points from " << model_points_file << "." << std::endl;
 
     
@@ -94,23 +98,29 @@ int main(int argc, char** argv)
         std::cerr << "Couldn't read file '" << model_features_file << "'" << std::endl;
         return -1;
     }
-    std::cerr << "Loaded " << model_feature_cloud->points.size()
+    if (verbose) std::cout << "Loaded " << model_feature_cloud->points.size()
         << " model features from " << model_features_file << "." << std::endl;
 
     object_detection::Alignment<pcl::PointXYZRGB, pcl::PointXYZRGB, Descriptor> alignment;
+    alignment.setFeatureMatchingThreshold(feature_matching_threshold);
     alignment.setNumberOfSamples(num_samples);
     alignment.setMaximumIterations(max_ransac_iterations);
     alignment.setRANSACOutlierRejectionThreshold(ransac_threshold);
-    std::cout << "number of samples = " << alignment.getNumberOfSamples() << std::endl;
-    std::cout << "max iterations = " << alignment.getMaximumIterations() << std::endl;
-    std::cout << "ransac outlier threshold = " << alignment.getRANSACOutlierRejectionThreshold() << std::endl;
-    std::cout << "max correspondence distance = " << alignment.getMaxCorrespondenceDistance() << std::endl;
-    std::cout << "transformation epsilon = " << alignment.getTransformationEpsilon() << std::endl;
+    alignment.setMaxCorrespondenceDistance(0.5); // unused?
+
     alignment.setInputCloud(model_point_cloud);
     alignment.setSourceFeatures(model_feature_cloud);
     alignment.setInputTarget(scene_point_cloud);
     alignment.setTargetFeatures(scene_feature_cloud);
-    alignment.setMaxCorrespondenceDistance(0.5);
+
+    if (verbose)
+    {
+        std::cout << "number of samples = " << alignment.getNumberOfSamples() << std::endl;
+        std::cout << "max iterations = " << alignment.getMaximumIterations() << std::endl;
+        std::cout << "ransac outlier threshold = " << alignment.getRANSACOutlierRejectionThreshold() << std::endl;
+        std::cout << "max correspondence distance = " << alignment.getMaxCorrespondenceDistance() << std::endl;
+        std::cout << "feature matching threshold = " << alignment.getFeatureMatchingThreshold() << std::endl;
+    }
     // set point representation of descriptor to use all 64 values (default is 3)
     //pcl::CustomPointRepresentation<Descriptor>::Ptr descriptor_point_representation(64);
     //alignment.setPointRepresentation(descriptor_point_representation.makeShared());
@@ -118,7 +128,7 @@ int main(int argc, char** argv)
     alignment.align(*alignment_output);
 
     Eigen::Matrix4f transformation = alignment.getFinalTransformation();
-    std::cout << "Transformation: " << std::endl;
+    if (verbose) std::cout << "Transformation: " << std::endl;
     std::cout << transformation << std::endl;
 
     Eigen::Matrix4f final_transformation = transformation;

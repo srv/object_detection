@@ -45,7 +45,6 @@ set(LIB_SOURCES
     src/object_detection/clipper.cpp
     src/object_detection/glcm.cpp
     src/object_detection/model.cpp
-    src/object_detection/feature_matcher.cpp
     src/object_detection/transformation_calculator.cpp
    )
 

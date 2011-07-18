@@ -86,6 +86,7 @@ def runExperiment(experiment, config):
     cmd.append(points_file_from)
     cmd.append("-D")
     cmd.append(descriptors_file_from)
+    cmd.append("-V")
     for (k, v) in config.items("extractor"):
         cmd.append("--" + k)
         cmd.append(v)
@@ -114,6 +115,7 @@ def runExperiment(experiment, config):
     cmd.append(descriptors_file_to)
     cmd.append("-T")
     cmd.append(transform_file)
+    cmd.append("-V")
     for (k, v) in config.items("transformation_estimator"):
         cmd.append("--" + k)
         cmd.append(v)
@@ -130,14 +132,16 @@ def runExperiment(experiment, config):
     cmd.append("-E")
     cmd.append(transform_file)
     print " ".join(cmd)
-    if subprocess.call(cmd) != 0:
-        print "ERROR running transformation_error_calculator!"
-        sys.exit(2)
+    output = subprocess.check_output(cmd) # throws an error on cmd fail
+    print output
+    start = output.rfind(":") + 2;
+    end = output.find("/", start) - 1;
+    return float(output[start:end])
 
 
 def main(argv):
-    if len(argv) < 2 or len(argv) > 3:
-        print >>sys.stderr, "Usage: {0} <test data folder> [<config file> = defaults.cfg]".format(argv[0])
+    if len(argv) != 3:
+        print >>sys.stderr, "Usage: {0} <test data folder> <config file>".format(argv[0])
         return 1
 
     data_path = argv[1]
@@ -148,10 +152,7 @@ def main(argv):
 
     print "Using test data folder {0}".format(data_path)
 
-    if len(argv) == 3:
-        config_file = argv[2]
-    else:
-        config_file = 'defaults.cfg'
+    config_file = argv[2]
 
     if not os.path.exists(config_file):
         print >>sys.stderr, "ERROR: Config file {0} does not exist, please specify a config file!".format(config_file)
@@ -165,10 +166,15 @@ def main(argv):
     num_experiments = len(experiments)
     print "Found data for {0} experiments".format(num_experiments)
     i = 0
+    error = 0
     for experiment in experiments:
         print "***** Running experiment {0} of {1}... *****".format(i+1, num_experiments)
-        runExperiment(experiments[i], config)
+        this_error = runExperiment(experiments[i], config)
+        error = error + this_error
         i = i + 1
+    error = error / num_experiments
+
+    print "Average error is", error
 
 if __name__ == "__main__":
     sys.exit(main(sys.argv))

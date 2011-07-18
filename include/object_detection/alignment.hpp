@@ -174,7 +174,7 @@ od::Alignment<PointSource, PointTarget, FeatureT>::computeTransformation (PointC
   ROS_INFO ("[%s::computeTransformation] Computed sample distance threshold of %f", 
              getClassName ().c_str (), sample_dist_thresh_);
 
-  unsigned int min_num_inliers = 0.8 * input_matched_indices.size();
+  unsigned int min_num_inliers = 0.5 * input_matched_indices.size();
   int i_iter;
   for (i_iter = 0; i_iter < max_iterations_; ++i_iter)
   {
@@ -240,5 +240,56 @@ od::Alignment<PointSource, PointTarget, FeatureT>::computeTransformation (PointC
 
   // Apply the final transformation
   transformPointCloud (*input_, output, final_transformation_);
+
+  // compute some statistics
+  int num_matched_outliers = 0;
+  int num_matched_inliers = 0; 
+  int num_unmatched_outliers = 0; 
+  int num_unmatched_inliers = 0;
+
+  for (size_t i = 0; i < input_->points.size(); ++i)
+  {
+      bool is_inlier = false;
+      bool has_matched = false;
+      int k = 1;
+      std::vector<int> nn_indices(k);
+      std::vector<float> nn_distances(k);
+      // find nearest point in target
+      tree_->nearestKSearch (input_->points[i], k, nn_indices, nn_distances);
+      if (nn_distances[0] < inlier_threshold_)
+      {
+          is_inlier = true;
+      }
+      if (std::find(input_matched_indices.begin(), input_matched_indices.end(), i)
+              != input_matched_indices.end())
+      {
+          has_matched = true;
+      }
+      if (is_inlier)
+      {
+          if (has_matched)
+          {
+              num_matched_inliers++;
+          }
+          else
+          {
+              num_unmatched_inliers++;
+          }
+      }
+      else
+      {
+          if (has_matched)
+          {
+              num_matched_outliers++;
+          }
+          else
+          {
+              num_unmatched_outliers++;
+          }
+      }
+  }
+  ROS_INFO ("[%s::computeTransformation] Statistics: inlier threshold: %f, %d matched inliers, %d unmatched inliers, %d outliers match, %d unmatched outliers.", 
+             getClassName ().c_str (), inlier_threshold_, num_matched_inliers, num_unmatched_inliers, num_matched_outliers, num_unmatched_outliers);
+
 }
 

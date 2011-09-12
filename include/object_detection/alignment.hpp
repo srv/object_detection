@@ -101,8 +101,8 @@ od::Alignment<PointSource, PointTarget, FeatureT>::findSimilarFeature (
   std::vector<float> nn_distances (k);
 
   feature_tree_->nearestKSearch (input_feature, k, nn_indices, nn_distances);
-  float distance_ratio = nn_distances[0] / nn_distances[1];
-  if (distance_ratio < ratio_threshold)
+  float squared_distance_ratio = nn_distances[0] / nn_distances[1];
+  if (squared_distance_ratio < ratio_threshold * ratio_threshold)
   {
       corresponding_index = nn_indices[0];
       return true;
@@ -256,7 +256,7 @@ od::Alignment<PointSource, PointTarget, FeatureT>::computeTransformation (PointC
       std::vector<float> nn_distances(k);
       // find nearest point in target
       tree_->nearestKSearch (input_->points[i], k, nn_indices, nn_distances);
-      if (nn_distances[0] < inlier_threshold_)
+      if (nn_distances[0] < inlier_threshold_ * inlier_threshold_)
       {
           is_inlier = true;
       }

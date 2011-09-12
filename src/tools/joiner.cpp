@@ -21,17 +21,13 @@ int main(int argc, char** argv)
     // Declare the supported options.
     po::options_description desc("Allowed options");
     desc.add_options()
-        ("scene_points,P", po::value<std::string>()->required(), "PCD file for scene points")
-        ("scene_features,F", po::value<std::string>()->required(), "PCD file for scene features")
-        ("model_points,Q", po::value<std::string>()->required(), "PCD file for model points")
-        ("model_features,G", po::value<std::string>()->required(), "PCD file for model features")
-        ("output_points,R", po::value<std::string>()->required(), "PCD file for registration result (points)")
-        ("output_features,H", po::value<std::string>()->required(), "PCD file for registration result (features)")
-        ("num_samples,N", po::value<int>()->default_value(3), "number of samples for RANSAC")
-        ("ransac_threshold,T", po::value<double>()->default_value(0.05), "ransac outlier rejection threshold")
-        ("max_alignment_iterations,I", po::value<int>()->default_value(1000), "maximum number of RANSAC iterations for initial alignment")
-        ("max_icp_iterations,J", po::value<int>()->default_value(1000), "maximum number of iterations for icp")
-        ("max_icp_distance,M", po::value<double>()->default_value(0.1), "maximum distance for correspondences in ICP");
+        ("source_points,P", po::value<std::string>()->required(), "PCD file for source points")
+        ("source_features,F", po::value<std::string>()->required(), "PCD file for source features")
+        ("target_points,Q", po::value<std::string>()->required(), "PCD file for target points")
+        ("target_features,G", po::value<std::string>()->required(), "PCD file for target features")
+        ("output_points,R", po::value<std::string>()->required(), "PCD file for joining result (points)")
+        ("output_features,H", po::value<std::string>()->required(), "PCD file for joining result (features)")
+        ("verbose,V", "verbose output")
         ;
 
     po::variables_map vm;
@@ -47,121 +43,100 @@ int main(int argc, char** argv)
         return -1;
     }
 
-    std::string scene_points_file = vm["scene_points"].as<std::string>();
-    std::string scene_features_file = vm["scene_features"].as<std::string>();
-    std::string model_points_file = vm["model_points"].as<std::string>();
-    std::string model_features_file = vm["model_features"].as<std::string>();
+    std::string source_points_file = vm["source_points"].as<std::string>();
+    std::string source_features_file = vm["source_features"].as<std::string>();
+    std::string target_points_file = vm["target_points"].as<std::string>();
+    std::string target_features_file = vm["target_features"].as<std::string>();
     std::string output_points_file = vm["output_points"].as<std::string>();
     std::string output_features_file = vm["output_features"].as<std::string>();
-    int num_samples = vm["num_samples"].as<int>();
-    double ransac_threshold = vm["ransac_threshold"].as<double>();
-    int max_alignment_iterations = vm["max_alignment_iterations"].as<int>();
-    int max_icp_iterations = vm["max_icp_iterations"].as<int>();
-    double max_icp_distance = vm["max_icp_distance"].as<double>();
-
+    bool verbose = vm.count("verbose") > 0;
 
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr 
-        scene_point_cloud(new pcl::PointCloud<pcl::PointXYZRGB>());
-    if (pcl::io::loadPCDFile<pcl::PointXYZRGB>(scene_points_file, *scene_point_cloud) == -1)
+        source_point_cloud(new pcl::PointCloud<pcl::PointXYZRGB>());
+    if (pcl::io::loadPCDFile<pcl::PointXYZRGB>(source_points_file, *source_point_cloud) == -1)
     {
-        std::cerr << "Couldn't read file '" << scene_points_file << "'" << std::endl;
+        std::cerr << "Couldn't read file '" << source_points_file << "'" << std::endl;
         return -1;
     }
-    std::cerr << "Loaded " << scene_point_cloud->points.size()
-        << " scene points from " << scene_points_file << "." << std::endl;
+    if (verbose) std::cout << "Loaded " << source_point_cloud->points.size()
+        << " source points from " << source_points_file << "." << std::endl;
 
     
     pcl::PointCloud<Descriptor>::Ptr 
-        scene_feature_cloud(new pcl::PointCloud<Descriptor>());
+        source_feature_cloud(new pcl::PointCloud<Descriptor>());
     
-    if (pcl::io::loadPCDFile<Descriptor>(scene_features_file, *scene_feature_cloud) == -1)
+    if (pcl::io::loadPCDFile<Descriptor>(source_features_file, *source_feature_cloud) == -1)
     {
-        std::cerr << "Couldn't read file '" << scene_features_file << "'" << std::endl;
+        std::cerr << "Couldn't read file '" << source_features_file << "'" << std::endl;
         return -1;
     }
-    std::cerr << "Loaded " << scene_feature_cloud->points.size()
-        << " scene features from " << scene_features_file << "." << std::endl;
+    std::cerr << "Loaded " << source_feature_cloud->points.size()
+        << " source features from " << source_features_file << "." << std::endl;
      
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr 
-        model_point_cloud(new pcl::PointCloud<pcl::PointXYZRGB>());
-    if (pcl::io::loadPCDFile<pcl::PointXYZRGB>(model_points_file, *model_point_cloud) == -1)
+        target_point_cloud(new pcl::PointCloud<pcl::PointXYZRGB>());
+    if (pcl::io::loadPCDFile<pcl::PointXYZRGB>(target_points_file, *target_point_cloud) == -1)
     {
-        std::cerr << "Couldn't read file '" << model_points_file << "'" << std::endl;
+        std::cerr << "Couldn't read file '" << target_points_file << "'" << std::endl;
         return -1;
     }
-    std::cerr << "Loaded " << model_point_cloud->points.size()
-        << " model points from " << model_points_file << "." << std::endl;
-
+    std::cerr << "Loaded " << target_point_cloud->points.size()
+        << " target points from " << target_points_file << "." << std::endl;
     
     pcl::PointCloud<Descriptor>::Ptr 
-        model_feature_cloud(new pcl::PointCloud<Descriptor>());
+        target_feature_cloud(new pcl::PointCloud<Descriptor>());
     
-    if (pcl::io::loadPCDFile<Descriptor>(model_features_file, *model_feature_cloud) == -1)
+    if (pcl::io::loadPCDFile<Descriptor>(target_features_file, *target_feature_cloud) == -1)
     {
-        std::cerr << "Couldn't read file '" << model_features_file << "'" << std::endl;
+        std::cerr << "Couldn't read file '" << target_features_file << "'" << std::endl;
         return -1;
     }
-    std::cerr << "Loaded " << model_feature_cloud->points.size()
-        << " model features from " << model_features_file << "." << std::endl;
+    std::cerr << "Loaded " << target_feature_cloud->points.size()
+        << " target features from " << target_features_file << "." << std::endl;
 
-    object_detection::Alignment<pcl::PointXYZRGB, pcl::PointXYZRGB, Descriptor> alignment;
-    alignment.setNumberOfSamples(num_samples);
-    alignment.setMaximumIterations(max_alignment_iterations);
-    alignment.setRANSACOutlierRejectionThreshold(ransac_threshold);
-    std::cout << "number of samples = " << alignment.getNumberOfSamples() << std::endl;
-    std::cout << "max iterations = " << alignment.getMaximumIterations() << std::endl;
-    std::cout << "ransac outlier threshold = " << alignment.getRANSACOutlierRejectionThreshold() << std::endl;
-    std::cout << "max correspondence distance = " << alignment.getMaxCorrespondenceDistance() << std::endl;
-    std::cout << "transformation epsilon = " << alignment.getTransformationEpsilon() << std::endl;
-    alignment.setInputCloud(model_point_cloud);
-    alignment.setSourceFeatures(model_feature_cloud);
-    alignment.setInputTarget(scene_point_cloud);
-    alignment.setTargetFeatures(scene_feature_cloud);
-    alignment.setMaxCorrespondenceDistance(0.5);
-    // set point representation of descriptor to use all 64 values (default is 3)
-    //pcl::CustomPointRepresentation<Descriptor>::Ptr descriptor_point_representation(64);
-    //alignment.setPointRepresentation(descriptor_point_representation.makeShared());
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr alignment_output(new pcl::PointCloud<pcl::PointXYZRGB>());
-    alignment.align(*alignment_output);
-    std::cout << "has converged = " << alignment.hasConverged() << std::endl;
+    pcl::KdTreeFLANN<pcl::PointXYZRGB> kd_tree;
+    kd_tree.setInputCloud(target_point_cloud);
 
-    Eigen::Matrix4f transformation = alignment.getFinalTransformation();
-    std::cout << "Transformation: " << std::endl;
-    std::cout << transformation << std::endl;
-    std::cout << "fitness score = " << alignment.getFitnessScore() << std::endl;
+    pcl::KdTreeFLANN<Descriptor> feature_tree;
+    feature_tree.setInputCloud(target_feature_cloud);
+    
+   pcl::PointCloud<pcl::PointXYZRGB>::Ptr 
+        output_point_cloud(new pcl::PointCloud<pcl::PointXYZRGB>());
+    pcl::PointCloud<Descriptor>::Ptr 
+        output_feature_cloud(new pcl::PointCloud<Descriptor>());
 
-    // run ICP
-    pcl::IterativeClosestPoint<pcl::PointXYZRGB, pcl::PointXYZRGB> icp;
-    icp.setMaximumIterations(max_icp_iterations);
-    icp.setMaxCorrespondenceDistance(max_icp_distance);
-    std::cout << "ICP max iterations = " << icp.getMaximumIterations() << std::endl;
-    std::cout << "ICP ransac outlier threshold = " << icp.getRANSACOutlierRejectionThreshold() << std::endl;
-    std::cout << "ICP max correspondence distance = " << icp.getMaxCorrespondenceDistance() << std::endl;
-    std::cout << "ICP transformation epsilon = " << icp.getTransformationEpsilon() << std::endl;
-    pcl::PointCloud<pcl::PointXYZRGB> registration_output;
-    icp.setInputCloud(alignment_output);
-    icp.setInputTarget(scene_point_cloud);
-    icp.align(registration_output);
-    std::cout << "ICP transformation: \n" << icp.getFinalTransformation() << std::endl;
-    std::cout << "ICP fitness score = " << icp.getFitnessScore() << std::endl;
-    std::cout << "has converged = " << icp.hasConverged() << std::endl;
-
-    std::cout << "final transformation: \n" << transformation * icp.getFinalTransformation() << std::endl;
-
-    // join scene with transformed model
-    scene_point_cloud->width += registration_output.width;
-    scene_feature_cloud->width += registration_output.width;
-    for (size_t i = 0; i < registration_output.points.size(); ++i)
+    float join_distance = 0.05 * 0.05;
+    std::vector<int> target_hit(target_point_cloud->points.size(), 0);
+    for (size_t i = 0; i < source_feature_cloud->points.size(); ++i)
     {
-        scene_point_cloud->points.push_back(registration_output.points[i]);
-        scene_feature_cloud->points.push_back(model_feature_cloud->points[i]);
+        // find nearest feature
+        int k = 2;
+        std::vector<int> nn_indices(k);
+        std::vector<float> nn_distances(k);
+        feature_tree.nearestKSearch(source_feature_cloud->points[i], k, nn_indices, nn_distances);
+        bool is_match = (nn_distances[0] / nn_distances[1]) < (0.8 * 0.8);
+
+        target_hit[nn_indices[0]] = 1;
+
+        float distance = euclideanDistance(source_point_cloud->points[i], 
+                target_point_cloud->points[nn_indices[0]]);
+        if (distance < join_distance)
+        {
+            output_point_cloud->points.push_back(source_point_cloud->points[i]);
+            output_feature_cloud->points.push_back(source_feature_cloud->points[i]);
+        }
     }
 
+
+
+    /*
     bool binary_mode = false;
-    pcl::io::savePCDFile<pcl::PointXYZRGB>(output_points_file, *scene_point_cloud, binary_mode);
-    std::cout << "Saved " << scene_point_cloud->points.size() << " points to " << output_points_file << "." << std::endl;
-    pcl::io::savePCDFile<Descriptor>(output_features_file, *scene_feature_cloud);
-    std::cout << "Saved " << scene_feature_cloud->points.size() << " features to " << output_features_file << "." << std::endl;
+    pcl::io::savePCDFile<pcl::PointXYZRGB>(output_points_file, *output_point_cloud, binary_mode);
+    std::cout << "Saved " << output_point_cloud->points.size() << " points to " << output_points_file << "." << std::endl;
+    pcl::io::savePCDFile<Descriptor>(output_features_file, *output_feature_cloud);
+    std::cout << "Saved " << output_feature_cloud->points.size() << " features to " << output_features_file << "." << std::endl;
+    */
  
     return 0;
 }
+

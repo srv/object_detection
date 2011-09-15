@@ -202,6 +202,11 @@ public:
 
     std::vector<StereoFeature> getStereoFeatures(const vision_msgs::StereoFeatures& stereo_features_msg)
     {
+        if (stereo_features_msg.features.size() == 0)
+        {
+          return std::vector<StereoFeature>();
+        }
+
         pcl::PointCloud<pcl::PointXYZRGB> point_cloud;
         pcl::fromROSMsg(stereo_features_msg.world_points, point_cloud);
         assert(stereo_features_msg.features.size() == point_cloud.size());

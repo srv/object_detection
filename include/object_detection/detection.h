@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 #include <cv.h>
+#include "mask.h"
 
 namespace object_detection {
 
@@ -15,24 +16,27 @@ namespace object_detection {
  */
 struct Detection
 {
-    /// label to identify an object
-    std::string label;
+  /// Mask that defines the location
+  Mask mask;
 
-    /// the rotation with respect to the trained object
-    double angle;
+  /// label to identify an object
+  std::string label;
 
-    /// the object center 
-    cv::Point center;
+  /// the rotation with respect to the trained object
+  double angle;
 
-    /// the scale of the object with respect to the trained object
-    double scale;
-    
-    /// some score (usually between 0 and 1) that tells the
-    /// quality of the detection
-    double score;
+  /// the object center 
+  cv::Point center;
 
-    /// the outline of the object as polygon
-    std::vector<cv::Point> outline;
+  /// the scale of the object with respect to the trained object
+  double scale;
+  
+  /// some score (usually between 0 and 1) that tells the
+  /// quality of the detection
+  double score;
+
+  /// the outline of the object as polygon
+  std::vector<cv::Point> outline;
 };
 
 }

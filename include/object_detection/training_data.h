@@ -41,7 +41,7 @@ struct TrainingData
     bool isValid() const
     {
         return (image.cols != 0 && image.rows != 0 &&
-                object_outline.size() > 2 && stereo_features.size() > 2);
+                object_outline.size() > 2);
     }
 };
 

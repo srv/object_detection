@@ -161,7 +161,7 @@ std::vector<Detection> Detector::detect(const cv::Mat& image,
 
     std::vector<Detection> all_detections;
 
-    /*
+    
     for(size_t i = 0; i < object_parts_detectors_.size(); ++i)
     {
         std::vector<Detection> detections = object_parts_detectors_[i]->detect(image);
@@ -187,7 +187,7 @@ std::vector<Detection> Detector::detect(const cv::Mat& image,
         }
         all_detections.insert(all_detections.end(), detections.begin(), detections.end());
     }
-    */
+    
 
     /*
 

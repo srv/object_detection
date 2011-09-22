@@ -9,6 +9,8 @@
 #include "statistics.h"
 #include "shape_matching.h"
 
+#define SHOW_IMAGES false
+
 using object_detection::ObjectPartsDetector;
 using object_detection::PartsClassifier;
 using object_detection::Detection;
@@ -45,12 +47,24 @@ void ObjectPartsDetector::train(const cv::Mat& image, const cv::Mat& object_mask
     // train the classifier
     parts_classifier_->train(image, object_mask);
 
+#if SHOW_IMAGES
+    cv::imshow(parts_classifier_->getName() + " training image", image);
+#endif
+
     // apply directly to training image to get object part description
     cv::Mat prob_image = parts_classifier_->classify(image);
     threshold_ = computeBestThreshold(prob_image, object_mask);
 
+#if SHOW_IMAGES
+    cv::imshow(parts_classifier_->getName() + " probability image", 255 * prob_image);
+#endif
+
     cv::Mat thresholded;
     cv::threshold(prob_image, thresholded, threshold_, 1.0, CV_THRESH_BINARY);
+
+#if SHOW_IMAGES
+    cv::imshow(parts_classifier_->getName() + " thresholded image", thresholded);
+#endif
 
     // store shapes as object description
     cv::Mat masked_prob_image;
@@ -60,7 +74,9 @@ void ObjectPartsDetector::train(const cv::Mat& image, const cv::Mat& object_mask
     cv::Mat object_shapes_image = cv::Mat::zeros(image.rows, image.cols, CV_8UC1);
     cv::drawContours(object_shapes_image, object_part_shapes_, -1, cv::Scalar(255), CV_FILLED);
 
+#if SHOW_IMAGES
     cv::imshow(parts_classifier_->getName() + " object shapes", object_shapes_image);
+#endif
 
     object_part_statistics_ = computeStatistics(object_shapes_image);
 
@@ -85,7 +101,9 @@ std::vector<Detection> ObjectPartsDetector::detect(const cv::Mat& image)
     std::vector<std::vector<cv::Point> > detected_shapes = extractShapes(prob_image_thresholded);
     cv::Mat shapes_image = cv::Mat::zeros(image.rows, image.cols, CV_8UC1);
     cv::drawContours(shapes_image, detected_shapes, -1, cv::Scalar(255), CV_FILLED);
+#if SHOW_IMAGES
     cv::imshow(parts_classifier_->getName() + " detected shapes", shapes_image);
+#endif
 
     // did we detect some shapes?
     if (detected_shapes.size() > 0)

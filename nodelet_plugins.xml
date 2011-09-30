@@ -1,0 +1,9 @@
+<library path="lib/libobject_detection_ros">
+  <class name="object_detection/ColorDetector" 
+         type="object_detection_ros::ColorDetectorNodelet"
+         base_class_type="nodelet::Nodelet">
+    <description>
+      Color-based object detector
+    </description>
+  </class>
+</library>

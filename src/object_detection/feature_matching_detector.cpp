@@ -133,8 +133,8 @@ void object_detection::FeatureMatchingDetector::trainInstance(const std::string&
   model_features_[name] = data.features_3d;
 }
 
-void object_detection::FeatureMatchingDetector::endTraining(const std::string& /*name*/)
+void object_detection::FeatureMatchingDetector::endTraining(const std::string& name)
 {
-  // nothing to do here
+  saveModel(name);
 }
 

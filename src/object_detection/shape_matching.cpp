@@ -1,9 +1,9 @@
 
 #include <iostream>
 #include <cv.h>
-#include "clipper.hpp"
 
-#include "shape_matching.h"
+#include "object_detection/clipper.hpp"
+#include "object_detection/shape_matching.h"
 
 
 using namespace object_detection;

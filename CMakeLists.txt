@@ -70,10 +70,13 @@ target_link_libraries(odat_ros odat)
 
 # object detection library
 rosbuild_add_library(${PROJECT_NAME}
-    src/object_detection/color_detector.cpp
     src/object_detection/shape_processing.cpp
+    src/object_detection/shape_matching.cpp
     src/object_detection/histogram_utilities.cpp 
+    src/object_detection/color_detector.cpp
     src/object_detection/feature_matching_detector.cpp
+    src/object_detection/shape_detector.cpp
+    src/object_detection/clipper.cpp
     )
 target_link_libraries(${PROJECT_NAME} odat)
 

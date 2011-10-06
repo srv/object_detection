@@ -83,6 +83,7 @@ target_link_libraries(${PROJECT_NAME} odat)
 # ros adapter to object detection library
 rosbuild_add_library(${PROJECT_NAME}_ros
     src/object_detection_ros/color_detector_nodelet.cpp
+    src/object_detection_ros/shape_detector_nodelet.cpp
     src/object_detection_ros/feature_matching_detector_nodelet.cpp
     )
 target_link_libraries(${PROJECT_NAME}_ros ${PROJECT_NAME} odat_ros)

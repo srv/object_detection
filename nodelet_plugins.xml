@@ -16,4 +16,13 @@
     </description>
   </class>
 
+  <class name="object_detection/ShapeDetector" 
+         type="object_detection_ros::ShapeDetectorNodelet"
+         base_class_type="nodelet::Nodelet">
+    <description>
+      Shape matching object detector
+    </description>
+  </class>
+
+
 </library>

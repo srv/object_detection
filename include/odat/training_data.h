@@ -5,6 +5,7 @@
 #include <opencv2/core/core.hpp>
 
 #include "odat/mask.h"
+#include "odat/feature_set_3d.h"
 
 namespace odat {
 
@@ -20,6 +21,9 @@ struct TrainingData
 
     /// region of interest that marks the object
     Mask mask; 
+
+    /// 3d feature set
+    FeatureSet3D features_3d;
 };
 
 }

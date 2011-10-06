@@ -39,23 +39,17 @@
 /**
 
 \author Marius Muja
+\author Stephan Wirth
 
 **/
 
 #ifndef POSE_ESTIMATOR_H_
 #define POSE_ESTIMATOR_H_
 
-#include "rein/core/types.h"
-
-#include <rein/DetectionArray.h>
-#include <rein/RectArray.h>
-#include <geometry_msgs/PoseArray.h>
-#include <sensor_msgs/PointCloud2.h>
-
-#include <boost/make_shared.hpp>
-
 #include <string>
 #include <vector>
+
+#include <boost/make_shared.hpp>
 #include <opencv2/core/core.hpp>
 
 namespace rein {
@@ -65,6 +59,8 @@ class PoseEstimator
 public:
 
 	PoseEstimator(){};
+
+	PoseEstimator(ModelStorage::Ptr model_storage) : model_storage_(model_storage) {};
 
 	/**
 	 * \brief Set input image for the pose estimator.

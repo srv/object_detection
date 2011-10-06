@@ -3,6 +3,7 @@
 
 #include "odat/serialization_support.h"
 #include "odat/training_data.h"
+#include "odat/exceptions.h"
 
 #include "object_detection/histogram_utilities.h"
 #include "object_detection/color_detector.h"
@@ -86,6 +87,13 @@ cv::MatND object_detection::ColorDetector::adaptHistogram(const std::string& mod
 void object_detection::ColorDetector::detect()
 {
   detections_.clear();
+
+  //check for input
+  if (image_.empty())
+  {
+    throw odat::Exception("Insufficient data for detection in " + getName());
+  }
+
   std::map<std::string, cv::MatND>::const_iterator iter;
   for (iter = model_histograms_.begin(); iter != model_histograms_.end(); ++iter)
   {
@@ -139,6 +147,17 @@ void object_detection::ColorDetector::loadModels(const std::vector<std::string>&
     archive >> histogram;
     model_histograms_[models[i]] = histogram;
   }
+}
+
+std::vector<std::string> object_detection::ColorDetector::getLoadedModels() const
+{
+  std::vector<std::string> loaded_models;
+  std::map<std::string, cv::MatND>::const_iterator iter;
+  for (iter = model_histograms_.begin(); iter != model_histograms_.end(); ++iter)
+  {
+    loaded_models.push_back(iter->first);
+  }
+  return loaded_models;
 }
 
 void object_detection::ColorDetector::saveModel(const std::string& model)

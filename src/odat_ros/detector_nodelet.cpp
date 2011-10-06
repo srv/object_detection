@@ -68,12 +68,13 @@ void DetectorNodelet::subscribeTopics(ros::NodeHandle& nh)
 	nh.getParam("use_image", use_image_);
 	nh.getParam("use_masks", use_masks_);
 	nh.getParam("use_input_detections", use_input_detections_);
-	nh.getParam("use_point_cloud", use_point_cloud_);
+	nh.getParam("use_features", use_features_);
 	nh.getParam("queue_size", queue_size_);
 
 	typedef message_filters::Subscriber<vision_msgs::MaskArray> MaskArraySubscriber;
 	typedef message_filters::Subscriber<vision_msgs::DetectionArray> DetectionArraySubscriber;
-	typedef message_filters::Subscriber<sensor_msgs::PointCloud2> PointCloud2Subscriber;
+	typedef message_filters::Subscriber<vision_msgs::Features> FeaturesSubscriber;
+	typedef message_filters::Subscriber<sensor_msgs::CameraInfo> CameraInfoSubscriber;
 
 	// clearing the list unsubscribes from everything subscribed so far
 	shared_ptrs_.clear();
@@ -82,45 +83,49 @@ void DetectorNodelet::subscribeTopics(ros::NodeHandle& nh)
 			     "  image           : %s\n"
 			     "  masks           : %s\n"
 			     "  input_detections: %s\n"
-			     "  point_cloud     : %s\n", (use_image_? nh.resolveName("image").c_str():"None"),
+			     "  features        : %s\n", (use_image_? nh.resolveName("image").c_str():"None"),
 			                        (use_masks_? nh.resolveName("masks").c_str():"None"),
 			                        (use_input_detections_? nh.resolveName("input_detections").c_str():"None"),
-			                        (use_point_cloud_? nh.resolveName("point_cloud").c_str():"None"));
+			                        (use_features_? nh.resolveName("features").c_str():"None"));
 
 	if (use_image_) {
 		boost::shared_ptr<image_transport::ImageTransport> it = make_shared<image_transport::ImageTransport>(nh);
 		boost::shared_ptr<image_transport::SubscriberFilter> image_sub =  make_shared<image_transport::SubscriberFilter>();
 		image_sub->subscribe(*it, "image", queue_size_);
+        boost::shared_ptr<CameraInfoSubscriber> camera_info_sub = make_shared<CameraInfoSubscriber>();
+        camera_info_sub->subscribe(nh, "camera_info", queue_size_);
 
-		if (use_point_cloud_) {
-			boost::shared_ptr<PointCloud2Subscriber> point_cloud_sub =  make_shared<PointCloud2Subscriber>();
-			point_cloud_sub->subscribe(nh, "point_cloud", queue_size_);
+		if (use_features_) {
+			boost::shared_ptr<FeaturesSubscriber> features_sub =  make_shared<FeaturesSubscriber>();
+			features_sub->subscribe(nh, "features", queue_size_);
 
 			if (use_input_detections_) {
 				boost::shared_ptr<DetectionArraySubscriber> detections_sub =  make_shared<DetectionArraySubscriber>();
 				detections_sub->subscribe(nh, "input_detections", queue_size_);
 
-				typedef message_filters::TimeSynchronizer<sensor_msgs::Image, sensor_msgs::PointCloud2, vision_msgs::DetectionArray> SynchronizerImagePointCloudDetections;
-				boost::shared_ptr<SynchronizerImagePointCloudDetections> sync_sub = make_shared<SynchronizerImagePointCloudDetections>(queue_size_+2);
-				sync_sub->connectInput(*image_sub, *point_cloud_sub, *detections_sub);
-				sync_sub->registerCallback(boost::bind(&DetectorNodelet::dataCallback, this, _1, _2, vision_msgs::MaskArrayConstPtr(), _3));
-
+				typedef message_filters::TimeSynchronizer<sensor_msgs::Image, sensor_msgs::CameraInfo, vision_msgs::Features, vision_msgs::DetectionArray> SynchronizerImageCameraInfoFeaturesDetections;
+				boost::shared_ptr<SynchronizerImageCameraInfoFeaturesDetections> sync_sub = make_shared<SynchronizerImageCameraInfoFeaturesDetections>(queue_size_+2);
+				sync_sub->connectInput(*image_sub, *camera_info_sub, *features_sub, *detections_sub);
+				sync_sub->registerCallback(boost::bind(&DetectorNodelet::dataCallback, this, _1, _2, _3, vision_msgs::MaskArrayConstPtr(), _4));
+				NODELET_INFO("DetectorNodelet listening to synchronized msgs: Image, CameraInfo, Features, DetectionArray");
 			}
 			else {
 				if (use_masks_) {
 					boost::shared_ptr<MaskArraySubscriber> masks_sub =  make_shared<MaskArraySubscriber>();
 					masks_sub->subscribe(nh, "masks", queue_size_);
 
-					typedef message_filters::TimeSynchronizer<sensor_msgs::Image, sensor_msgs::PointCloud2, vision_msgs::MaskArray> SynchronizerImagePointCloudMasks;
-					boost::shared_ptr<SynchronizerImagePointCloudMasks> sync_sub = make_shared<SynchronizerImagePointCloudMasks>(queue_size_+2);
-					sync_sub->connectInput(*image_sub, *point_cloud_sub, *masks_sub);
-					sync_sub->registerCallback(boost::bind(&DetectorNodelet::dataCallback, this, _1, _2, _3, vision_msgs::DetectionArrayConstPtr()));
+					typedef message_filters::TimeSynchronizer<sensor_msgs::Image, sensor_msgs::CameraInfo, vision_msgs::Features, vision_msgs::MaskArray> SynchronizerImageCameraInfoFeaturesMasks;
+					boost::shared_ptr<SynchronizerImageCameraInfoFeaturesMasks> sync_sub = make_shared<SynchronizerImageCameraInfoFeaturesMasks>(queue_size_+2);
+					sync_sub->connectInput(*image_sub, *camera_info_sub, *features_sub, *masks_sub);
+					sync_sub->registerCallback(boost::bind(&DetectorNodelet::dataCallback, this, _1, _2, _3, _4, vision_msgs::DetectionArrayConstPtr()));
+				    NODELET_INFO("DetectorNodelet listening to synchronized msgs: Image, CameraInfo, Features, MaskArray");
 				}
 				else {
-					typedef message_filters::TimeSynchronizer<sensor_msgs::Image, sensor_msgs::PointCloud2> SynchronizerImagePointCloud;
-					boost::shared_ptr<SynchronizerImagePointCloud> sync_sub = make_shared<SynchronizerImagePointCloud>(queue_size_+2);
-					sync_sub->connectInput(*image_sub, *point_cloud_sub);
-					sync_sub->registerCallback(boost::bind(&DetectorNodelet::dataCallback, this, _1, _2, vision_msgs::MaskArrayConstPtr(), vision_msgs::DetectionArrayConstPtr()));
+					typedef message_filters::TimeSynchronizer<sensor_msgs::Image, sensor_msgs::CameraInfo, vision_msgs::Features> SynchronizerImageCameraInfoFeatures;
+					boost::shared_ptr<SynchronizerImageCameraInfoFeatures> sync_sub = make_shared<SynchronizerImageCameraInfoFeatures>(queue_size_+2);
+					sync_sub->connectInput(*image_sub, *camera_info_sub, *features_sub);
+					sync_sub->registerCallback(boost::bind(&DetectorNodelet::dataCallback, this, _1, _2, _3, vision_msgs::MaskArrayConstPtr(), vision_msgs::DetectionArrayConstPtr()));
+				    NODELET_INFO("DetectorNodelet listening to synchronized msgs: Image, CameraInfo, Features");
 				}
 			}
 		}
@@ -129,54 +134,67 @@ void DetectorNodelet::subscribeTopics(ros::NodeHandle& nh)
 				boost::shared_ptr<DetectionArraySubscriber> detections_sub =  make_shared<DetectionArraySubscriber>();
 				detections_sub->subscribe(nh, "input_detections", queue_size_);
 
-				typedef message_filters::TimeSynchronizer<sensor_msgs::Image, vision_msgs::DetectionArray> SynchronizerImageDetections;
-				boost::shared_ptr<SynchronizerImageDetections> sync_sub = make_shared<SynchronizerImageDetections>(queue_size_+2);
-				sync_sub->connectInput(*image_sub, *detections_sub);
-				sync_sub->registerCallback(boost::bind(&DetectorNodelet::dataCallback, this, _1, sensor_msgs::PointCloud2ConstPtr(), vision_msgs::MaskArrayConstPtr(), _2));
+				typedef message_filters::TimeSynchronizer<sensor_msgs::Image, sensor_msgs::CameraInfo, vision_msgs::DetectionArray> SynchronizerImageCameraInfoDetections;
+				boost::shared_ptr<SynchronizerImageCameraInfoDetections> sync_sub = make_shared<SynchronizerImageCameraInfoDetections>(queue_size_+2);
+				sync_sub->connectInput(*image_sub, *camera_info_sub, *detections_sub);
+				sync_sub->registerCallback(boost::bind(&DetectorNodelet::dataCallback, this, _1, _2, vision_msgs::FeaturesConstPtr(), vision_msgs::MaskArrayConstPtr(), _3));
+				NODELET_INFO("DetectorNodelet listening to synchronized msgs: Image, CameraInfo, DetectionArray");
 			}
 			else {
-
 				if (use_masks_) {
 					boost::shared_ptr<MaskArraySubscriber> masks_sub =  make_shared<MaskArraySubscriber>();
 					masks_sub->subscribe(nh, "masks", queue_size_);
 
-					typedef message_filters::TimeSynchronizer<sensor_msgs::Image, vision_msgs::MaskArray> SynchronizerImageMaskArray;
-					boost::shared_ptr<SynchronizerImageMaskArray> sync_sub = make_shared<SynchronizerImageMaskArray>(queue_size_+2);
-					sync_sub->connectInput(*image_sub, *masks_sub);
-					sync_sub->registerCallback(boost::bind(&DetectorNodelet::dataCallback, this, _1, sensor_msgs::PointCloud2ConstPtr(), _2, vision_msgs::DetectionArrayConstPtr()));
+					typedef message_filters::TimeSynchronizer<sensor_msgs::Image, sensor_msgs::CameraInfo, vision_msgs::MaskArray> SynchronizerImageCameraInfoMaskArray;
+					boost::shared_ptr<SynchronizerImageCameraInfoMaskArray> sync_sub = make_shared<SynchronizerImageCameraInfoMaskArray>(queue_size_+2);
+					sync_sub->connectInput(*image_sub, *camera_info_sub, *masks_sub);
+					sync_sub->registerCallback(boost::bind(&DetectorNodelet::dataCallback, this, _1, _2, vision_msgs::FeaturesConstPtr(), _3, vision_msgs::DetectionArrayConstPtr()));
+				    NODELET_INFO("DetectorNodelet listening to synchronized msgs: Image, CameraInfo, MaskArray");
 				}
 				else {
-					image_sub->registerCallback(boost::bind(&DetectorNodelet::dataCallback, this,_1, sensor_msgs::PointCloud2ConstPtr(), vision_msgs::MaskArrayConstPtr(), vision_msgs::DetectionArrayConstPtr()));
+					typedef message_filters::TimeSynchronizer<sensor_msgs::Image, sensor_msgs::CameraInfo> SynchronizerImageCameraInfo;
+					boost::shared_ptr<SynchronizerImageCameraInfo> sync_sub = make_shared<SynchronizerImageCameraInfo>(queue_size_+2);
+					sync_sub->connectInput(*image_sub, *camera_info_sub);
+					sync_sub->registerCallback(boost::bind(&DetectorNodelet::dataCallback, this, _1, _2, vision_msgs::FeaturesConstPtr(), vision_msgs::MaskArrayConstPtr(), vision_msgs::DetectionArrayConstPtr()));
+				    NODELET_INFO("DetectorNodelet listening to synchronized msgs: Image, CameraInfo");
 				}
 			}
 		}
 	}
 	else {
-		if (use_point_cloud_) {
-			boost::shared_ptr<PointCloud2Subscriber> point_cloud_sub =  make_shared<PointCloud2Subscriber>();
-			point_cloud_sub->subscribe(nh, "point_cloud", queue_size_);
+		if (use_features_) {
+			boost::shared_ptr<FeaturesSubscriber> features_sub =  make_shared<FeaturesSubscriber>();
+			features_sub->subscribe(nh, "features", queue_size_);
+            boost::shared_ptr<CameraInfoSubscriber> camera_info_sub = make_shared<CameraInfoSubscriber>();
+            camera_info_sub->subscribe(nh, "camera_info", queue_size_);
 
 			if (use_input_detections_) {
 				boost::shared_ptr<DetectionArraySubscriber> detections_sub =  make_shared<DetectionArraySubscriber>();
 				detections_sub->subscribe(nh, "input_detections", queue_size_);
 
-				typedef message_filters::TimeSynchronizer<sensor_msgs::PointCloud2, vision_msgs::DetectionArray> SynchronizerPointCloudDetections;
-				boost::shared_ptr<SynchronizerPointCloudDetections> sync_sub = make_shared<SynchronizerPointCloudDetections>(queue_size_+2);
-				sync_sub->connectInput(*point_cloud_sub, *detections_sub);
-				sync_sub->registerCallback(boost::bind(&DetectorNodelet::dataCallback, this, sensor_msgs::ImageConstPtr(), _1, vision_msgs::MaskArrayConstPtr(), _2));
+				typedef message_filters::TimeSynchronizer<sensor_msgs::CameraInfo, vision_msgs::Features, vision_msgs::DetectionArray> SynchronizerCameraInfoFeaturesDetections;
+				boost::shared_ptr<SynchronizerCameraInfoFeaturesDetections> sync_sub = make_shared<SynchronizerCameraInfoFeaturesDetections>(queue_size_+2);
+				sync_sub->connectInput(*camera_info_sub, *features_sub, *detections_sub);
+				sync_sub->registerCallback(boost::bind(&DetectorNodelet::dataCallback, this, sensor_msgs::ImageConstPtr(), _1, _2, vision_msgs::MaskArrayConstPtr(), _3));
+				NODELET_INFO("DetectorNodelet listening to synchronized msgs: CameraInfo, Features, DetectionArray");
 			}
 			else {
 				if (use_masks_) {
 					boost::shared_ptr<MaskArraySubscriber> masks_sub =  make_shared<MaskArraySubscriber>();
 					masks_sub->subscribe(nh, "masks", queue_size_);
 
-					typedef message_filters::TimeSynchronizer<sensor_msgs::PointCloud2, vision_msgs::MaskArray> SynchronizerPointCloudmask;
-					boost::shared_ptr<SynchronizerPointCloudmask> sync_sub = make_shared<SynchronizerPointCloudmask>(queue_size_+2);
-					sync_sub->connectInput(*point_cloud_sub, *masks_sub);
-					sync_sub->registerCallback(boost::bind(&DetectorNodelet::dataCallback, this, sensor_msgs::ImageConstPtr(), _1, _2, vision_msgs::DetectionArrayConstPtr()));
+					typedef message_filters::TimeSynchronizer<sensor_msgs::CameraInfo, vision_msgs::Features, vision_msgs::MaskArray> SynchronizerCameraInfoFeaturesMasks;
+					boost::shared_ptr<SynchronizerCameraInfoFeaturesMasks> sync_sub = make_shared<SynchronizerCameraInfoFeaturesMasks>(queue_size_+2);
+					sync_sub->connectInput(*camera_info_sub, *features_sub, *masks_sub);
+					sync_sub->registerCallback(boost::bind(&DetectorNodelet::dataCallback, this, sensor_msgs::ImageConstPtr(), _1, _2, _3, vision_msgs::DetectionArrayConstPtr()));
+				    NODELET_INFO("DetectorNodelet listening to synchronized msgs: CameraInfo, Features, MaskArray");
 				}
 				else {
-					point_cloud_sub->registerCallback(boost::bind(&DetectorNodelet::dataCallback, this, sensor_msgs::ImageConstPtr(), _1, vision_msgs::MaskArrayConstPtr(), vision_msgs::DetectionArrayConstPtr()));
+					typedef message_filters::TimeSynchronizer<sensor_msgs::CameraInfo, vision_msgs::Features> SynchronizerCameraInfoFeatures;
+					boost::shared_ptr<SynchronizerCameraInfoFeatures> sync_sub = make_shared<SynchronizerCameraInfoFeatures>(queue_size_+2);
+					sync_sub->connectInput(*camera_info_sub, *features_sub);
+					sync_sub->registerCallback(boost::bind(&DetectorNodelet::dataCallback, this, sensor_msgs::ImageConstPtr(), _1, _2, vision_msgs::MaskArrayConstPtr(), vision_msgs::DetectionArrayConstPtr()));
+				    NODELET_INFO("DetectorNodelet listening to synchronized msgs: CameraInfo, Features");
 				}
 			}
 		}
@@ -205,15 +223,25 @@ bool DetectorNodelet::resultsNeeded()
  * @param masks the regions of interest in the image (might be missing)
  */
 void DetectorNodelet::dataCallback(const sensor_msgs::ImageConstPtr& image_msg,
-									const sensor_msgs::PointCloud2ConstPtr& point_cloud_msg,
+                                    const sensor_msgs::CameraInfoConstPtr& camera_info_msg,
+									const vision_msgs::FeaturesConstPtr& features_msg,
 									const vision_msgs::MaskArrayConstPtr& masks_msg,
 									const vision_msgs::DetectionArrayConstPtr& detections_msg)
 {
+    NODELET_DEBUG("Entering dataCallback()");
+
+    if (camera_info_msg.get() != NULL)
+    {
+      const cv::Mat P(3,4, CV_64FC1, const_cast<double*>(camera_info_msg->P.data()));
+      const cv::Mat K_prime = P.colRange(cv::Range(0,3));
+      detector_->setCameraMatrix(K_prime);
+    }
+
 	if (use_image_) {
 		header_ = image_msg->header;
 	}
-	else if (use_point_cloud_){
-		header_ = point_cloud_msg->header;
+	else if (use_features_){
+		header_ = features_msg->header;
 	}
 
     if (use_image_) 
@@ -235,7 +263,13 @@ void DetectorNodelet::dataCallback(const sensor_msgs::ImageConstPtr& image_msg,
       odat_ros::fromMsg(*detections_msg, detections);
       detector_->setInputdetections(detections);
     }
-	//if (use_point_cloud_) detector_->setPointCloud(point_cloud);
+	
+	if (use_features_) 
+    {
+      odat::FeatureSet feature_set;
+      odat_ros::fromMsg(*features_msg, feature_set);
+      detector_->setFeatures(feature_set);
+    }
 
 	if (resultsNeeded()) {
 		runNodelet();
@@ -279,16 +313,39 @@ void DetectorNodelet::loadModels(const std::string& models)
 	std::vector<std::string> models_vec;
 	boost::split(models_vec, models, boost::is_any_of("\t ,"));
 	std::vector<std::string> models_vec_filtered;
+    std::ostringstream model_list;
 	for (size_t i=0;i<models_vec.size();++i) {
-		if (!models_vec[i].empty()) models_vec_filtered.push_back(models_vec[i]);
+		if (!models_vec[i].empty())
+        {
+          models_vec_filtered.push_back(models_vec[i]);
+          if (i != 0) model_list << ", ";
+          model_list << models_vec[i];
+        }
 	}
 
 	if (models_vec_filtered.size()!=0) {
 		detector_->loadModels(models_vec_filtered);
+	    NODELET_INFO_STREAM("Loading models '" << model_list.str() << "' for " << detector_->getName() << ".");
 	}
 	else {
+	    NODELET_INFO_STREAM("Loading all models for " << detector_->getName() << ".");
 		detector_->loadAllModels();
 	}
+	model_list.str("");
+    std::vector<std::string> loaded_models = detector_->getLoadedModels();
+    for (size_t i = 0; i < loaded_models.size(); ++i)
+    {
+      if (i != 0) model_list << ", ";
+      model_list << loaded_models[i];
+    }
+    if (!loaded_models.empty())
+    {
+      NODELET_INFO_STREAM("Loaded models '" << model_list.str() << "' for " << detector_->getName() << ".");
+    }
+    else
+    {
+      NODELET_WARN_STREAM("No models for " << detector_->getName() << " have been loaded!");
+    }
 }
 
 }

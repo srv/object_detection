@@ -9,16 +9,22 @@
 
   <depend package="opencv2"/>
   <depend package="sensor_msgs"/>
+  <depend package="vision_msgs" />
   <depend package="cv_bridge"/>
   <depend package="roscpp"/>
   <depend package="std_msgs"/>
   <depend package="image_transport"/>
-  <depend package="vision_msgs" />
   <depend package="image_geometry" />
   <depend package="camera_info_manager" />
   <depend package="pcl" />
   <depend package="pcl_ros" />
   <depend package="tf" />
+  <depend package="nodelet" />
+
+  <export>
+    <nodelet plugin="${prefix}/nodelet_plugins.xml" />
+  </export>
+
  
 </package>
 

@@ -18,7 +18,7 @@ namespace object_detection_ros {
       virtual void childInit(ros::NodeHandle& nh)
       {
         use_image_ = true;
-        use_point_cloud_ = false;
+        use_features_ = false;
         use_masks_ = false;
         use_input_detections_ = false;
 
@@ -45,16 +45,7 @@ namespace object_detection_ros {
 
         std::string models;
 	    nh.getParam("models", models);
-	    if (models == "")
-        {
-          NODELET_INFO("Loading all models.");
-        }
-        else
-        {
-          NODELET_INFO("Loading the following models: %s", models.c_str());
-        }
 	    loadModels(models);
-	    NODELET_INFO("Loading done.");
 
 	    loadSettings(nh);
 	    printSettings();

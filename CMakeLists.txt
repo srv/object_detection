@@ -41,6 +41,7 @@ set(LIB_SOURCES
     src/object_detection/histogram_utilities.cpp 
     src/object_detection/utilities.cpp
     src/object_detection/statistics.cpp
+    src/object_detection/shape_processing.cpp
     src/object_detection/shape_matching.cpp
     src/object_detection/clipper.cpp
     src/object_detection/glcm.cpp
@@ -48,34 +49,84 @@ set(LIB_SOURCES
     src/object_detection/transformation_calculator.cpp
    )
 
+set(NEW_LIB_SOURCES
+    src/rein_object_detection/color_detector.cpp
+    src/nodelets/color_detector_nodelet.cpp
+   )
 
-rosbuild_add_library(object_detection ${LIB_SOURCES})
-rosbuild_add_executable(object_detection_test src/object_detection_test/main.cpp)
-rosbuild_add_executable(pixel_feature_extraction src/pixel_feature_extraction/main.cpp)
-rosbuild_add_executable(glcm_extraction src/glcm_extraction/main.cpp)
-target_link_libraries(object_detection boost_program_options)
+# object detection and tracking library
+rosbuild_add_library(odat
+    src/odat/fs_model_storage.cpp
+    src/odat/detection.cpp
+    )
+rosbuild_link_boost(odat serialization)
 
-target_link_libraries(object_detection_test object_detection)
-target_link_libraries(pixel_feature_extraction object_detection)
-target_link_libraries(glcm_extraction object_detection)
+# adapter to ros
+rosbuild_add_library(odat_ros
+    src/odat_ros/detector_nodelet.cpp
+    src/odat_ros/conversions.cpp
+    )
+target_link_libraries(odat_ros odat)
 
-include_directories(include/object_detection)
+# object detection library
+rosbuild_add_library(${PROJECT_NAME}
+    src/object_detection/color_detector.cpp
+    src/object_detection/shape_processing.cpp
+    src/object_detection/histogram_utilities.cpp 
+    src/object_detection/feature_matching_detector.cpp
+    )
+target_link_libraries(${PROJECT_NAME} odat)
 
-rosbuild_add_executable(object_detector_node src/nodes/object_detector_node.cpp)
-rosbuild_add_executable(trainer_node src/nodes/trainer_node.cpp)
-rosbuild_add_executable(stereo_trainer_node src/nodes/stereo_trainer_node.cpp)
-rosbuild_add_executable(keypoint_detector_node src/nodes/keypoint_detector_node.cpp)
-rosbuild_add_executable(detection_display_node src/nodes/detection_display_node.cpp)
-rosbuild_add_executable(movement_calculator_node src/nodes/movement_calculator_node.cpp)
-rosbuild_add_executable(model_fitting_node src/nodes/model_fitting_node.cpp)
-rosbuild_add_executable(joiner src/tools/joiner.cpp)
-rosbuild_add_executable(transformation_estimator src/tools/transformation_estimator.cpp)
-rosbuild_add_executable(transformation_error_calculator src/tools/transformation_error_calculator.cpp)
-rosbuild_add_executable(feature_quality src/tools/feature_quality.cpp)
-rosbuild_add_executable(sample_distance_threshold_computation src/tools/sample_distance_threshold_computation.cpp)
+# ros adapter to object detection library
+rosbuild_add_library(${PROJECT_NAME}_ros
+    src/object_detection_ros/color_detector_nodelet.cpp
+    src/object_detection_ros/feature_matching_detector_nodelet.cpp
+    )
+target_link_libraries(${PROJECT_NAME}_ros ${PROJECT_NAME} odat_ros)
 
-target_link_libraries(object_detector_node object_detection)
-target_link_libraries(trainer_node object_detection)
-target_link_libraries(stereo_trainer_node object_detection)
-target_link_libraries(keypoint_detector_node object_detection)
-target_link_libraries(detection_display_node object_detection)
+rosbuild_add_executable(color_detector_trainer src/object_detection_tools/color_detector_trainer.cpp)
+target_link_libraries(color_detector_trainer ${PROJECT_NAME})
+
+rosbuild_add_executable(trainer src/object_detection_tools/trainer.cpp)
+target_link_libraries(trainer ${PROJECT_NAME})
+
+rosbuild_add_executable(detector src/object_detection_tools/detector.cpp)
+target_link_libraries(detector ${PROJECT_NAME})
+
+rosbuild_add_executable(detection_display src/odat_ros/tools/detection_display.cpp)
+target_link_libraries(detection_display odat_ros)
+
+
+#rosbuild_add_library(object_detection ${LIB_SOURCES} ${NEW_LIB_SOURCES})
+#rosbuild_add_executable(object_detection_test src/object_detection_test/main.cpp)
+#rosbuild_add_executable(pixel_feature_extraction src/pixel_feature_extraction/main.cpp)
+#rosbuild_add_executable(glcm_extraction src/glcm_extraction/main.cpp)
+#target_link_libraries(object_detection boost_program_options sqlite3 pq)
+
+#target_link_libraries(object_detection_test object_detection)
+#target_link_libraries(pixel_feature_extraction object_detection)
+#target_link_libraries(glcm_extraction object_detection)
+
+#include_directories(include/object_detection)
+#include_directories(include/rein_object_detection)
+
+#rosbuild_add_executable(object_detector_node src/nodes/object_detector_node.cpp)
+#rosbuild_add_executable(trainer_node src/nodes/trainer_node.cpp)
+#rosbuild_add_executable(stereo_trainer_node src/nodes/stereo_trainer_node.cpp)
+#rosbuild_add_executable(keypoint_detector_node src/nodes/keypoint_detector_node.cpp)
+#rosbuild_add_executable(detection_display_node src/nodes/detection_display_node.cpp)
+#rosbuild_add_executable(movement_calculator_node src/nodes/movement_calculator_node.cpp)
+#rosbuild_add_executable(model_fitting_node src/nodes/model_fitting_node.cpp)
+#rosbuild_add_executable(joiner src/tools/joiner.cpp)
+#rosbuild_add_executable(transformation_estimator src/tools/transformation_estimator.cpp)
+#rosbuild_add_executable(transformation_error_calculator src/tools/transformation_error_calculator.cpp)
+#rosbuild_add_executable(feature_quality src/tools/feature_quality.cpp)
+#rosbuild_add_executable(sample_distance_threshold_computation src/tools/sample_distance_threshold_computation.cpp)
+
+#target_link_libraries(color_detector_trainer object_detection)
+#target_link_libraries(object_detector_node object_detection)
+#target_link_libraries(trainer_node object_detection)
+#target_link_libraries(stereo_trainer_node object_detection)
+#target_link_libraries(keypoint_detector_node object_detection)
+#target_link_libraries(detection_display_node object_detection)
+

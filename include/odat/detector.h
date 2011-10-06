@@ -53,6 +53,7 @@
 #include "odat/detection.h"
 #include "odat/model_storage.h"
 #include "odat/mask.h"
+#include "odat/feature_set.h"
 
 namespace odat {
 
@@ -74,6 +75,15 @@ public:
 	}
 
 	/**
+	 * \brief Set camera matrix
+	 * @param k camera matrix
+	 */
+	inline void setCameraMatrix(const cv::Mat& k)
+    {
+        camera_matrix_k_ = k;
+    }
+
+	/**
 	 * Sets the regions-of-interest (ROI/masks) where the detector should look.
 	 * @param ros_list Array of rectangles representing the regions of interest. If empty
 	 * the entire image is used.
@@ -82,6 +92,15 @@ public:
 	{
 		masks_ = masks;
 	}
+
+	/**
+	 * Sets the input features
+	 * @param feature_set the set of input features
+	 */
+	inline void setFeatures(const FeatureSet& features)
+    {
+        features_ = features;
+    }
 
 	/**
 	 * Set list of detections. This is useful when the detector works like a filter, for chaining detectors
@@ -123,6 +142,11 @@ public:
 	}
 
 	/**
+	* Returns a list containing the names of all loaded models
+	*/
+    virtual std::vector<std::string> getLoadedModels() const = 0;
+
+	/**
 	 * This returns the list of resulting detection after detect() is called.
 	 * @return detections array
 	 */
@@ -142,9 +166,19 @@ protected:
 	cv::Mat image_;
 
 	/**
+	 * The camera matrix
+	 */
+    cv::Mat camera_matrix_k_;
+
+	/**
 	 * Input Masks
 	 */
     std::vector<Mask> masks_;
+
+    /**
+     * Features
+     */
+    FeatureSet features_;
 
 	/**
 	 * Input ROIs

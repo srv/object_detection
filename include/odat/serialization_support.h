@@ -44,15 +44,18 @@
 
 #include <boost/serialization/binary_object.hpp>
 #include <boost/serialization/split_free.hpp>
+#include <boost/serialization/vector.hpp>
 
 #include <opencv2/core/core.hpp>
 
-// ------------- cv::Mat
+#include "odat/feature_set_3d.h"
+
 namespace boost 
 { 
   namespace serialization 
   {
 
+    // ------------- cv::Mat
     template<class Archive>
     void save(Archive & ar, const cv::Mat& mat, const unsigned int version)
     {
@@ -145,13 +148,41 @@ namespace boost
       ar & scalar.val;
     }
 
-
     // ------------- cv::Range
     template<class Archive>
     void serialize(Archive & ar, cv::Range& range, const unsigned int version)
     {
       ar & range.start;
       ar & range.end;
+    }
+
+    // ------------- cv::KeyPoint
+    template<class Archive>
+    void serialize(Archive & ar, cv::KeyPoint& key_point, const unsigned int version)
+    {
+      ar & key_point.pt;
+      ar & key_point.size;
+      ar & key_point.angle;
+      ar & key_point.response;
+      ar & key_point.octave;
+      ar & key_point.class_id;
+    }
+
+    // ------------- odat::FeatureSet
+    template<class Archive>
+    void serialize(Archive & ar, odat::FeatureSet& features, const unsigned int version)
+    {
+      ar & features.key_points;
+      ar & features.descriptor_name;
+      ar & features.descriptors;
+    }
+
+    // ------------- odat::FeatureSet3D
+    template<class Archive>
+    void serialize(Archive & ar, odat::FeatureSet3D& features, const unsigned int version)
+    {
+      ar & features.features_left;
+      ar & features.world_points;
     }
   }
 }

@@ -40,6 +40,35 @@ void odat_ros::fromMsg(const vision_msgs::MaskArray& masks_msg, std::vector<odat
   }  
 }
 
+void odat_ros::fromMsg(const vision_msgs::Features& features_msg, odat::FeatureSet& features)
+{
+  features.key_points.resize(features_msg.key_points.size());
+  for (size_t i = 0; i < features.key_points.size(); ++i)
+  {
+    features.key_points[i].pt.x = features_msg.key_points[i].x;
+    features.key_points[i].pt.y = features_msg.key_points[i].y;
+    features.key_points[i].size = features_msg.key_points[i].size;
+    features.key_points[i].angle = features_msg.key_points[i].angle;
+    features.key_points[i].response = features_msg.key_points[i].response;
+    features.key_points[i].octave = features_msg.key_points[i].octave;
+    const cv::Mat descriptor_mat(features_msg.descriptor_data, true);
+    features.descriptors = descriptor_mat.reshape(0, features.key_points.size());
+    features.descriptor_name = features_msg.descriptor_name;
+  }
+}
+
+void odat_ros::fromMsg(const vision_msgs::Features3D& features_3d_msg, odat::FeatureSet3D& features_3d)
+{
+  fromMsg(features_3d_msg.features_left, features_3d.features_left);
+  features_3d.world_points.resize(features_3d_msg.world_points.size());
+  for (size_t i = 0; i < features_3d_msg.world_points.size(); ++i)
+  {
+    features_3d.world_points[i].x = features_3d_msg.world_points[i].x;
+    features_3d.world_points[i].y = features_3d_msg.world_points[i].y;
+    features_3d.world_points[i].z = features_3d_msg.world_points[i].z;
+  }
+}
+
 void odat_ros::toMsg(const odat::Detection& detection, vision_msgs::Detection& detection_msg)
 {
   detection_msg.label = detection.label;

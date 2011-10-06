@@ -27,6 +27,11 @@ namespace object_detection
       virtual void loadModels(const std::vector<std::string>& models);
 
       /**
+      * @return list of loaded models
+      */
+      virtual std::vector<std::string> getLoadedModels() const;
+
+      /**
       * Saves the given model using model storage
       */
       void saveModel(const std::string& model);

@@ -26,6 +26,10 @@ namespace odat {
     /// some score (usually between 0 and 1) that tells the
     /// quality of the detection
     double score;
+
+    /// describes the transformation of the detected
+    /// object relative to the training data
+    cv::Mat transform;
   };
 }
 

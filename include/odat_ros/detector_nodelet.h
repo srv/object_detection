@@ -45,7 +45,8 @@
 
 // messages
 #include <sensor_msgs/Image.h>
-#include <sensor_msgs/PointCloud2.h>
+#include <sensor_msgs/CameraInfo.h>
+#include <vision_msgs/Features.h>
 #include <vision_msgs/DetectionArray.h>
 #include <vision_msgs/MaskArray.h>
 
@@ -80,7 +81,7 @@ namespace odat_ros {
 class DetectorNodelet : public NodeletBase
 {
 public:
-	DetectorNodelet() : use_image_(true), use_point_cloud_(false), use_masks_(false), use_input_detections_(false), queue_size_(1) {};
+	DetectorNodelet() : use_image_(true), use_features_(false), use_masks_(false), use_input_detections_(false), queue_size_(1) {};
 
 protected:
 	/**
@@ -121,16 +122,19 @@ private:
 	/**
 	 * Callback
 	 * @param image the image to run recognition on
+	 * @param camera_info the camera info for the image
+	 * @param features the features of the current image
 	 * @param masks the regions of interest in the image (might be missing)
 	 */
 	void dataCallback(const sensor_msgs::ImageConstPtr& image,
-			const sensor_msgs::PointCloud2ConstPtr& point_cloud,
+	        const sensor_msgs::CameraInfoConstPtr& camera_info,
+			const vision_msgs::FeaturesConstPtr& features,
 			const vision_msgs::MaskArrayConstPtr& masks,
 			const vision_msgs::DetectionArrayConstPtr& detections);
 
 protected:
 	bool use_image_;
-	bool use_point_cloud_;
+	bool use_features_;
 	bool use_masks_;
 	bool use_input_detections_;
 	int queue_size_;

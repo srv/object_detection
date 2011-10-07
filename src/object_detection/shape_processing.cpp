@@ -23,6 +23,17 @@ cv::Mat object_detection::shape_processing::minimalMask(const Shape& shape)
   return mask;
 }
 
+object_detection::shape_processing::Shape object_detection::shape_processing::shift(const Shape& shape, float dx, float dy)
+{
+  Shape shifted_shape = shape;
+  for (size_t i = 0; i < shifted_shape.size(); ++i)
+  {
+    shifted_shape[i].x += dx;
+    shifted_shape[i].y += dy;
+  }
+  return shifted_shape;
+}
+
 bool object_detection::shape_processing::compareShapeArea(const Shape& shape1, const Shape& shape2)
 {
     return area(shape1) > area(shape2);

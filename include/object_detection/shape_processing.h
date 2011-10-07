@@ -25,6 +25,12 @@ namespace object_detection
     * background and 255 for everything in the shape
     */
     cv::Mat minimalMask(const Shape& shape);
+
+    /**
+    * shifts all points of the given shape by given parameters and returns
+    * the newly created shape
+    */
+    Shape shift(const Shape& shape, float dx, float dy);
       
     /**
     * Comparison method for shape sorting.

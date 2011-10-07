@@ -66,8 +66,11 @@ object_detection::ColorDetector::ColorDetector(odat::ModelStorage::Ptr model_sto
 // adapt histogram according to settings
 cv::MatND object_detection::ColorDetector::adaptHistogram(const std::string& model_name, const cv::MatND& model_histogram)
 {
+  assert(!model_histogram.empty());
+  assert(model_histogram.rows == 180);
+  assert(model_histogram.cols == 256);
   cv::MatND adapted_histogram;
-  cv::resize(model_histogram, adapted_histogram, cv::Size(num_hue_bins_, num_saturation_bins_));
+  cv::resize(model_histogram, adapted_histogram, cv::Size(num_saturation_bins_, num_hue_bins_));
 
   // set small saturations to zero
   int black_sat_bins = min_saturation_ * num_saturation_bins_ / 256;
@@ -181,30 +184,44 @@ void object_detection::ColorDetector::trainInstance(const std::string& name, con
 
 void object_detection::ColorDetector::endTraining(const std::string& name)
 {
-  int num_hue_bins_ = 180;
-  int num_saturation_bins_ = 256;
+  // we create the full histogram for training, it will be adapted for
+  // detection according to current parameters
+  const int NUM_HUE_BINS = 180;
+  const int NUM_SATURATION_BINS = 256;
   assert(training_data_.find(name) != training_data_.end());
   cv::MatND image_histogram;
   cv::MatND object_histogram;
   const std::vector<odat::TrainingData>& training_data = training_data_[name];
   for (size_t i = 0; i < training_data.size(); ++i)
   {
+    if (training_data[i].image.empty())
+    {
+      continue;
+    }
     cv::Mat object_mask = cv::Mat::zeros(training_data[i].image.rows, training_data[i].image.cols, CV_8U);
     cv::Mat local_object_mask = object_mask(training_data[i].mask.roi);
     training_data[i].mask.mask.copyTo(local_object_mask);
     assert(training_data[i].image.type() == CV_8UC3);
     cv::Mat hsv_image;
+    // range of H: [0;180]
+    // range of S: [0;255]
+    // range of V: [0;255]
     cv::cvtColor(training_data[i].image, hsv_image, CV_BGR2HSV);
+
     if (i == 0)
     {
-      image_histogram = histogram_utilities::calculateHistogram(hsv_image, num_hue_bins_, num_saturation_bins_, cv::Mat());
-      object_histogram = histogram_utilities::calculateHistogram(hsv_image, num_hue_bins_, num_saturation_bins_, object_mask);
+      image_histogram = histogram_utilities::calculateHistogram(hsv_image, NUM_HUE_BINS, NUM_SATURATION_BINS, cv::Mat());
+      object_histogram = histogram_utilities::calculateHistogram(hsv_image, NUM_HUE_BINS, NUM_SATURATION_BINS, object_mask);
     }
     else
     {
-      histogram_utilities::accumulateHistogram(hsv_image, num_hue_bins_, num_saturation_bins_, cv::Mat(), image_histogram);
-      histogram_utilities::accumulateHistogram(hsv_image, num_hue_bins_, num_saturation_bins_, object_mask, object_histogram);
+      histogram_utilities::accumulateHistogram(hsv_image, NUM_HUE_BINS, NUM_SATURATION_BINS, cv::Mat(), image_histogram);
+      histogram_utilities::accumulateHistogram(hsv_image, NUM_HUE_BINS, NUM_SATURATION_BINS, object_mask, object_histogram);
     }
+  }
+  if (object_histogram.empty())
+  {
+    throw odat::Exception("Insufficient training data for " + getName());
   }
   cv::MatND model_histogram = object_histogram / image_histogram * 255;
 

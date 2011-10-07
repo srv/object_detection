@@ -71,7 +71,7 @@ namespace odat_ros
 
     public:
 
-      DetectionDisplay() : it_(nh_), sync_sub_(100)
+      DetectionDisplay() : it_(nh_), sync_sub_(20)
       {
         image_sub_.subscribe(it_,"image", 1);
         detections_sub_.subscribe(nh_,"detections", 1);

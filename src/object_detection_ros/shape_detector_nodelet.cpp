@@ -17,7 +17,7 @@ namespace object_detection_ros {
       */
       virtual void childInit(ros::NodeHandle& nh)
       {
-        use_image_ = false;
+        use_image_ = true;
         use_features_ = false;
         use_masks_ = false;
         use_input_detections_ = true;

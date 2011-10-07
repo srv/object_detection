@@ -1,16 +1,42 @@
 #include <iostream>
 #include <ros/package.h>
 #include <boost/program_options.hpp>
+#include <boost/filesystem.hpp>
 
 #include <opencv2/highgui/highgui.hpp>
 
 #include <odat/fs_model_storage.h>
 
 #include "object_detection/color_detector.h"
+#include "object_detection/shape_detector.h"
 #include "object_detection/feature_matching_detector.h"
 
 
 namespace po = boost::program_options;
+
+// creates given directory if not exists, checks if given path
+// is a directory if exists
+// \return true if path is directory or could be created as directory, false otherwise
+bool makeDir(boost::filesystem::path& path)
+{
+  if (boost::filesystem::exists(path))
+  {
+    if (!boost::filesystem::is_directory(path))
+    {
+      std::cerr << "path '" << path <<  "' is not a directory." << std::endl;
+      return false;
+    }
+  }
+  else
+  {
+    if (!boost::filesystem::create_directory(path))
+    {
+      std::cerr << "could not create directory '" << path << "'." << std::endl;
+      return false;
+    }
+  }
+  return true;
+}
 
 int main(int argc, char** argv)
 {
@@ -23,6 +49,7 @@ int main(int argc, char** argv)
     ("detector,R", po::value<std::string>()->required(), "detector to run")
     ("db_type,D", po::value<std::string>()->default_value("filesystem"), "database type")
     ("connection_string,C", po::value<std::string>()->default_value(ros::package::getPath("object_detection") + "/models"), "database connection string")
+    ("detection_output,O", po::value<std::string>()->default_value(ros::package::getPath("object_detection") + "/detections"), "output directory for detections")
     ;
   po::variables_map vm;
   try
@@ -51,6 +78,10 @@ int main(int argc, char** argv)
   if (detector_name == "ColorDetector")
   {
     detector.reset(new object_detection::ColorDetector(model_storage));
+  }
+  else if (detector_name == "ShapeDetector")
+  {
+    detector.reset(new object_detection::ShapeDetector(model_storage));
   }
   else if (detector_name == "FeatureMatchingDetector")
   {
@@ -100,18 +131,46 @@ int main(int argc, char** argv)
   detector->loadAllModels();
   detector->detect();
 
+  boost::filesystem::path output_dir(vm["detection_output"].as<std::string>());
+  if (!makeDir(output_dir))
+  {
+    std::cerr << "could not access output directory" << std::endl;
+    return -5;
+  }
+
+  time_t rawtime;
+  struct tm * timeinfo;
+  char buffer [80];
+  time ( &rawtime );
+  timeinfo = localtime ( &rawtime );
+  strftime (buffer, 80, "%Y-%m-%d-%H-%M-%S",timeinfo);
+  std::string date_string(buffer);
+  output_dir = output_dir/date_string;
+
+  if (!makeDir(output_dir))
+  {
+    std::cerr << "could not create output directory" << std::endl;
+    return -6;
+  }
+
   std::vector<odat::Detection> detections = detector->getDetections();
   std::cout << detections.size() << " detections: " << std::endl;
   for (size_t i = 0; i < detections.size(); ++i)
   {
+    boost::filesystem::path detection_output_dir = output_dir/detections[i].detector;
+    if (!makeDir(detection_output_dir))
+    {
+      std::cerr << "could not create output directory for detections." << std::endl;
+      return -7;
+    }
     std::cout << "#" << i << ":" << std::endl;
     std::cout << detections[i] << std::endl;
     std::cout << std::endl;
     if (!detections[i].mask.mask.empty())
     {
       std::ostringstream name;
-      name << "detection-" << i << "-" << detector->getName() << "-mask.jpg";
-      cv::imwrite(name.str(), detections[i].mask.mask);
+      name << "detection-" << i << "-" << detections[i].label << "-mask.jpg";
+      cv::imwrite((detection_output_dir/name.str()).string(), detections[i].mask.mask);
     }
   }
 

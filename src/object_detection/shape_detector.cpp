@@ -32,24 +32,25 @@ void object_detection::ShapeDetector::detect()
     throw odat::Exception("Insufficient data for detection in " + getName());
   }
 
-  std::map<std::string, std::vector<cv::Point> >::const_iterator iter;
-  for (iter = model_shapes_.begin(); iter != model_shapes_.end(); ++iter)
+  for (size_t i = 0; i < input_detections_.size(); ++i)
   {
-    const std::string& model_name = iter->first;
-    const std::vector<cv::Point>& model_shape = iter->second;
-
-    for (size_t i = 0; i < input_detections_.size(); ++i)
+    const cv::Mat& candidate_mask = input_detections_[i].mask.mask;
+    if (candidate_mask.empty())
     {
-      const cv::Mat& candidate_mask = input_detections_[i].mask.mask;
-      if (candidate_mask.empty())
-      {
-        // skip detections without binary mask
-        continue;
-      }
-      // get shape of mask
-      std::vector<shape_processing::Shape> detected_shapes = shape_processing::extractShapes(candidate_mask);
-      std::vector<shape_processing::Shape> biggest_shapes = shape_processing::getBiggestShapes(detected_shapes);
-      const std::vector<cv::Point> candidate_shape = biggest_shapes[0];
+      // skip detections without binary mask
+      continue;
+    }
+
+    std::vector<shape_processing::Shape> detected_shapes = shape_processing::extractShapes(candidate_mask);
+    std::vector<shape_processing::Shape> biggest_shapes = shape_processing::getBiggestShapes(detected_shapes);
+    const std::vector<cv::Point> candidate_shape = biggest_shapes[0];
+
+    std::map<std::string, std::vector<cv::Point> >::const_iterator iter;
+    for (iter = model_shapes_.begin(); iter != model_shapes_.end(); ++iter)
+    {
+      const std::string& model_name = iter->first;
+      const std::vector<cv::Point>& model_shape = iter->second;
+          // get shape of mask
       double score;
       ShapeMatching::MatchingParameters matching_parameters = ShapeMatching::matchShapes(candidate_shape, model_shape, &score);
 
@@ -59,12 +60,17 @@ void object_detection::ShapeDetector::detect()
       {
         // report detection
         odat::Detection detection;
-        detection.mask.roi = shape_processing::boundingRect(candidate_shape);
-        detection.mask.mask = shape_processing::minimalMask(candidate_shape);
+        detection.mask = input_detections_[i].mask;
+        //detection.mask.roi = shape_processing::boundingRect(candidate_shape);
+        //detection.mask.mask = shape_processing::minimalMask(candidate_shape);
         detection.label = model_name;
         detection.detector = getName();
         detection.score = score;
+        detection.scale = matching_parameters.scale;
         // TODO insert pose information!
+        detection.transform.create(2, 3, CV_32F);
+        detection.transform.at<float>(0, 2) = matching_parameters.shift_x;
+        detection.transform.at<float>(1, 2) = matching_parameters.shift_y;
         detections_.push_back(detection);
       }
     }
@@ -118,7 +124,7 @@ void object_detection::ShapeDetector::trainInstance(const std::string& name, con
   std::vector<shape_processing::Shape> shapes = shape_processing::extractShapes(data.mask.mask);
   std::vector<shape_processing::Shape> biggest_shapes = shape_processing::getBiggestShapes(shapes);
   // save biggest shape as model
-  model_shapes_[name] = biggest_shapes[0];
+  model_shapes_[name] = shape_processing::shift(biggest_shapes[0], -data.mask.roi.width / 2, -data.mask.roi.height / 2);
 }
 
 void object_detection::ShapeDetector::endTraining(const std::string& name)

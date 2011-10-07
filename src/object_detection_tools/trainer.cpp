@@ -7,6 +7,7 @@
 #include <odat/fs_model_storage.h>
 
 #include "object_detection/color_detector.h"
+#include "object_detection/shape_detector.h"
 #include "object_detection/feature_matching_detector.h"
 
 
@@ -57,14 +58,8 @@ int main(int argc, char** argv)
       std::cerr << "Cannot load mask " << vm["mask"].as<std::string>() << "!" << std::endl;
       return -3;
     }
+    // we assume that the mask image has same size as image
     training_data.mask.roi = cv::Rect(0, 0, training_data.image.cols, training_data.image.rows);
-  }
-
-  if (training_data.mask.mask.rows != training_data.image.rows ||
-      training_data.mask.mask.cols != training_data.image.cols)
-  {
-    std::cerr << "Image and mask have to be of same size!" << std::endl;
-    return -4;
   }
 
   if (vm.count("stereo_features"))
@@ -92,6 +87,10 @@ int main(int argc, char** argv)
   if (detector == "ColorDetector")
   {
     trainable.reset(new object_detection::ColorDetector(model_storage));
+  }
+  else if (detector == "ShapeDetector")
+  {
+    trainable.reset(new object_detection::ShapeDetector(model_storage));
   }
   else if (detector == "FeatureMatchingDetector")
   {

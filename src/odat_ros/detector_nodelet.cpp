@@ -37,6 +37,7 @@
 
 /**
 \author Marius Muja
+\author Stephan Wirth
 **/
 
 #include "odat/detector.h"
@@ -87,6 +88,7 @@ void DetectorNodelet::subscribeTopics(ros::NodeHandle& nh)
 			                        (use_masks_? nh.resolveName("masks").c_str():"None"),
 			                        (use_input_detections_? nh.resolveName("input_detections").c_str():"None"),
 			                        (use_features_? nh.resolveName("features").c_str():"None"));
+	NODELET_INFO_STREAM("Queue size is " << queue_size_);
 
 	if (use_image_) {
 		boost::shared_ptr<image_transport::ImageTransport> it = make_shared<image_transport::ImageTransport>(nh);
@@ -214,7 +216,7 @@ void DetectorNodelet::advertiseTopics(ros::NodeHandle& nh)
  */
 bool DetectorNodelet::resultsNeeded()
 {
-	return (detections_pub_.getNumSubscribers()>0);
+	return (detections_pub_.getNumSubscribers() > 0);
 }
 
 /**
@@ -228,7 +230,7 @@ void DetectorNodelet::dataCallback(const sensor_msgs::ImageConstPtr& image_msg,
 									const vision_msgs::MaskArrayConstPtr& masks_msg,
 									const vision_msgs::DetectionArrayConstPtr& detections_msg)
 {
-    NODELET_DEBUG("Entering dataCallback()");
+    NODELET_DEBUG_STREAM("Entering dataCallback() of detector " << detector_->getName());
 
     if (camera_info_msg.get() != NULL)
     {

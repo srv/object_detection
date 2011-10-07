@@ -1,0 +1,23 @@
+<launch>
+  <arg name="manager" default="detection_pipeline_manager" />
+  <arg name="standalone" default="true" />
+  <arg name="camera" default="camera_flex_wide/left" />
+
+  <include file="$(find object_detection)/launch/detection_pipeline.launch">
+    <arg name="manager" value="$(arg manager)" />
+    <arg name="standalone" value="$(arg standalone)" />
+    <arg name="camera" value="$(arg camera)" />
+  </include>
+
+  <node name="color_detector_display" pkg="object_detection" type="detection_display" output="screen" >
+    <remap from="image" to="$(arg camera)/image_rect_color" />
+    <remap from="detections" to="color_detector/detections" />
+  </node>
+
+  <node name="shape_detector_display" pkg="object_detection" type="detection_display" output="screen" >
+    <remap from="image" to="$(arg camera)/image_rect_color" />
+    <remap from="detections" to="shape_detector/detections" />
+  </node>
+
+
+</launch>

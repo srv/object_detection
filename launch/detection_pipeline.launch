@@ -1,0 +1,30 @@
+<launch>
+  <arg name="manager" default="detection_pipeline_manager" />
+  <arg name="standalone" default="false" />
+  <arg name="camera" default="camera_flex_wide/left" />
+
+  <node if="$(arg standalone)" name="$(arg manager)" pkg="nodelet" type="nodelet" args="manager" output="screen" />
+
+  <node name="color_detector" pkg="nodelet" type="nodelet" args="load object_detection/ColorDetector $(arg manager)" output="screen" >
+    <remap from="color_detector/image" to="$(arg camera)/image_rect_color" />
+    <remap from="color_detector/camera_info" to="$(arg camera)/camera_info" />
+    <rosparam file="$(find object_detection)/cfg/color_detector_params.yaml" />
+    <param name="db_type" value="filesystem" />
+    <param name="connection_string" value="$(find object_detection)/models" />
+    <param name="show_images" value="false" />
+    <param name="models" value="fdr-pool-2" />
+    <param name="queue_size" value="10" />
+  </node>
+
+  <node name="shape_detector" pkg="nodelet" type="nodelet" args="load object_detection/ShapeDetector $(arg manager)" output="screen" >
+    <remap from="shape_detector/input_detections" to="color_detector/detections" />
+    <remap from="shape_detector/image" to="$(arg camera)/image_rect_color" />
+    <remap from="shape_detector/camera_info" to="$(arg camera)/camera_info" />
+    <rosparam file="$(find object_detection)/cfg/shape_detector_params.yaml" />
+    <param name="db_type" value="filesystem" />
+    <param name="connection_string" value="$(find object_detection)/models" />
+    <param name="models" value="fdr-pool-2" />
+    <param name="queue_size" value="10" />
+  </node>
+
+</launch>

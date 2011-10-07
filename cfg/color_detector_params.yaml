@@ -2,18 +2,16 @@
 num_hue_bins: 32
 
 # number of bins for the saturation channel
-num_saturation_bins: 16
+num_saturation_bins: 32
 
 # minimum saturation to accept
-# (note that saturation bins are counted from
-#  min_saturation to 255)
-min_saturation: 0
+min_saturation: 50
 
 # minimum value to accept
 min_value: 20 
 
 # size of the morphology operator
-morph_element_size: 9
+morph_element_size: 7
 
 # show debug images
 show_images: true

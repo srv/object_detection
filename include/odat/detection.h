@@ -28,8 +28,14 @@ namespace odat {
     double score;
 
     /// describes the transformation of the detected
-    /// object relative to the training data
+    /// object relative to the training data.
+    /// this can be a 6D transformation (3D manifold) (3x4 matrix)
+    /// or a 3D transformation (2D manifold) (2x3 matrix)
     cv::Mat transform;
+
+    /// describes the scaling of the object (in a 2D-based detection
+    double scale;
+
   };
 }
 

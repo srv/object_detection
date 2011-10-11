@@ -118,3 +118,19 @@ void odat_ros::toMsg(const std::vector<odat::Mask>& masks, vision_msgs::MaskArra
   }
 }
 
+void odat_ros::toMsg(const odat::TrainingData& training_data, vision_msgs::TrainingData& training_data_msg)
+{
+  assert(training_data.image.type() == CV_8UC3);
+  cv_bridge::CvImage cv_image;
+  cv_image.image = training_data.image;
+  cv_image.encoding = sensor_msgs::image_encodings::BGR8;
+  cv_image.toImageMsg(training_data_msg.image);
+  toMsg(training_data.mask, training_data_msg.mask);
+  training_data_msg.image_pose.x = training_data.image_pose.x;
+  training_data_msg.image_pose.y = training_data.image_pose.y;
+  training_data_msg.image_pose.theta = training_data.image_pose.theta;
+  
+  // TODO 3D info
+  // toMsg(training_data.features_3d, training_data_msg.features3d);
+}
+

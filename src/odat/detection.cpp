@@ -8,6 +8,7 @@ std::ostream& operator<< (std::ostream& out, const odat::Detection& detection)
          "Label         : " << detection.label << "\n"
          "Detector      : " << detection.detector << "\n"
          "Score         : " << detection.score << "\n"
-         "Transformation: " << detection.transform;
+         "Image Pose    : (" << detection.image_pose.x << ", " << detection.image_pose.y << ", " << detection.image_pose.theta << ")\n"
+         "Scale         : " << detection.scale;
   return out;
 }

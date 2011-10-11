@@ -41,16 +41,31 @@ void object_detection::ShapeDetector::detect()
       continue;
     }
 
+    // get shape of mask
     std::vector<shape_processing::Shape> detected_shapes = shape_processing::extractShapes(candidate_mask);
+    if (detected_shapes.size() == 0)
+    {
+      continue;
+    }
     std::vector<shape_processing::Shape> biggest_shapes = shape_processing::getBiggestShapes(detected_shapes);
-    const std::vector<cv::Point> candidate_shape = biggest_shapes[0];
+    std::vector<cv::Point> candidate_shape = biggest_shapes[0];
+    // shift according to roi
+    for (size_t k = 0; k < candidate_shape.size(); ++k)
+    {
+      candidate_shape[k].x += input_detections_[i].mask.roi.x;
+      candidate_shape[k].y += input_detections_[i].mask.roi.y;
+    }
 
     std::map<std::string, std::vector<cv::Point> >::const_iterator iter;
     for (iter = model_shapes_.begin(); iter != model_shapes_.end(); ++iter)
     {
       const std::string& model_name = iter->first;
+      // skip models that don't match the input detection
+      if (model_name != input_detections_[i].label)
+      {
+        continue;
+      }
       const std::vector<cv::Point>& model_shape = iter->second;
-          // get shape of mask
       double score;
       ShapeMatching::MatchingParameters matching_parameters = ShapeMatching::matchShapes(candidate_shape, model_shape, &score);
 
@@ -66,11 +81,12 @@ void object_detection::ShapeDetector::detect()
         detection.label = model_name;
         detection.detector = getName();
         detection.score = score;
-        detection.scale = matching_parameters.scale;
-        // TODO insert pose information!
-        detection.transform.create(2, 3, CV_32F);
-        detection.transform.at<float>(0, 2) = matching_parameters.shift_x;
-        detection.transform.at<float>(1, 2) = matching_parameters.shift_y;
+        // we have to invert here because we want the transformation from the
+        // model shape to the candidate shape
+        detection.scale = 1.0 / matching_parameters.scale;
+        detection.image_pose.x = -matching_parameters.shift_x;
+        detection.image_pose.y = -matching_parameters.shift_y;
+        detection.image_pose.theta = -matching_parameters.rotation;
         detections_.push_back(detection);
       }
     }
@@ -123,8 +139,10 @@ void object_detection::ShapeDetector::trainInstance(const std::string& name, con
   }
   std::vector<shape_processing::Shape> shapes = shape_processing::extractShapes(data.mask.mask);
   std::vector<shape_processing::Shape> biggest_shapes = shape_processing::getBiggestShapes(shapes);
-  // save biggest shape as model
-  model_shapes_[name] = shape_processing::shift(biggest_shapes[0], -data.mask.roi.width / 2, -data.mask.roi.height / 2);
+  // take biggest shape as model,
+  // transform and rotate to have the origin at (0, 0) and x axis aligned
+  shape_processing::Shape shifted_shape = ShapeMatching::rotatePoints(biggest_shapes[0], 0.0, data.mask.roi.x - data.image_pose.x, data.mask.roi.y - data.image_pose.y);
+  model_shapes_[name] = ShapeMatching::rotatePoints(shifted_shape, -data.image_pose.theta);
 }
 
 void object_detection::ShapeDetector::endTraining(const std::string& name)

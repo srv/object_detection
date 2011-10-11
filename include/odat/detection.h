@@ -5,6 +5,7 @@
 #include <string>
 
 #include "odat/mask.h"
+#include "odat/pose2d.h"
 
 namespace odat {
   /**
@@ -27,11 +28,12 @@ namespace odat {
     /// quality of the detection
     double score;
 
-    /// describes the transformation of the detected
-    /// object relative to the training data.
-    /// this can be a 6D transformation (3D manifold) (3x4 matrix)
-    /// or a 3D transformation (2D manifold) (2x3 matrix)
-    cv::Mat transform;
+    /// describes the pose of the object in the image
+    Pose2D image_pose;
+
+    /// describes the pose of the object with respect to the sensor as
+    /// 3D rigid transformation
+    cv::Mat pose;
 
     /// describes the scaling of the object (in a 2D-based detection
     double scale;

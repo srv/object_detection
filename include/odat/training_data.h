@@ -6,6 +6,7 @@
 
 #include "odat/mask.h"
 #include "odat/feature_set_3d.h"
+#include "odat/pose2d.h"
 
 namespace odat {
 
@@ -22,8 +23,15 @@ struct TrainingData
     /// region of interest that marks the object
     Mask mask; 
 
-    /// 3d feature set
+    /// 2d pose of the object in the training image
+    Pose2D image_pose;
+
+    /// 3d feature set,
+    /// the 3D coordinates are given in the camera frame
     FeatureSet3D features_3d;
+
+    /// 3d pose of the object in the 3d features
+    cv::Mat pose;
 };
 
 }

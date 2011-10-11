@@ -13,6 +13,7 @@ ShapeMatching::MatchingParameters ShapeMatching::matchShapes(
         const std::vector<cv::Point>& reference_shape,
         double* score)
 {
+    assert(floating_shape.size() > 2 && reference_shape.size() > 2);
     cv::Moments reference_shape_moments = cv::moments(cv::Mat(reference_shape));
     cv::Moments floating_shape_moments = cv::moments(cv::Mat(floating_shape));
 
@@ -23,15 +24,6 @@ ShapeMatching::MatchingParameters ShapeMatching::matchShapes(
             reference_shape_centroid);
     double floating_shape_mean_distance = computeMeanDistance(floating_shape,
             floating_shape_centroid);
-
-    /*
-    std::cout << "reference shape: area=" << reference_shape_area 
-              << " centroid=" << reference_shape_centroid 
-              << " mean distance=" << reference_shape_mean_distance << std::endl;
-    std::cout << "floating shape: area=" << floating_shape_area 
-              << " centroid=" << floating_shape_centroid 
-              << " mean distance=" << floating_shape_mean_distance << std::endl;
-              */
 
     double scale = reference_shape_mean_distance / floating_shape_mean_distance;
 
@@ -49,13 +41,22 @@ ShapeMatching::MatchingParameters ShapeMatching::matchShapes(
             floating_shape_centroid) * scale;
     }
 
-    MatchingParameters parameters;
-    parameters.scale = scale;
-    parameters.shift_x = reference_shape_centroid.x - floating_shape_centroid.x;
-    parameters.shift_y = reference_shape_centroid.y - floating_shape_centroid.y;
-    parameters.rotation = findRotation(normalized_floating_shape,
-            normalized_reference_shape, score);
-    return parameters;
+    double rotation = findRotation(normalized_floating_shape, normalized_reference_shape, score);
+
+    // now go from reference shape to floating shape to find the origin
+    // it seems that opencv rotations are not from x towards y...
+    cv::Mat rot_mat = cv::getRotationMatrix2D(reference_shape_centroid, rotation / M_PI * 180.0, 1.0 / scale);
+    assert(rot_mat.type() == CV_64FC1);
+    double shift_x = -reference_shape_centroid.x + floating_shape_centroid.x;
+    double shift_y = -reference_shape_centroid.y + floating_shape_centroid.y;
+
+    // report the inverse
+    MatchingParameters matching_params;
+    matching_params.scale = scale;
+    matching_params.rotation = rotation;
+    matching_params.shift_x = -(rot_mat.at<double>(0, 2) + shift_x);
+    matching_params.shift_y = -(rot_mat.at<double>(1, 2) + shift_y);
+    return matching_params;
 }
 
 cv::Point ShapeMatching::computeCentroid(const cv::Moments& moments)
@@ -98,15 +99,15 @@ double ShapeMatching::findRotation(const std::vector<cv::Point>& floating_shape,
 }
 
 std::vector<cv::Point> ShapeMatching::rotatePoints(
-        const std::vector<cv::Point>& points, double angle)
+        const std::vector<cv::Point>& points, double angle, int shift_x, int shift_y)
 {
     double sinAngle = sin(-angle);
     double cosAngle = cos(-angle);
     std::vector<cv::Point> rotated_points(points.size());
     for (size_t i = 0; i < points.size(); ++i)
     {
-        rotated_points[i].x = round(cosAngle * points[i].x + sinAngle * points[i].y);
-        rotated_points[i].y = round(-sinAngle * points[i].x + cosAngle * points[i].y);
+        rotated_points[i].x = round(cosAngle * points[i].x + sinAngle * points[i].y) + shift_x;
+        rotated_points[i].y = round(-sinAngle * points[i].x + cosAngle * points[i].y) + shift_y;
     }
     return rotated_points;
 }

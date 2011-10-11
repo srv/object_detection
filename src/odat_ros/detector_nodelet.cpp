@@ -41,6 +41,7 @@
 **/
 
 #include "odat/detector.h"
+#include "odat/exceptions.h"
 
 #include "odat_ros/detector_nodelet.h"
 #include "odat_ros/conversions.h"
@@ -285,10 +286,17 @@ void DetectorNodelet::dataCallback(const sensor_msgs::ImageConstPtr& image_msg,
  */
 void DetectorNodelet::runNodelet()
 {
+  try
+  {
 	NODELET_DEBUG("Running %s detector", detector_->getName().c_str());
 	clock_t start = clock();
 	detector_->detect();
 	NODELET_DEBUG("Detection took %g seconds.", ((double)clock()-start)/CLOCKS_PER_SEC);
+  }
+  catch (const odat::Exception& e)
+  {
+    NODELET_ERROR_STREAM("Exception occured in " << detector_->getName() << ": " << e.what());
+  }
 }
 
 
@@ -298,10 +306,13 @@ void DetectorNodelet::runNodelet()
 void DetectorNodelet::publishResults()
 {
   std::vector<odat::Detection> detections = detector_->getDetections();
-  vision_msgs::DetectionArray::Ptr detections_msg = boost::make_shared<vision_msgs::DetectionArray>();
-  odat_ros::toMsg(detections, *detections_msg);
-  detections_msg->header = header_;
-  detections_pub_.publish(detections_msg);
+  if (detections.size() > 0)
+  {
+    vision_msgs::DetectionArray::Ptr detections_msg = boost::make_shared<vision_msgs::DetectionArray>();
+    odat_ros::toMsg(detections, *detections_msg);
+    detections_msg->header = header_;
+    detections_pub_.publish(detections_msg);
+  }
 }
 
 

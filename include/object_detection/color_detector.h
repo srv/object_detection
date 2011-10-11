@@ -97,16 +97,16 @@ namespace object_detection
       static const int DEFAULT_NUM_HUE_BINS = 32;
 
       /// default value for number of saturation bins
-      static const int DEFAULT_NUM_SATURATION_BINS = 16;
+      static const int DEFAULT_NUM_SATURATION_BINS = 32;
 
       /// default value for minimum saturation
-      static const int DEFAULT_MIN_SATURATION = 20;
+      static const int DEFAULT_MIN_SATURATION = 50;
 
       /// default value for minimum value (brightness)
       static const int DEFAULT_MIN_VALUE = 20;
 
       /// default size of the element that is used in opening
-      static const int DEFAULT_MORPH_ELEMENT_SIZE = 7;
+      static const int DEFAULT_MORPH_ELEMENT_SIZE = 5;
 
       /// number of bins for the hue channels,
       /// defaults to DEFAULT_NUM_HUE_BINS

@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 #include <cv.h>
 
-#include "shape_matching.h"
+#include "object_detection/shape_matching.h"
 
 using namespace object_detection;
 
@@ -147,12 +147,13 @@ TEST(ShapeMatching, matchShapes)
     shape1.push_back(cv::Point( 100,  200));
     shape1.push_back(cv::Point(-100,  200));
     shape1.push_back(cv::Point(-100, -200));
+    shape1.push_back(cv::Point(   0, -300));
     shape1.push_back(cv::Point( 100, -200));
 
     double angle = M_PI / 4.0;
     double scale = 1.5;
-    int shift_x = 50;
-    int shift_y = -35;
+    int shift_x =  50;
+    int shift_y = 150;
     std::vector<cv::Point> shape2 = ShapeMatching::rotatePoints(shape1, M_PI / 4.0);
     for (size_t i = 0; i < shape2.size(); ++i)
     {
@@ -162,14 +163,78 @@ TEST(ShapeMatching, matchShapes)
 
     double score;
     ShapeMatching::MatchingParameters matching_parameters =
-        ShapeMatching::matchShapes(shape1, shape2, &score);
+        ShapeMatching::matchShapes(shape2, shape1, &score);
 
     EXPECT_NEAR(score, 1.0, 0.01);
-    EXPECT_EQ(shift_x, matching_parameters.shift_x);
-    EXPECT_EQ(shift_y, matching_parameters.shift_y);
-    EXPECT_NEAR(angle, matching_parameters.rotation, M_PI / 180.0);
-    EXPECT_NEAR(scale, matching_parameters.scale, 0.1);
+    EXPECT_NEAR(-shift_x, matching_parameters.shift_x, 2);
+    EXPECT_NEAR(-shift_y, matching_parameters.shift_y, 2);
+    EXPECT_NEAR(-angle, matching_parameters.rotation, M_PI / 180.0);
+    EXPECT_NEAR(1.0/scale, matching_parameters.scale, 0.1);
 }
+
+TEST(ShapeMatching, matchShapes2)
+{
+    std::vector<cv::Point> ref_shape;
+    ref_shape.push_back(cv::Point(500, 100));
+    ref_shape.push_back(cv::Point(300, 200));
+    ref_shape.push_back(cv::Point(300,-200));
+    ref_shape.push_back(cv::Point(500,-100));
+
+    std::vector<cv::Point> detected_shape;
+    detected_shape.push_back(cv::Point(300,  100));
+    detected_shape.push_back(cv::Point(400,  300));
+    detected_shape.push_back(cv::Point(  0,  300));
+    detected_shape.push_back(cv::Point(100,  100));
+
+    double score;
+    ShapeMatching::MatchingParameters matching_parameters =
+        ShapeMatching::matchShapes(detected_shape, ref_shape, &score);
+
+    std::cout << "Matching parameters: " << std::endl;
+    std::cout << "  rotation (deg.):" << matching_parameters.rotation / M_PI * 180.0 << std::endl;
+    std::cout << "  shift_x        :" << matching_parameters.shift_x << std::endl;
+    std::cout << "  shift_y        :" << matching_parameters.shift_y << std::endl;
+    std::cout << "  scale          :" << matching_parameters.scale << std::endl;
+    std::cout << "  score          :" << score << std::endl;
+    
+    EXPECT_NEAR(score, 1.0, 0.02);
+    EXPECT_NEAR(matching_parameters.shift_x, -200, 2);
+    EXPECT_NEAR(matching_parameters.shift_y, -600, 2);
+    EXPECT_NEAR(M_PI / 2, matching_parameters.rotation, M_PI / 180.0);
+    EXPECT_NEAR(1.0, matching_parameters.scale, 0.1);
+}
+
+TEST(ShapeMatching, matchShapes3)
+{
+    std::vector<cv::Point> ref_shape;
+    ref_shape.push_back(cv::Point(100, 100));
+    ref_shape.push_back(cv::Point(100,-100));
+    ref_shape.push_back(cv::Point(200,   0));
+
+    std::vector<cv::Point> detected_shape;
+    detected_shape.push_back(cv::Point(  0,  400));
+    detected_shape.push_back(cv::Point(200,  200));
+    detected_shape.push_back(cv::Point(400,  400));
+
+    double score;
+    ShapeMatching::MatchingParameters matching_parameters =
+        ShapeMatching::matchShapes(detected_shape, ref_shape, &score);
+
+    std::cout << "Matching parameters: " << std::endl;
+    std::cout << "  rotation (deg.):" << matching_parameters.rotation / M_PI * 180.0 << std::endl;
+    std::cout << "  shift_x        :" << matching_parameters.shift_x << std::endl;
+    std::cout << "  shift_y        :" << matching_parameters.shift_y << std::endl;
+    std::cout << "  scale          :" << matching_parameters.scale << std::endl;
+    std::cout << "  score          :" << score << std::endl;
+    
+    EXPECT_NEAR(score, 1.0, 0.1);
+    EXPECT_NEAR(matching_parameters.shift_x, -200, 2);
+    EXPECT_NEAR(matching_parameters.shift_y, -600, 2);
+    EXPECT_NEAR(M_PI_2, matching_parameters.rotation, M_PI / 180.0);
+    EXPECT_NEAR(0.5, matching_parameters.scale, 0.1);
+
+}
+
 
 TEST(ShapeMatching, computeMeanDistance)
 {

@@ -102,9 +102,12 @@ namespace odat_ros
         int w = detections[i].mask.roi.width;
         int h = detections[i].mask.roi.height;
 
-        int bl = (2*2555)%200;
-        int gr = (2*433)%224;
-        int rd = (2*2020)%210;
+//        int bl = (2*2555)%200;
+//        int gr = (2*433)%224;
+//        int rd = (2*2020)%210;
+        int bl = 0;
+        int gr = 255;
+        int rd = 170;
         cv::rectangle(image, detections[i].mask.roi.tl(), detections[i].mask.roi.br(), cv::Scalar(bl,gr,rd), 2);
 
         cv::Mat mask = detections[i].mask.mask;
@@ -131,7 +134,7 @@ namespace odat_ros
 
         int baseline = 0;
         int X = x+3, Y = y+12;
-        cv::Size tsize = getTextSize(detections[i].label, cv::FONT_HERSHEY_SIMPLEX, 1.0, 2, &baseline);
+        cv::Size tsize = getTextSize(detections[i].label, cv::FONT_HERSHEY_SIMPLEX, 0.8, 2, &baseline);
         if( Y + tsize.height + 2 >= image_height) { Y = image_height - y - 12 - 2 - tsize.height;}
         if(Y < 0) Y = 0;
         if(X + tsize.width + 2 >= image_width) { X = image_width - x - 3 - 2 - tsize.width;}
@@ -139,12 +142,22 @@ namespace odat_ros
         cv::putText(image, detections[i].label,cv::Point(X,Y),cv::FONT_HERSHEY_SIMPLEX,1.0,cv::Scalar(bl,gr,rd),2);
         std::string strscore = std::string("(") + tostr(detections[i].score) + std::string(")");
         X = x + 6; Y = y+24;
-        tsize = getTextSize(strscore,cv::FONT_HERSHEY_SIMPLEX,0.4,1,&baseline);
+        tsize = getTextSize(strscore,cv::FONT_HERSHEY_SIMPLEX, 0.4, 1, &baseline);
         if( Y + tsize.height + 1 >= image_height) { Y = image_height - y - 24 - 1 - tsize.height;}
         if(Y < 0) Y = 0;
         if(X + tsize.width + 1 >= image_width) { X = image_width - x - 3 - 1 - tsize.width;}
         if(X < 0) X = 0;
         putText(image,strscore,cv::Point(X,Y),cv::FONT_HERSHEY_SIMPLEX,0.4,cv::Scalar(bl,gr,rd),1);
+
+        // coordinate system
+        cv::Point origin;
+        origin.x = detections[i].image_pose.x;
+        origin.y = detections[i].image_pose.y;
+        double direction = detections[i].image_pose.theta;
+        cv::Point x_axis(20 * detections[i].scale * cos(direction), 20 * detections[i].scale * sin(direction));
+        cv::Point y_axis(20 * detections[i].scale * cos(direction + M_PI_2), 20 * detections[i].scale * sin(direction + M_PI_2));
+        cv::line(image, origin, origin + x_axis, cv::Scalar(0, 0, 255), 2);
+        cv::line(image, origin, origin + y_axis, cv::Scalar(0, 255, 0), 2);
       }
       cv::imshow(window_name_, image);
       cv::waitKey(40);

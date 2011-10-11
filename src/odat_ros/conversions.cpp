@@ -10,6 +10,11 @@ void odat_ros::fromMsg(const vision_msgs::Detection& detection_msg, odat::Detect
   detection.detector = detection_msg.detector;
   detection.score = detection_msg.score;
   fromMsg(detection_msg.mask, detection.mask);
+  detection.image_pose.x = detection_msg.image_pose.x;
+  detection.image_pose.y = detection_msg.image_pose.y;
+  detection.image_pose.theta = detection_msg.image_pose.theta;
+  detection.scale = detection_msg.scale;
+  // TODO 3D pose!!
 }
 
 void odat_ros::fromMsg(const vision_msgs::DetectionArray& detections_msg, std::vector<odat::Detection>& detections)
@@ -75,6 +80,11 @@ void odat_ros::toMsg(const odat::Detection& detection, vision_msgs::Detection& d
   detection_msg.detector = detection.detector;
   detection_msg.score = detection.score;
   toMsg(detection.mask, detection_msg.mask);
+  detection_msg.image_pose.x = detection.image_pose.x;
+  detection_msg.image_pose.y = detection.image_pose.y;
+  detection_msg.image_pose.theta = detection.image_pose.theta;
+  detection_msg.scale = detection.scale;
+  // TODO 3d pose
 }
 
 void odat_ros::toMsg(const std::vector<odat::Detection>& detections, vision_msgs::DetectionArray& detections_msg)

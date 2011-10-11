@@ -105,21 +105,39 @@ void object_detection::ColorDetector::detect()
     cv::Mat hsv_image;
     cv::cvtColor(image_, hsv_image, CV_BGR2HSV);
     cv::Mat backprojection = histogram_utilities::calculateBackprojection(model_histogram, hsv_image);
-    cv::Mat binary;
-    cv::threshold(backprojection, binary, 127, 255, CV_THRESH_BINARY);
 
     // some opening
     int element_size = morph_element_size_;
     cv::Mat element = cv::Mat::zeros(element_size, element_size, CV_8UC1);
     cv::circle(element, cv::Point(element_size / 2, element_size / 2), element_size / 2, cv::Scalar(255), -1);
-    cv::morphologyEx(binary, binary, cv::MORPH_OPEN, element);
+    cv::Mat backprojection_morphed;
+    cv::morphologyEx(backprojection, backprojection_morphed, cv::MORPH_OPEN, element);
+
+//    cv::medianBlur(backprojection, backprojection, 3);
+    cv::Mat binary;
+    cv::threshold(backprojection_morphed, binary, 127, 255, CV_THRESH_BINARY);
+
+    // create mask for ivalid values
+    std::vector<cv::Mat> hsv_channels;
+    cv::split(hsv_image, hsv_channels);
+    cv::Mat value = hsv_channels[2];
+
+    cv::Mat min_value_mask;
+    cv::threshold(value, min_value_mask, min_value_, 255, CV_THRESH_BINARY);
+
+    // mask out low values in binary image
+    cv::bitwise_and(min_value_mask, binary, binary);
 
     if (show_images_)
     {
       cv::namedWindow(model_name +"-backprojection", 0);
-      cv::namedWindow(model_name + "-backprojection-thresholded-opened", 0);
+      cv::namedWindow(model_name + "-backprojection-morphed", 0);
+      cv::namedWindow(model_name + "-backprojection-thresholded-morphed", 0);
+      cv::namedWindow(model_name + "-value-mask", 0);
       cv::imshow(model_name + "-backprojection", backprojection);
-      cv::imshow(model_name + "-backprojection-thresholded-opened", binary);
+      cv::imshow(model_name + "-backprojection-morphed", backprojection_morphed);
+      cv::imshow(model_name + "-backprojection-thresholded-morphed", binary);
+      cv::imshow(model_name + "-value-mask", min_value_mask);
       cv::waitKey(5);
     }
 
@@ -228,6 +246,7 @@ void object_detection::ColorDetector::endTraining(const std::string& name)
   if (show_images_)
   {
     histogram_utilities::showHSHistogram(model_histogram, "model histogram");
+    cv::waitKey(5);
   }
   model_histograms_[name] = model_histogram;
   training_data_.erase(name);

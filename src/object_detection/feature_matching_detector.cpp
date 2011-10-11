@@ -81,7 +81,7 @@ void object_detection::FeatureMatchingDetector::detect()
       detection.label = model_name;
       detection.detector = getName();
       detection.score = 1.0; // TODO add score based on number of matchings (?)
-      detection.transform = transform;
+      detection.pose = transform;
       detections_.push_back(detection);
     }
   }

@@ -31,7 +31,7 @@ namespace object_detection
     * the newly created shape
     */
     Shape shift(const Shape& shape, float dx, float dy);
-      
+
     /**
     * Comparison method for shape sorting.
     * After sorting with this comparator the biggest shape comes first.

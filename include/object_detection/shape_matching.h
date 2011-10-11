@@ -64,14 +64,14 @@ public:
 
     /**
     * Rotates a set of image points clock-wise (as rotation goes from x to y)
-    * by a given angle.
+    * by a given angle and shifts the result afterwards.
     * \param points the input points
     * \param angle the angle to use for rotation in radiants
     * \return rotated point set
     */
     static std::vector<cv::Point> rotatePoints(
             const std::vector<cv::Point>& points, 
-            double angle);
+            double angle, int shift_x = 0, int shift_y = 0);
 
     /**
     * Computes the area that two shapes have in common.

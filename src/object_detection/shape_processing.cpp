@@ -1,3 +1,5 @@
+#include <iostream>
+
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 
@@ -46,7 +48,17 @@ std::vector<object_detection::shape_processing::Shape> object_detection::shape_p
   std::vector<Shape> contours;
   //cv::findContours(image_copy, contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
   cv::findContours(image_copy, contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_TC89_KCOS);
-  return contours;
+  std::vector<Shape> simplified_contours;
+  for (size_t i = 0; i < contours.size(); ++i)
+  {
+    Shape simplified;
+    cv::approxPolyDP(contours[i], simplified, 5, true); // allow 5 pixel displacement
+    if (simplified.size() > 2)
+    {
+      simplified_contours.push_back(simplified);
+    }
+  }
+  return simplified_contours;
 }
 
 std::vector<object_detection::shape_processing::Shape> object_detection::shape_processing::getBiggestShapes(const std::vector<Shape>& shapes)

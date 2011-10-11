@@ -7,12 +7,13 @@
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/object_detection</url>
 
-  <depend package="opencv2"/>
+  <depend package="std_msgs"/>
   <depend package="sensor_msgs"/>
   <depend package="vision_msgs" />
+
+  <depend package="opencv2"/>
   <depend package="cv_bridge"/>
   <depend package="roscpp"/>
-  <depend package="std_msgs"/>
   <depend package="image_transport"/>
   <depend package="image_geometry" />
   <depend package="camera_info_manager" />

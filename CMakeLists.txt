@@ -29,8 +29,6 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 #rosbuild_add_executable(example examples/example.cpp)
 #target_link_libraries(example ${PROJECT_NAME})
 
-add_subdirectory(test)
-
 set(LIB_SOURCES 
     src/object_detection/detector.cpp
     src/object_detection/detection.cpp
@@ -88,9 +86,6 @@ rosbuild_add_library(${PROJECT_NAME}_ros
     )
 target_link_libraries(${PROJECT_NAME}_ros ${PROJECT_NAME} odat_ros)
 
-rosbuild_add_executable(color_detector_trainer src/object_detection_tools/color_detector_trainer.cpp)
-target_link_libraries(color_detector_trainer ${PROJECT_NAME})
-
 rosbuild_add_executable(trainer src/object_detection_tools/trainer.cpp)
 target_link_libraries(trainer ${PROJECT_NAME})
 
@@ -100,6 +95,9 @@ target_link_libraries(detector ${PROJECT_NAME})
 rosbuild_add_executable(detection_display src/odat_ros/tools/detection_display.cpp)
 target_link_libraries(detection_display odat_ros)
 
+
+rosbuild_add_gtest(shape_matching_test test/shape_matching_test.cpp)
+target_link_libraries(shape_matching_test ${PROJECT_NAME})
 
 #rosbuild_add_library(object_detection ${LIB_SOURCES} ${NEW_LIB_SOURCES})
 #rosbuild_add_executable(object_detection_test src/object_detection_test/main.cpp)

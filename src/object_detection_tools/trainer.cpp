@@ -26,7 +26,7 @@ int main(int argc, char** argv)
     ("origin_y", po::value<double>()->required(), "y position of the origin of the object in the image, given in pixels")
     ("origin_theta", po::value<double>()->required(), "angle of the origin of the object in the image, given in radiants, positive values turn from x axis to y axis")
     ("db_type", po::value<std::string>()->default_value("filesystem"), "database type")
-    ("connection_string", po::value<std::string>()->default_value(ros::package::getPath("object_detection") + "/models"), "database connection string")
+    ("connection_string", po::value<std::string>()->default_value(ros::package::getPath("object_detection_models") + "/models"), "database connection string")
     ;
   po::variables_map vm;
   try

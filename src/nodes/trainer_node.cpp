@@ -36,10 +36,10 @@ public:
         SELECTING_DIRECTION
     };
 
-    TrainerNode() : it_(nh_), current_mode_(DISPLAY_VIDEO)
+    TrainerNode() : nh_(), nh_priv_("~"), it_(nh_), current_mode_(DISPLAY_VIDEO)
     {
         image_sub_ = it_.subscribe("image", 1, &TrainerNode::imageCallback, this);
-        training_data_pub_ = nh_.advertise<vision_msgs::TrainingData>("training_data", 1);
+        training_data_pub_ = nh_priv_.advertise<vision_msgs::TrainingData>("training_data", 1);
 
         cv::namedWindow("Training GUI");
         cv::setMouseCallback("Training GUI", &TrainerNode::staticMouseCallback, this);
@@ -215,6 +215,7 @@ private:
     }
 
     ros::NodeHandle nh_;
+    ros::NodeHandle nh_priv_;
     image_transport::ImageTransport it_;
     image_transport::Subscriber image_sub_;
     ros::Publisher training_data_pub_;
@@ -231,7 +232,7 @@ private:
 
 int main(int argc, char** argv)
 {
-  ros::init(argc, argv, "traininer_node");
+  ros::init(argc, argv, "trainer_node");
   TrainerNode trainer;
   ros::spin();
   return 0;

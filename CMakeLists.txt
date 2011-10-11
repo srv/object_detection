@@ -56,6 +56,7 @@ set(NEW_LIB_SOURCES
 rosbuild_add_library(odat
     src/odat/fs_model_storage.cpp
     src/odat/detection.cpp
+    src/odat/detector.cpp
     )
 rosbuild_link_boost(odat serialization)
 
@@ -94,6 +95,9 @@ target_link_libraries(detector ${PROJECT_NAME})
 
 rosbuild_add_executable(detection_display src/odat_ros/tools/detection_display.cpp)
 target_link_libraries(detection_display odat_ros)
+
+rosbuild_add_executable(trainer_node src/nodes/trainer_node.cpp)
+target_link_libraries(trainer_node odat_ros ${PROJECT_NAME})
 
 
 rosbuild_add_gtest(shape_matching_test test/shape_matching_test.cpp)

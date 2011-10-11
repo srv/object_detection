@@ -1,0 +1,8 @@
+# minimum scale to accept as detection
+min_scale: 0.5
+
+# maximum scale to accept as detection
+max_scale: 2.0
+
+# matching threshold to accept as detection
+matching_score_threshold: 0.7

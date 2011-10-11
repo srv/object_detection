@@ -30,7 +30,7 @@
 *                                                                              *
 *******************************************************************************/
 
-#include "clipper.hpp"
+#include "object_detection/clipper.hpp"
 #include <cmath>
 #include <ctime>
 #include <vector>

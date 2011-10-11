@@ -1,0 +1,23 @@
+<launch>
+  <arg name="manager" default="color_detector_manager" />
+  <arg name="standalone" default="false" />
+  <arg name="camera" />
+  <arg name="input_detections" default="color_detector/detections" />
+  <arg name="models" default="" />
+
+  <node if="$(arg standalone)" name="$(arg manager)" pkg="nodelet" type="nodelet" args="manager" output="screen" />
+
+  <node name="shape_detector" pkg="nodelet" type="nodelet" args="load object_detection/ShapeDetector $(arg manager)" output="screen" >
+    <remap from="shape_detector/input_detections" to="$(arg input_detections)" />
+    <!-- We have to give an image here as all detectors read some sensor as input... -->
+    <remap from="shape_detector/image" to="$(arg camera)/image_raw" />
+    <remap from="shape_detector/camera_info" to="$(arg camera)/camera_info" />
+    <rosparam file="$(find object_detection)/cfg/shape_detector_params.yaml" />
+    <param name="db_type" value="filesystem" />
+    <param name="connection_string" value="$(find object_detection_models)/models" />
+    <param name="queue_size" value="5" />
+    <param name="models" value="$(arg models)" />
+  </node>
+
+</launch>
+

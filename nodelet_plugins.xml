@@ -1,0 +1,28 @@
+<library path="lib/libobject_detection_ros">
+
+  <class name="object_detection/ColorDetector" 
+         type="object_detection_ros::ColorDetectorNodelet"
+         base_class_type="nodelet::Nodelet">
+    <description>
+      Color-based object detector
+    </description>
+  </class>
+
+  <class name="object_detection/FeatureMatchingDetector" 
+         type="object_detection_ros::FeatureMatchingDetectorNodelet"
+         base_class_type="nodelet::Nodelet">
+    <description>
+      Feature matching object detector
+    </description>
+  </class>
+
+  <class name="object_detection/ShapeDetector" 
+         type="object_detection_ros::ShapeDetectorNodelet"
+         base_class_type="nodelet::Nodelet">
+    <description>
+      Shape matching object detector
+    </description>
+  </class>
+
+
+</library>

@@ -11,6 +11,7 @@ src/*_msgs/msg/_*.pyc
 src/*_msgs/_*.py
 src/*_msgs/_*.pyc
 msg/lisp/
+doc/html/
 
 # Makefiles
 Makefile

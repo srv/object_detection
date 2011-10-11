@@ -1,7 +1,7 @@
 #include <cv.h>
 #include <highgui.h>
 
-#include "histogram_utilities.h"
+#include "object_detection/histogram_utilities.h"
 
 namespace object_detection
 {
@@ -116,7 +116,7 @@ void showHSHistogram(const cv::MatND& histogram,
     // visualization
     double max_value = 0;
     cv::minMaxLoc(histogram, 0, &max_value, 0, 0);
-    int scale = 8;
+    int scale = 4;
     cv::Mat histogram_image_hsv = 
         cv::Mat::zeros((num_saturation_bins + 1) * scale, (num_hue_bins + 1) * scale, CV_8UC3);
 
@@ -148,7 +148,7 @@ void showHSHistogram(const cv::MatND& histogram,
                 CV_FILLED );
          }
 
-    cv::namedWindow( name );
+    cv::namedWindow( name, 0 );
     cv::imshow( name, histogram_image );
 }
 

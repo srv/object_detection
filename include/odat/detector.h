@@ -106,7 +106,7 @@ public:
 	 * Set list of detections. This is useful when the detector works like a filter, for chaining detectors
 	 * @param ros_list Array of detections.
 	 */
-	inline void setInputdetections(const std::vector<Detection>& input_detections)
+	inline void setInputDetections(const std::vector<Detection>& input_detections)
 	{
 		input_detections_ = input_detections;
 	}

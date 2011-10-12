@@ -1,11 +1,14 @@
 <package>
   <description brief="object detection">
-        A library for detecting objects.
+        A package for object detection.
   </description>
+
   <author>Stephan Wirth</author>
-  <license>BSD</license>
+
+  <!-- <license></license> -->
+
   <review status="unreviewed" notes=""/>
-  <url>http://ros.org/wiki/object_detection</url>
+  <!-- <url></url> -->
 
   <depend package="std_msgs"/>
   <depend package="sensor_msgs"/>

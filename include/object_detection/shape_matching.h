@@ -47,6 +47,8 @@ public:
 
     /**
     * Calculates the centroid of a shape using its moments and returns it.
+    * \param moments input moments
+    * \return the centroid
     */
     static cv::Point computeCentroid(const cv::Moments& moments);
 
@@ -67,6 +69,8 @@ public:
     * by a given angle and shifts the result afterwards.
     * \param points the input points
     * \param angle the angle to use for rotation in radiants
+    * \param shift_x shift in x direction
+    * \param shift_y shift in y direction
     * \return rotated point set
     */
     static std::vector<cv::Point> rotatePoints(

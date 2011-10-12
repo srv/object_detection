@@ -63,6 +63,9 @@ public:
 
 	Detector() {};
 
+    /**
+    * \param model_storage pointer to the model storage to use
+    */
 	Detector(ModelStorage::Ptr model_storage) : model_storage_(model_storage) {};
 
 	/**
@@ -95,7 +98,7 @@ public:
 
 	/**
 	 * Sets the input features
-	 * @param feature_set the set of input features
+	 * @param features the set of input features
 	 */
 	inline void setFeatures(const FeatureSet& features)
     {
@@ -104,7 +107,7 @@ public:
 
 	/**
 	 * Set list of detections. This is useful when the detector works like a filter, for chaining detectors
-	 * @param ros_list Array of detections.
+	 * @param input_detections Array of detections.
 	 */
 	inline void setInputDetections(const std::vector<Detection>& input_detections)
 	{

@@ -2,14 +2,56 @@
 \mainpage
 \htmlinclude manifest.html
 
-\b libdetection is ... 
+This package provides object detection algorithms and their adaptions to ROS.
 
-<!-- 
-Provide an overview of your package.
--->
+Like in almost every pattern recognition software, there is a training and an
+application stage.
 
+\section Training
+To train the detector, do the following steps:
+-# roslaunch object_detection object_detector.launch
+-# roslaunch object_detection trainer.launch
+-# Select the object of interest (the target) in the Trainer GUI,
+      following the instructions you can see in the console output.
+-# When the training is finished (see ROS log of object_detector),
+      you can shut down the trainer launch.
+
+\em Note: the trained object is stored persistent in object_detector/models and
+           will automatically be loaded when the object detector is launched
+
+\section Application
+The detector has to be trained before, the trained object model has to lie in object_detector/models.
+-# roslaunch object_detection object_detector.launch.\n
+   The console output has to show a message that lists the trained objects.
+-# Detections are now published in object_detector/detections, to show the detections, run
+   roslaunch object_detection detection_display.launch
+
+\section Background
+The detector works in two stages. First, a color detector (object_detection::ColorDetector) detects blobs that have similar
+colors as the trained object. The output of the color detector is mainly a set of blobs (or masks odat::Mask), wrapped
+into odat::Detections. In the second stage, a shape detector (object_detection::ShapeDetector) processes the output of the
+color detector and compares the shapes of the detected blobs to stored model shapes (object_detection::ShapeMatching).
+Using this comparison, the objects pose (odat::Pose2D) and scale can be estimated.
+
+\section Parameters
+Please refer to the following files to check and modify parameters:
+- object_detection/cfg/color_detector_params.xml
+- object_detection/cfg/shape_detector_params.xml
+
+\em Note: It may be necessary to train the detector again after modifying some parameters!
 
 \section codeapi Code API
+
+The code is split into several libraries:
+- \ref odat\n
+  Framework for object detection, here the base classes and data structures are defined.
+- odat_ros\n
+  ROS-Wrapper for odat, containing mainly conversion functions to convert from odat data structures to messages and vice versa.
+- object_detection\n
+  Object detection algorithms.
+
+\subsection object_detection_ros object_detection_ros
+ROS-Wrapper for object detection algorithms (nodelets and nodes).
 
 <!--
 Provide links to specific auto-generated API documentation within your

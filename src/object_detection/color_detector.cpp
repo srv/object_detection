@@ -68,10 +68,15 @@ object_detection::ColorDetector::ColorDetector(odat::ModelStorage::Ptr model_sto
 cv::MatND object_detection::ColorDetector::adaptHistogram(const std::string& model_name, const cv::MatND& model_histogram)
 {
   assert(!model_histogram.empty());
+  /*
   assert(model_histogram.rows == 180);
   assert(model_histogram.cols == 256);
-  cv::MatND adapted_histogram;
-  cv::resize(model_histogram, adapted_histogram, cv::Size(num_saturation_bins_, num_hue_bins_));
+  */
+  assert(model_histogram.rows == num_hue_bins_);
+  assert(model_histogram.cols == num_saturation_bins_);
+
+  cv::MatND adapted_histogram = model_histogram.clone();
+  //cv::resize(model_histogram, adapted_histogram, cv::Size(num_saturation_bins_, num_hue_bins_));
 
   // set small saturations to zero
   int black_sat_bins = min_saturation_ * num_saturation_bins_ / 256;
@@ -211,10 +216,12 @@ void object_detection::ColorDetector::trainInstance(const std::string& name, con
 
 void object_detection::ColorDetector::endTraining(const std::string& name)
 {
-  // we create the full histogram for training, it will be adapted for
-  // detection according to current parameters
-  const int NUM_HUE_BINS = 180;
-  const int NUM_SATURATION_BINS = 256;
+  //// we create the full histogram for training, it will be adapted for
+  //// detection according to current parameters
+  //const int NUM_HUE_BINS = 180;
+  //const int NUM_SATURATION_BINS = 256;
+  const int NUM_HUE_BINS = num_hue_bins_;
+  const int NUM_SATURATION_BINS = num_saturation_bins_;
   assert(training_data_.find(name) != training_data_.end());
   cv::MatND image_histogram;
   cv::MatND object_histogram;

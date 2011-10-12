@@ -24,5 +24,12 @@
     </description>
   </class>
 
+  <class name="object_detection/Detector" 
+         type="object_detection_ros::DetectorNodelet"
+         base_class_type="nodelet::Nodelet">
+    <description>
+      All-in-one detector
+    </description>
+  </class>
 
 </library>

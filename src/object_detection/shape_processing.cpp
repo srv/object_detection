@@ -52,7 +52,7 @@ std::vector<object_detection::shape_processing::Shape> object_detection::shape_p
   for (size_t i = 0; i < contours.size(); ++i)
   {
     Shape simplified;
-    cv::approxPolyDP(contours[i], simplified, 5, true); // allow 5 pixel displacement
+    cv::approxPolyDP(contours[i], simplified, 3, true); // allow 3 pixel displacement
     if (simplified.size() > 2)
     {
       simplified_contours.push_back(simplified);

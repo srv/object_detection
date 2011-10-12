@@ -99,6 +99,8 @@ int main(int argc, char** argv)
   color_detector.endTraining(object_name); // this saves the model
 
   // run color detector and store its output to train shape detector
+  color_detector.setNumHueBins(180);
+  color_detector.setNumSaturationBins(256);
   color_detector.setImage(training_data.image);
   color_detector.detect();
   std::vector<odat::Detection> detections = color_detector.getDetections();

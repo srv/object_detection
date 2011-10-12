@@ -75,7 +75,7 @@ void object_detection::ShapeDetector::detect()
       {
         // report detection
         odat::Detection detection;
-        detection.mask = input_detections_[i].mask;
+        detection.mask.roi = input_detections_[i].mask.roi;
         //detection.mask.roi = shape_processing::boundingRect(candidate_shape);
         //detection.mask.mask = shape_processing::minimalMask(candidate_shape);
         detection.label = model_name;

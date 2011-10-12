@@ -1,31 +1,37 @@
 
-#include "odat_ros/detector_nodelet.h"
-#include "odat/fs_model_storage.h"
+#include <nodelet/nodelet.h>
+#include <image_transport/image_transport.h>
+#include <image_transport/subscriber.h>
+#include <cv_bridge/cv_bridge.h>
 
+#include <sensor_msgs/image_encodings.h>
+#include <vision_msgs/DetectionArray.h>
+
+#include "odat/fs_model_storage.h"
+#include "odat_ros/conversions.h"
 #include "object_detection/color_detector.h"
 
 namespace object_detection_ros {
 
-  class ColorDetectorNodelet : public odat_ros::DetectorNodelet
+  class ColorDetectorNodelet : public nodelet::Nodelet
   {
     private:
       boost::shared_ptr<object_detection::ColorDetector> color_detector_;
 
+      image_transport::Subscriber image_sub_;
+      boost::shared_ptr<image_transport::ImageTransport> it_;
+
+      ros::Publisher detections_pub_;
+
     public:
-      /**
-      * Initializes the nodelet
-      */
-      virtual void childInit(ros::NodeHandle& nh)
+      virtual void onInit()
       {
-        use_image_ = true;
-        use_features_ = false;
-        use_masks_ = false;
-        use_input_detections_ = false;
+        ros::NodeHandle& nh_priv = getPrivateNodeHandle();
 
         std::string db_type;
-        nh.param<std::string>("db_type", db_type, "filesystem");
+        nh_priv.param<std::string>("db_type", db_type, "filesystem");
         std::string connection_string;
-        if (!nh.getParam("connection_string", connection_string)) {
+        if (!nh_priv.getParam("connection_string", connection_string)) {
             NODELET_ERROR("Parameter 'connection_string' is missing");
         }
 
@@ -36,19 +42,20 @@ namespace object_detection_ros {
         }
         else {
           NODELET_ERROR("Unknown model storage database type!");
-          //model_storage = boost::make_shared<rein::DatabaseModelStorage>(db_type,connection_string);
         }
         // instantiate the detector
         color_detector_ = boost::make_shared<object_detection::ColorDetector>(model_storage);
-        // save in variable that is used by base class
-        detector_ = color_detector_;
 
         std::string models;
-	    nh.getParam("models", models);
-	    loadModels(models);
+	    nh_priv.getParam("models", models);
+	    color_detector_->loadModelList(models);
 
-	    loadSettings(nh);
+	    loadSettings(nh_priv);
 	    printSettings();
+
+        ros::NodeHandle& nh = getNodeHandle();
+	    advertise(nh);
+	    subscribe(nh);
       }  
 
       void loadSettings(ros::NodeHandle& nh)
@@ -79,6 +86,41 @@ namespace object_detection_ros {
                      color_detector_->minValue(),
                      color_detector_->morphElementSize(),
                      (color_detector_->showImages() ? "true" : "false"));
+      }
+
+      void advertise(ros::NodeHandle& nh)
+      {
+        detections_pub_ = nh.advertise<vision_msgs::DetectionArray>("detections", 1);
+      }
+
+      void subscribe(ros::NodeHandle& nh)
+      {
+        it_.reset(new image_transport::ImageTransport(nh));
+        image_sub_ = it_->subscribe("image", 1, &ColorDetectorNodelet::detectionCb, this);
+      }
+
+      void detectionCb(const sensor_msgs::ImageConstPtr& image_msg)
+      {
+        if (detections_pub_.getNumSubscribers() > 0)
+        {
+          cv_bridge::CvImageConstPtr cv_ptr;
+          try
+          {
+            cv_ptr = cv_bridge::toCvShare(image_msg, sensor_msgs::image_encodings::BGR8);
+          }
+          catch (cv_bridge::Exception& e)
+          {
+            NODELET_ERROR("cv_bridge exception: %s", e.what());
+            return;
+          }
+          color_detector_->setImage(cv_ptr->image);
+          color_detector_->detect();
+          std::vector<odat::Detection> detections = color_detector_->getDetections();
+          vision_msgs::DetectionArrayPtr detections_msg(new vision_msgs::DetectionArray());
+          odat_ros::toMsg(detections, *detections_msg);
+          detections_msg->header = image_msg->header;
+          detections_pub_.publish(detections_msg);
+        }
       }
   };
 

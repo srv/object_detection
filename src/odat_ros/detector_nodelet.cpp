@@ -264,7 +264,7 @@ void DetectorNodelet::dataCallback(const sensor_msgs::ImageConstPtr& image_msg,
     {
       std::vector<odat::Detection> detections;
       odat_ros::fromMsg(*detections_msg, detections);
-      detector_->setInputdetections(detections);
+      detector_->setInputDetections(detections);
     }
 	
 	if (use_features_) 

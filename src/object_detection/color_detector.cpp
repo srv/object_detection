@@ -59,6 +59,7 @@ object_detection::ColorDetector::ColorDetector(odat::ModelStorage::Ptr model_sto
   min_saturation_(DEFAULT_MIN_SATURATION),
   min_value_(DEFAULT_MIN_VALUE),
   morph_element_size_(DEFAULT_MORPH_ELEMENT_SIZE),
+  mean_filter_size_(DEFAULT_MEAN_FILTER_SIZE),
   show_images_(false)
 {
 }
@@ -67,10 +68,15 @@ object_detection::ColorDetector::ColorDetector(odat::ModelStorage::Ptr model_sto
 cv::MatND object_detection::ColorDetector::adaptHistogram(const std::string& model_name, const cv::MatND& model_histogram)
 {
   assert(!model_histogram.empty());
+  /*
   assert(model_histogram.rows == 180);
   assert(model_histogram.cols == 256);
-  cv::MatND adapted_histogram;
-  cv::resize(model_histogram, adapted_histogram, cv::Size(num_saturation_bins_, num_hue_bins_));
+  */
+  assert(model_histogram.rows == num_hue_bins_);
+  assert(model_histogram.cols == num_saturation_bins_);
+
+  cv::MatND adapted_histogram = model_histogram.clone();
+  //cv::resize(model_histogram, adapted_histogram, cv::Size(num_saturation_bins_, num_hue_bins_));
 
   // set small saturations to zero
   int black_sat_bins = min_saturation_ * num_saturation_bins_ / 256;
@@ -106,16 +112,22 @@ void object_detection::ColorDetector::detect()
     cv::cvtColor(image_, hsv_image, CV_BGR2HSV);
     cv::Mat backprojection = histogram_utilities::calculateBackprojection(model_histogram, hsv_image);
 
+    // filter out noise
+    if (mean_filter_size_ > 2)
+    {
+      cv::medianBlur(backprojection, backprojection, mean_filter_size_);
+    }
+
+    // perform thresholding
+    cv::Mat binary;
+    cv::threshold(backprojection, binary, 127, 255, CV_THRESH_BINARY);
+
     // some opening
     int element_size = morph_element_size_;
     cv::Mat element = cv::Mat::zeros(element_size, element_size, CV_8UC1);
     cv::circle(element, cv::Point(element_size / 2, element_size / 2), element_size / 2, cv::Scalar(255), -1);
-    cv::Mat backprojection_morphed;
-    cv::morphologyEx(backprojection, backprojection_morphed, cv::MORPH_OPEN, element);
-
-//    cv::medianBlur(backprojection, backprojection, 3);
-    cv::Mat binary;
-    cv::threshold(backprojection_morphed, binary, 127, 255, CV_THRESH_BINARY);
+    cv::Mat binary_morphed;
+    cv::morphologyEx(binary, binary_morphed, cv::MORPH_CLOSE, element);
 
     // create mask for ivalid values
     std::vector<cv::Mat> hsv_channels;
@@ -126,29 +138,31 @@ void object_detection::ColorDetector::detect()
     cv::threshold(value, min_value_mask, min_value_, 255, CV_THRESH_BINARY);
 
     // mask out low values in binary image
-    cv::bitwise_and(min_value_mask, binary, binary);
+    cv::bitwise_and(min_value_mask, binary_morphed, binary_morphed);
 
     if (show_images_)
     {
       cv::namedWindow(model_name +"-backprojection", 0);
-      cv::namedWindow(model_name + "-backprojection-morphed", 0);
-      cv::namedWindow(model_name + "-backprojection-thresholded-morphed", 0);
+      cv::namedWindow(model_name + "-backprojection-thresholded", 0);
+      cv::namedWindow(model_name + "-backprojection-thresholded-morphed-masked", 0);
       cv::namedWindow(model_name + "-value-mask", 0);
       cv::imshow(model_name + "-backprojection", backprojection);
-      cv::imshow(model_name + "-backprojection-morphed", backprojection_morphed);
-      cv::imshow(model_name + "-backprojection-thresholded-morphed", binary);
+      cv::imshow(model_name + "-backprojection-thresholded", binary);
+      cv::imshow(model_name + "-backprojection-thresholded-morphed-masked", binary_morphed);
       cv::imshow(model_name + "-value-mask", min_value_mask);
       cv::waitKey(5);
     }
 
-    std::vector<shape_processing::Shape> detected_shapes = shape_processing::extractShapes(binary);
+    std::vector<shape_processing::Shape> detected_shapes = shape_processing::extractShapes(binary_morphed);
     std::vector<shape_processing::Shape> biggest_shapes = shape_processing::getBiggestShapes(detected_shapes);
-    for (size_t i = 0; i < biggest_shapes.size(); ++i)
+    //for (size_t i = 0; i < biggest_shapes.size(); ++i)
+    // report only biggest shape as detection
+    if (biggest_shapes.size() > 0)
     {
       // report detection
       odat::Detection detection;
-      detection.mask.roi = shape_processing::boundingRect(biggest_shapes[i]);
-      detection.mask.mask = shape_processing::minimalMask(biggest_shapes[i]);
+      detection.mask.roi = shape_processing::boundingRect(biggest_shapes[0]);
+      detection.mask.mask = shape_processing::minimalMask(biggest_shapes[0]);
       detection.label = model_name;
       detection.detector = getName();
       detection.score = 1;
@@ -202,10 +216,12 @@ void object_detection::ColorDetector::trainInstance(const std::string& name, con
 
 void object_detection::ColorDetector::endTraining(const std::string& name)
 {
-  // we create the full histogram for training, it will be adapted for
-  // detection according to current parameters
-  const int NUM_HUE_BINS = 180;
-  const int NUM_SATURATION_BINS = 256;
+  //// we create the full histogram for training, it will be adapted for
+  //// detection according to current parameters
+  //const int NUM_HUE_BINS = 180;
+  //const int NUM_SATURATION_BINS = 256;
+  const int NUM_HUE_BINS = num_hue_bins_;
+  const int NUM_SATURATION_BINS = num_saturation_bins_;
   assert(training_data_.find(name) != training_data_.end());
   cv::MatND image_histogram;
   cv::MatND object_histogram;

@@ -73,8 +73,8 @@ namespace odat_ros
 
       DetectionDisplay() : it_(nh_), sync_sub_(20)
       {
-        image_sub_.subscribe(it_,"image", 1);
-        detections_sub_.subscribe(nh_,"detections", 1);
+        image_sub_.subscribe(it_,"image", 5);
+        detections_sub_.subscribe(nh_,"detections", 5);
 
         sync_sub_.connectInput(image_sub_,detections_sub_);
         sync_sub_.registerCallback(&DetectionDisplay::detectionCallback, this);

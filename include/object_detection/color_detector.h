@@ -51,7 +51,7 @@ namespace object_detection
 
       inline void setNumSaturationBins(int num_saturation_bins)
       {
-          assert(num_saturation_bins > 0 && num_saturation_bins < 256);
+          assert(num_saturation_bins > 0 && num_saturation_bins <= 256);
           num_saturation_bins_ = num_saturation_bins;
       }
 
@@ -81,6 +81,14 @@ namespace object_detection
 
       inline int morphElementSize() const { return morph_element_size_; }
 
+      inline void setMeanFilterSize(int mean_filter_size)
+      {
+          assert(mean_filter_size > 0 && mean_filter_size % 2 == 1);
+          mean_filter_size_ = mean_filter_size;
+      }
+
+      inline int meanFilterSize() const { return mean_filter_size_; }
+
       inline void setShowImages(bool show) { show_images_ = show; }
 
       inline bool showImages() const { return show_images_; }
@@ -106,7 +114,10 @@ namespace object_detection
       static const int DEFAULT_MIN_VALUE = 20;
 
       /// default size of the element that is used in opening
-      static const int DEFAULT_MORPH_ELEMENT_SIZE = 5;
+      static const int DEFAULT_MORPH_ELEMENT_SIZE = 9;
+
+      /// default size for mean filter
+      static const int DEFAULT_MEAN_FILTER_SIZE = 1;
 
       /// number of bins for the hue channels,
       /// defaults to DEFAULT_NUM_HUE_BINS
@@ -126,6 +137,9 @@ namespace object_detection
 
       /// size of the element that is used in opening
       int morph_element_size_;
+
+      /// size of the mean filter window
+      int mean_filter_size_;
 
       /// show images while processing ?
       bool show_images_;

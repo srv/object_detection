@@ -106,7 +106,7 @@ public:
 	 * Set list of detections. This is useful when the detector works like a filter, for chaining detectors
 	 * @param ros_list Array of detections.
 	 */
-	inline void setInputdetections(const std::vector<Detection>& input_detections)
+	inline void setInputDetections(const std::vector<Detection>& input_detections)
 	{
 		input_detections_ = input_detections;
 	}
@@ -130,16 +130,15 @@ public:
 	virtual void loadModels(const std::vector<std::string>& models) = 0;
 
 	/**
+	 * Loads pre-trained models for a list of objects.
+	 * @param models comma-separated list of objects to load
+	 */
+	void loadModelList(const std::string& models);
+
+	/**
 	 * Loads all available pre-trained models
 	 */
-	void loadAllModels()
-	{
-		if (model_storage_ != NULL) {
-			std::vector<std::string> models;
-			model_storage_->getModelList(getName(),models);
-			loadModels(models);
-		}
-	}
+	void loadAllModels();
 
 	/**
 	* Returns a list containing the names of all loaded models

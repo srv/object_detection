@@ -1,0 +1,22 @@
+<launch>
+  <arg name="manager" default="object_detector_manager" />
+  <arg name="standalone" default="true" />
+  <arg name="image" default="camera_flex_wide/left/image_rect_color" />
+  <arg name="training_data" default="trainer_node/training_data" />
+  <arg name="show_images" default="false" />
+  <arg name="models" default="" />
+
+  <node if="$(arg standalone)" name="$(arg manager)" pkg="nodelet" type="nodelet" args="manager" output="screen" />
+
+  <node name="object_detector" pkg="nodelet" type="nodelet" args="load object_detection/Detector $(arg manager)" output="screen" >
+    <remap from="image" to="$(arg image)" />
+    <remap from="training_data" to="$(arg training_data)" />
+    <rosparam file="$(find object_detection)/cfg/color_detector_params.yaml" />
+    <rosparam file="$(find object_detection)/cfg/shape_detector_params.yaml" />
+    <param name="db_type" value="filesystem" />
+    <param name="connection_string" value="$(find object_detection)/models" />
+    <param name="show_images" value="$(arg show_images)" />
+    <param name="models" value="$(arg models)" />
+  </node>
+
+</launch>

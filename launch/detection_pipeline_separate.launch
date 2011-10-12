@@ -10,7 +10,7 @@
     <remap from="color_detector/camera_info" to="$(arg camera)/camera_info" />
     <rosparam file="$(find object_detection)/cfg/color_detector_params.yaml" />
     <param name="db_type" value="filesystem" />
-    <param name="connection_string" value="$(find object_detection_models)/models" />
+    <param name="connection_string" value="$(find object_detection)/models" />
     <param name="show_images" value="$(arg show_images)" />
     <param name="queue_size" value="5" />
     <param name="models" value="$(arg models)" />
@@ -24,7 +24,7 @@
     <remap from="shape_detector/camera_info" to="$(arg camera)/camera_info" />
     <rosparam file="$(find object_detection)/cfg/shape_detector_params.yaml" />
     <param name="db_type" value="filesystem" />
-    <param name="connection_string" value="$(find object_detection_models)/models" />
+    <param name="connection_string" value="$(find object_detection)/models" />
     <param name="queue_size" value="5" />
     <param name="models" value="$(arg models)" />
   </node>

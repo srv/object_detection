@@ -56,6 +56,7 @@ set(NEW_LIB_SOURCES
 rosbuild_add_library(odat
     src/odat/fs_model_storage.cpp
     src/odat/detection.cpp
+    src/odat/detector.cpp
     )
 rosbuild_link_boost(odat serialization)
 
@@ -83,17 +84,21 @@ rosbuild_add_library(${PROJECT_NAME}_ros
     src/object_detection_ros/color_detector_nodelet.cpp
     src/object_detection_ros/shape_detector_nodelet.cpp
     src/object_detection_ros/feature_matching_detector_nodelet.cpp
+    src/object_detection_ros/detector_nodelet.cpp
     )
 target_link_libraries(${PROJECT_NAME}_ros ${PROJECT_NAME} odat_ros)
 
-rosbuild_add_executable(trainer src/object_detection_tools/trainer.cpp)
-target_link_libraries(trainer ${PROJECT_NAME})
+#rosbuild_add_executable(trainer src/object_detection_tools/trainer.cpp)
+#target_link_libraries(trainer ${PROJECT_NAME})
 
-rosbuild_add_executable(detector src/object_detection_tools/detector.cpp)
-target_link_libraries(detector ${PROJECT_NAME})
+#rosbuild_add_executable(detector src/object_detection_tools/detector.cpp)
+#target_link_libraries(detector ${PROJECT_NAME})
 
 rosbuild_add_executable(detection_display src/odat_ros/tools/detection_display.cpp)
 target_link_libraries(detection_display odat_ros)
+
+rosbuild_add_executable(trainer_node src/nodes/trainer_node.cpp)
+target_link_libraries(trainer_node odat_ros ${PROJECT_NAME})
 
 
 rosbuild_add_gtest(shape_matching_test test/shape_matching_test.cpp)

@@ -74,6 +74,18 @@ void odat_ros::fromMsg(const vision_msgs::Features3D& features_3d_msg, odat::Fea
   }
 }
 
+void odat_ros::fromMsg(const vision_msgs::TrainingData& training_data_msg, odat::TrainingData& training_data)
+{
+  assert(training_data_msg.image.encoding == "bgr8");
+  cv_bridge::CvImageConstPtr cv_image = cv_bridge::toCvCopy(training_data_msg.image);
+  training_data.image = cv_image->image;
+  fromMsg(training_data_msg.mask, training_data.mask);
+  training_data.image_pose.x = training_data_msg.image_pose.x;
+  training_data.image_pose.y = training_data_msg.image_pose.y;
+  training_data.image_pose.theta = training_data_msg.image_pose.theta;
+  fromMsg(training_data_msg.features3d, training_data.features_3d);
+}
+
 void odat_ros::toMsg(const odat::Detection& detection, vision_msgs::Detection& detection_msg)
 {
   detection_msg.label = detection.label;

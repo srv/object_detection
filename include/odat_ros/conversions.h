@@ -20,6 +20,7 @@ namespace odat_ros
   void fromMsg(const vision_msgs::MaskArray& masks_msg, std::vector<odat::Mask>& masks);
   void fromMsg(const vision_msgs::Features& features_msg, odat::FeatureSet& features);
   void fromMsg(const vision_msgs::Features3D& features3d_msg, odat::FeatureSet3D& features_3d);
+  void fromMsg(const vision_msgs::TrainingData& training_data_msg, odat::TrainingData& training_data);
 
   void toMsg(const odat::Detection& detection, vision_msgs::Detection& detection_msg);
   void toMsg(const std::vector<odat::Detection>& detections, vision_msgs::DetectionArray& detections_msg);

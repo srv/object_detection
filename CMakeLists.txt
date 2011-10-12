@@ -88,11 +88,11 @@ rosbuild_add_library(${PROJECT_NAME}_ros
     )
 target_link_libraries(${PROJECT_NAME}_ros ${PROJECT_NAME} odat_ros)
 
-rosbuild_add_executable(trainer src/object_detection_tools/trainer.cpp)
-target_link_libraries(trainer ${PROJECT_NAME})
+#rosbuild_add_executable(trainer src/object_detection_tools/trainer.cpp)
+#target_link_libraries(trainer ${PROJECT_NAME})
 
-rosbuild_add_executable(detector src/object_detection_tools/detector.cpp)
-target_link_libraries(detector ${PROJECT_NAME})
+#rosbuild_add_executable(detector src/object_detection_tools/detector.cpp)
+#target_link_libraries(detector ${PROJECT_NAME})
 
 rosbuild_add_executable(detection_display src/odat_ros/tools/detection_display.cpp)
 target_link_libraries(detection_display odat_ros)

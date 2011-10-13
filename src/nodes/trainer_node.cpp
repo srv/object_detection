@@ -44,13 +44,13 @@ public:
         cv::namedWindow("Training GUI");
         cv::setMouseCallback("Training GUI", &TrainerNode::staticMouseCallback, this);
 
-        loop_timer_ = nh_.createTimer(ros::Duration(0.05), &TrainerNode::processEvents, this);
+        loop_timer_ = nh_.createTimer(ros::Duration(0.05), &TrainerNode::repaint, this);
 
         object_pose_.x = 0;
         object_pose_.y = 0;
         object_pose_.theta = 0;
 
-        ROS_INFO("Press space to select a training image.");
+        ROS_INFO("Click left to select a training image.");
     }
 
     ~TrainerNode()
@@ -78,13 +78,15 @@ private:
         if (current_mode_ == DISPLAY_VIDEO)
         {
            cv::imshow("Training GUI", image);
+           cv::waitKey(5);
         }
         else if (current_mode_ == AWAITING_TRAINING_IMAGE)
         {
             training_image_ = image.clone();
             cv::imshow("Training GUI", training_image_);
+            cv::waitKey(5);
             current_mode_ = PAINTING;
-            ROS_INFO("Entered painting mode, click to select an object polygon. Press space when finished.");
+            ROS_INFO("Entered painting mode, click left to select an object polygon. Click right when finished.");
         }
     }
 
@@ -92,84 +94,86 @@ private:
     {
         // extract this pointer and call function on object
         TrainerNode* node = reinterpret_cast<TrainerNode*>(param);
+        assert(node != NULL);
         node->mouseCallback(event, x, y, flags);
     }
 
     void mouseCallback(int event, int x, int y, int flags)
     {
         current_mouse_position_ = cv::Point(x, y);
-        if (current_mode_ == PAINTING && event == CV_EVENT_LBUTTONUP)
+        if (current_mode_ == DISPLAY_VIDEO)
         {
-            ROS_INFO("Adding point (%i,%i) to polygon.", x, y);
-            polygon_points_.push_back(current_mouse_position_);
+            if (event == CV_EVENT_LBUTTONUP)
+            {
+                current_mode_ = AWAITING_TRAINING_IMAGE;
+                ROS_INFO("Taking next arriving image as training image...");
+            }
+        } 
+        else if (current_mode_ == PAINTING)
+        {
+            if (event == CV_EVENT_LBUTTONUP)
+            {
+                ROS_INFO("Adding point (%i,%i) to polygon.", x, y);
+                polygon_points_.push_back(current_mouse_position_);
+            }
+            else if (event == CV_EVENT_RBUTTONUP)
+            {
+                if (polygon_points_.size() > 2)
+                {
+                    current_mode_ = SELECTING_ORIGIN;
+                    image_sub_.shutdown();
+                    object_pose_.x = x;
+                    object_pose_.y = y;
+                    ROS_INFO("Select the object origin and click.");
+                }
+                else
+                {
+                    ROS_INFO("Not enough points in polygon, resetting.");
+                    polygon_points_.clear();
+                }
+            }
         }
-        else if (current_mode_ == SELECTING_ORIGIN && event == CV_EVENT_LBUTTONUP)
+        else if (current_mode_ == SELECTING_ORIGIN)
         {
-            ROS_INFO("Setting point (%i,%i) as origin.", x, y);
             object_pose_.x = x;
             object_pose_.y = y;
+            if (event == CV_EVENT_LBUTTONUP)
+            {
+              ROS_INFO("Setting point (%i,%i) as origin.", x, y);
+              ROS_INFO("Select direction and click. (red = x, green = y)");
+              current_mode_ = SELECTING_DIRECTION;
+            }
         }
         else if (current_mode_ == SELECTING_DIRECTION)
         {
             object_pose_.theta = atan2(current_mouse_position_.y - object_pose_.y,
                 current_mouse_position_.x - object_pose_.x);
+            if (event == CV_EVENT_LBUTTONUP)
+            {
+              current_mode_ = SHOWING_TRAINING_IMAGE;
+              publishTrainingData(training_image_, polygon_points_, object_pose_);
+            }
+        }
+        else if (current_mode_ == SHOWING_TRAINING_IMAGE)
+        {
+            if (event == CV_EVENT_LBUTTONUP)
+            {
+                current_mode_ = DISPLAY_VIDEO;
+                ROS_INFO("Entering display video mode.");
+                polygon_points_.clear();
+                object_pose_.x = 0;
+                object_pose_.y = 0;
+                object_pose_.theta = 0;
+                // subscribe to image topic again
+                image_sub_ = it_.subscribe("image", 1, &TrainerNode::imageCallback, this);
+            }
         }
     }
 
-    void processEvents(const ros::TimerEvent&)
+    void repaint(const ros::TimerEvent&)
     {
-        char key = cv::waitKey(3);
-        if (key == ' ' && current_mode_ == DISPLAY_VIDEO)
+        if (current_mode_ != DISPLAY_VIDEO && current_mode_ != AWAITING_TRAINING_IMAGE)
         {
-            current_mode_ = AWAITING_TRAINING_IMAGE;
-            ROS_INFO("Space pressed, using next arriving image as training image.");
-        }
-        // painting finished?
-        else if (key == ' ' && current_mode_ == PAINTING)
-        {
-            // unsubscribe from image topic as we dont need it now
-            image_sub_.shutdown();
-            ROS_INFO("Select the object origin and press space.");
-            current_mode_ = SELECTING_ORIGIN;
-            /*
-            if (polygon_points_.size() > 2)
-            {
-                publishTrainingData(training_image_msg_, polygon_points_, "object1");
-            }
-            current_mode_ = SHOWING_TRAINING_IMAGE;
-            cv::Mat image_with_polygon = training_image_.clone();
-            const cv::Point* point_data = polygon_points_.data();
-            int num_points = polygon_points_.size();
-            bool closed = true;
-            cv::polylines(image_with_polygon, &point_data, &num_points, 
-                    1, closed, cv::Scalar(0, 255, 0), 2);
-            cv::imshow("Training GUI", image_with_polygon);
-            */
-        }
-        else if (key == ' ' && current_mode_ == SELECTING_ORIGIN)
-        {
-            ROS_INFO("Select object direction and press space.");
-            current_mode_ = SELECTING_DIRECTION;
-        }
-        else if (key == ' ' && current_mode_ == SELECTING_DIRECTION)
-        {
-            current_mode_ = SHOWING_TRAINING_IMAGE;
-            publishTrainingData(training_image_, polygon_points_, object_pose_);
-        }
-        else if (key == ' ' && current_mode_ == SHOWING_TRAINING_IMAGE)
-        {
-            ROS_INFO("Entering display video mode.");
-            current_mode_ = DISPLAY_VIDEO;
-            polygon_points_.clear();
-            object_pose_.x = 0;
-            object_pose_.y = 0;
-            object_pose_.theta = 0;
-            // subscribe to image topic again
-            image_sub_ = it_.subscribe("image", 1, &TrainerNode::imageCallback, this);
-        }
-        else if (key < 0 && current_mode_ != DISPLAY_VIDEO && current_mode_ != AWAITING_TRAINING_IMAGE)
-        {
-            // no key was pressed
             std::vector<cv::Point> painting_polygon_points = polygon_points_;
             if (current_mode_ == PAINTING)
             {
@@ -186,13 +190,17 @@ private:
                         1, closed, cv::Scalar(0, 255, 0), 1);
             }
             // coordinate system
-            cv::Point origin(object_pose_.x, object_pose_.y);
-            double direction = object_pose_.theta;
-            cv::Point x_axis(50 * cos(direction), 50 * sin(direction));
-            cv::Point y_axis(50 * cos(direction + M_PI_2), 50 * sin(direction + M_PI_2));
-            cv::line(canvas, origin, origin + x_axis, cv::Scalar(0, 0, 255), 2);
-            cv::line(canvas, origin, origin + y_axis, cv::Scalar(0, 255, 0), 2);
+            if (object_pose_.x != 0 && object_pose_.y != 0)
+            {
+              cv::Point origin(object_pose_.x, object_pose_.y);
+              double direction = object_pose_.theta;
+              cv::Point x_axis(50 * cos(direction), 50 * sin(direction));
+              cv::Point y_axis(50 * cos(direction + M_PI_2), 50 * sin(direction + M_PI_2));
+              cv::line(canvas, origin, origin + x_axis, cv::Scalar(0, 0, 255), 2);
+              cv::line(canvas, origin, origin + y_axis, cv::Scalar(0, 255, 0), 2);
+            }
             cv::imshow("Training GUI", canvas);
+            cv::waitKey(5);
         }
     }
 
@@ -212,6 +220,7 @@ private:
 
         training_data_pub_.publish(training_data_msg);
         ROS_INFO("Training message published.");
+        ROS_INFO("Click left to see incoming images again.");
     }
 
     ros::NodeHandle nh_;

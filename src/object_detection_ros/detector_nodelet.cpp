@@ -71,52 +71,34 @@ namespace object_detection_ros {
 
       void loadSettings(ros::NodeHandle& nh)
       {
+        // retrieve all parameters that are set (if getParam fails, the value is untouched)
         // color detector settings
-        int num_hue_bins, num_saturation_bins, min_saturation, min_value, morph_element_size, mean_filter_size;
-        bool show_images;
-        if (!nh.hasParam("num_hue_bins")) NODELET_ERROR("Param num_hue_bins not found!");
-        if (nh.getParam("num_hue_bins", num_hue_bins)) color_detector_->setNumHueBins(num_hue_bins);
-        if (nh.getParam("num_saturation_bins", num_saturation_bins)) color_detector_->setNumSaturationBins(num_saturation_bins);
-        if (nh.getParam("min_saturation", min_saturation)) color_detector_->setMinSaturation(min_saturation);
-        if (nh.getParam("min_value", min_value)) color_detector_->setMinValue(min_value);
-        if (nh.getParam("morph_element_size", morph_element_size)) color_detector_->setMorphElementSize(morph_element_size);
-        if (nh.getParam("mean_filter_size", mean_filter_size)) color_detector_->setMeanFilterSize(mean_filter_size);
-        if (nh.getParam("show_images", show_images)) color_detector_->setShowImages(show_images);
+        object_detection::ColorDetector::Params color_detector_params;
+        nh.getParam("num_hue_bins", color_detector_params.num_hue_bins);
+        nh.getParam("num_saturation_bins", color_detector_params.num_saturation_bins);
+        nh.getParam("min_saturation", color_detector_params.min_saturation);
+        nh.getParam("min_value", color_detector_params.min_value);
+        nh.getParam("morph_element_size", color_detector_params.morph_element_size);
+        nh.getParam("mean_filter_size", color_detector_params.mean_filter_size);
+        nh.getParam("show_images", color_detector_params.show_images);
+        color_detector_->setParams(color_detector_params);
 
         // shape detector settings
-        double matching_score_threshold, min_scale, max_scale;
-        if (nh.getParam("matching_score_threshold", matching_score_threshold)) shape_detector_->setMatchingScoreThreshold(matching_score_threshold);
-        if (nh.getParam("min_scale", min_scale)) shape_detector_->setMinScale(min_scale);
-        if (nh.getParam("max_scale", max_scale)) shape_detector_->setMaxScale(max_scale);
+        object_detection::ShapeDetector::Params shape_detector_params;
+        nh.getParam("matching_score_threshold", shape_detector_params.matching_score_threshold);
+        nh.getParam("min_scale", shape_detector_params.min_scale);
+        nh.getParam("max_scale", shape_detector_params.max_scale);
+        shape_detector_->setParams(shape_detector_params);
       }
 
       void printSettings()
       {
-        NODELET_INFO("Current ColorDetector settings:\n"
-                     "  Number of Hue Bins       : %i \n"
-                     "  Number of Saturation Bins: %i \n"
-                     "  Minimum Saturation       : %i \n"
-                     "  Minimum Value            : %i \n"
-                     "  Morph Element Size       : %i \n"
-                     "  Mean Filter Size         : %i \n"
-                     "  Show Images              : %s \n",
-                     color_detector_->numHueBins(),
-                     color_detector_->numSaturationBins(),
-                     color_detector_->minSaturation(),
-                     color_detector_->minValue(),
-                     color_detector_->morphElementSize(),
-                     color_detector_->meanFilterSize(),
-                     (color_detector_->showImages() ? "true" : "false"));
-        NODELET_INFO("Current ShapeDetector settings:\n"
-                     "  Matching Score Threshold : %f \n"
-                     "  Min Scale                : %f \n"
-                     "  Max Scale                : %f \n",
-                     shape_detector_->matchingScoreThreshold(),
-                     shape_detector_->minScale(),
-                     shape_detector_->maxScale());
+        NODELET_INFO_STREAM("Current ColorDetector settings:\n" << color_detector_->params());
         std::vector<std::string> color_models = color_detector_->getLoadedModels();
         NODELET_INFO_STREAM("Loaded " << color_models.size() << " color models.");
         for (size_t i = 0; i < color_models.size(); ++i) NODELET_INFO_STREAM("    " << color_models[i]);
+        
+        NODELET_INFO_STREAM("Current ShapeDetector settings:\n" << shape_detector_->params());
         std::vector<std::string> shape_models = shape_detector_->getLoadedModels();
         NODELET_INFO_STREAM("Loaded " << shape_models.size() << " shape models.");
         for (size_t i = 0; i < shape_models.size(); ++i) NODELET_INFO_STREAM("    " << shape_models[i]);
@@ -131,7 +113,6 @@ namespace object_detection_ros {
       {
         it_.reset(new image_transport::ImageTransport(nh));
         image_sub_ = it_->subscribe("image", 1, &DetectorNodelet::detectionCb, this);
-
         training_data_sub_ = nh.subscribe("training_data", 1, &DetectorNodelet::trainingDataCb, this);
       }
 

@@ -10,17 +10,27 @@
 #include "object_detection/shape_processing.h"
 #include "object_detection/shape_matching.h"
 
-const float object_detection::ShapeDetector::DEFAULT_MATCHING_SCORE_THRESHOLD = 0.3;
-const float object_detection::ShapeDetector::DEFAULT_MIN_SCALE = 0.2;
-const float object_detection::ShapeDetector::DEFAULT_MAX_SCALE = 5.0;
+const float object_detection::ShapeDetector::Params::DEFAULT_MATCHING_SCORE_THRESHOLD = 0.3;
+const float object_detection::ShapeDetector::Params::DEFAULT_MIN_SCALE = 0.2;
+const float object_detection::ShapeDetector::Params::DEFAULT_MAX_SCALE = 5.0;
+
+std::ostream& operator<< (std::ostream& ostr, const object_detection::ShapeDetector::Params& params)
+{
+  ostr << "  Matching Score Threshold : " << params.matching_score_threshold << std::endl
+       << "  Min Scale                : " << params.min_scale << std::endl
+       << "  Max Scale                : " << params.max_scale;
+  return ostr;
+}
+
+object_detection::ShapeDetector::Params::Params() :
+  matching_score_threshold(DEFAULT_MATCHING_SCORE_THRESHOLD),
+  min_scale(DEFAULT_MIN_SCALE),
+  max_scale(DEFAULT_MAX_SCALE)
+{}
 
 object_detection::ShapeDetector::ShapeDetector(odat::ModelStorage::Ptr model_storage) :
-        odat::Detector(model_storage),
-        matching_score_threshold_(DEFAULT_MATCHING_SCORE_THRESHOLD),
-        min_scale_(DEFAULT_MIN_SCALE),
-        max_scale_(DEFAULT_MAX_SCALE)
-{
-}
+  odat::Detector(model_storage)
+{}
 
 void object_detection::ShapeDetector::detect()
 {
@@ -49,6 +59,9 @@ void object_detection::ShapeDetector::detect()
     }
     std::vector<shape_processing::Shape> biggest_shapes = shape_processing::getBiggestShapes(detected_shapes);
     std::vector<cv::Point> candidate_shape = biggest_shapes[0];
+
+    // \TODO check for min/max scale here and skip if not in range given by parameters
+
     // shift according to roi
     for (size_t k = 0; k < candidate_shape.size(); ++k)
     {
@@ -69,9 +82,9 @@ void object_detection::ShapeDetector::detect()
       double score;
       ShapeMatching::MatchingParameters matching_parameters = ShapeMatching::matchShapes(candidate_shape, model_shape, &score);
 
-      if (score > matching_score_threshold_ &&
-          matching_parameters.scale >= min_scale_ &&
-          matching_parameters.scale <= max_scale_)
+      if (score > params_.matching_score_threshold &&
+          matching_parameters.scale >= params_.min_scale &&
+          matching_parameters.scale <= params_.max_scale)
       {
         // report detection
         odat::Detection detection;

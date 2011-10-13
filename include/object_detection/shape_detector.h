@@ -9,6 +9,33 @@ namespace object_detection
   class ShapeDetector : public odat::Detector, public odat::Trainable
   {
     public:
+
+      struct Params
+      {
+        /**
+        * Creates a default parameter set
+        */
+        Params();
+
+        /// threshold that defines a match
+        double matching_score_threshold;
+        
+        /// minimum scaling of a shape that is accepted as detection
+        double min_scale;
+        
+        /// maximum scaling of a shape that is accepted as detection
+        double max_scale;
+
+        /// defaults (defined in cpp)
+        static const float DEFAULT_MATCHING_SCORE_THRESHOLD;
+        static const float DEFAULT_MIN_SCALE;
+        static const float DEFAULT_MAX_SCALE;
+      };
+
+      /**
+      * Creates a shape detector with default parameters
+      * @param model_storage storage to use to load/save models
+      */
       ShapeDetector(odat::ModelStorage::Ptr model_storage);
 
       virtual void detect();
@@ -35,45 +62,32 @@ namespace object_detection
       virtual void trainInstance(const std::string& name, const odat::TrainingData& data);
       virtual void endTraining(const std::string& name);
 
-      inline void setMatchingScoreThreshold(float threshold)
+      /**
+      * @param params new parameters
+      */
+      inline void setParams(const Params& params)
       {
-        matching_score_threshold_ = threshold;
+        params_ = params;
       }
 
-      inline float matchingScoreThreshold() const { return matching_score_threshold_; }
-
-      inline void setMinScale(float scale)
-      {
-        min_scale_ = scale;
-      }
-
-      inline float minScale() const { return min_scale_; }
-
-      inline void setMaxScale(float scale)
-      {
-        max_scale_ = scale;
-      }
-
-      inline float maxScale() const { return max_scale_; }
+      /**
+      * @return current parameters
+      */
+      inline Params params() const { return params_; }
 
     private:
 
       /// the object models
       std::map<std::string, std::vector<cv::Point> > model_shapes_;
 
-      static const float DEFAULT_MATCHING_SCORE_THRESHOLD;
-      static const float DEFAULT_MIN_SCALE;
-      static const float DEFAULT_MAX_SCALE;
-
       /// detection limiting parameters
-      float matching_score_threshold_;
-      float min_scale_;
-      float max_scale_;
+      Params params_;
 
   };
 
 } // end of namespace
 
+std::ostream& operator<< (std::ostream& ostr, const object_detection::ShapeDetector::Params& params);
 
 #endif
 

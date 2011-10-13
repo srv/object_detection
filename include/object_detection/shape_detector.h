@@ -6,10 +6,16 @@
 
 namespace object_detection
 {
+  /**
+  * @brief Detector that compares shapes
+  */
   class ShapeDetector : public odat::Detector, public odat::Trainable
   {
     public:
 
+      /**
+      * @brief Parameters for ShapeDetector
+      */
       struct Params
       {
         /**

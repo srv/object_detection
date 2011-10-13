@@ -6,10 +6,16 @@
 
 namespace object_detection
 {
+  /**
+  * @brief Detector that compares colors
+  */
   class ColorDetector : public odat::Detector, public odat::Trainable
   {
     public:
 
+      /**
+      * @brief Parameters for the ColorDetector
+      */
       struct Params
       {
         /**
@@ -17,47 +23,33 @@ namespace object_detection
         */
         Params();
 
-        /// default value for number of hue bins
-        static const int DEFAULT_NUM_HUE_BINS = 32;
-
-        /// default value for number of saturation bins
-        static const int DEFAULT_NUM_SATURATION_BINS = 32;
-
-        /// default value for minimum saturation
-        static const int DEFAULT_MIN_SATURATION = 50;
-
-        /// default value for minimum value (brightness)
-        static const int DEFAULT_MIN_VALUE = 20;
-
-        /// default size of the element that is used in opening
-        static const int DEFAULT_MORPH_ELEMENT_SIZE = 9;
-
-        /// default size for mean filter
-        static const int DEFAULT_MEAN_FILTER_SIZE = 1;
-
         /// number of bins for the hue channels
         int num_hue_bins;
 
         /// number of bins for the saturation channel
         int num_saturation_bins;
 
-        /// minimum saturation that has to have a color to be
-        /// part of the object model
+        /// minimum saturation that has to have a color to be part of the object model
         int min_saturation;
 
-        /// minimum value that has to have a color to be 
-        /// part of the object model
+        /// minimum value that has to have a color to be part of the object model
         int min_value;
 
         /// size of the element that is used in opening
         int morph_element_size;
 
-        /// size of the mean filter window, must be odd and >0,
-        /// a size of 1 means no filter is used
+        /// size of the mean filter window, must be odd and >0, a size of 1 means no filter is used
         int mean_filter_size;
 
-        /// show images while processing ?
+        /// show images while processing? default = false
         bool show_images;
+
+        static const int DEFAULT_NUM_HUE_BINS = 32;
+        static const int DEFAULT_NUM_SATURATION_BINS = 32;
+        static const int DEFAULT_MIN_SATURATION = 50;
+        static const int DEFAULT_MIN_VALUE = 20;
+        static const int DEFAULT_MORPH_ELEMENT_SIZE = 9;
+        static const int DEFAULT_MEAN_FILTER_SIZE = 1;
       };
 
       /**

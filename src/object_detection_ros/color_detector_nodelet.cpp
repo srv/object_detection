@@ -60,32 +60,22 @@ namespace object_detection_ros {
 
       void loadSettings(ros::NodeHandle& nh)
       {
-        int num_hue_bins, num_saturation_bins, min_saturation, min_value, morph_element_size;
-        bool show_images;
-        if (!nh.hasParam("num_hue_bins")) NODELET_ERROR("Param num_hue_bins not found!");
-        if (nh.getParam("num_hue_bins", num_hue_bins)) color_detector_->setNumHueBins(num_hue_bins);
-        if (nh.getParam("num_saturation_bins", num_saturation_bins)) color_detector_->setNumSaturationBins(num_saturation_bins);
-        if (nh.getParam("min_saturation", min_saturation)) color_detector_->setMinSaturation(min_saturation);
-        if (nh.getParam("min_value", min_value)) color_detector_->setMinValue(min_value);
-        if (nh.getParam("morph_element_size", morph_element_size)) color_detector_->setMorphElementSize(morph_element_size);
-        if (nh.getParam("show_images", show_images)) color_detector_->setShowImages(show_images);
+        // retrieve all parameters that are set (if getParam fails, the value is untouched)
+        // color detector settings
+        object_detection::ColorDetector::Params color_detector_params;
+        nh.getParam("num_hue_bins", color_detector_params.num_hue_bins);
+        nh.getParam("num_saturation_bins", color_detector_params.num_saturation_bins);
+        nh.getParam("min_saturation", color_detector_params.min_saturation);
+        nh.getParam("min_value", color_detector_params.min_value);
+        nh.getParam("morph_element_size", color_detector_params.morph_element_size);
+        nh.getParam("mean_filter_size", color_detector_params.mean_filter_size);
+        nh.getParam("show_images", color_detector_params.show_images);
+        color_detector_->setParams(color_detector_params);
       }
 
       void printSettings()
       {
-        NODELET_INFO("Current ColorDetector settings:\n"
-                     "  Number of Hue Bins       : %i \n"
-                     "  Number of Saturation Bins: %i \n"
-                     "  Minimum Saturation       : %i \n"
-                     "  Minimum Value            : %i \n"
-                     "  Morph Element Size       : %i \n"
-                     "  Show Images              : %s \n",
-                     color_detector_->numHueBins(),
-                     color_detector_->numSaturationBins(),
-                     color_detector_->minSaturation(),
-                     color_detector_->minValue(),
-                     color_detector_->morphElementSize(),
-                     (color_detector_->showImages() ? "true" : "false"));
+        NODELET_INFO_STREAM("Current ColorDetector settings:\n" << color_detector_->params());
       }
 
       void advertise(ros::NodeHandle& nh)

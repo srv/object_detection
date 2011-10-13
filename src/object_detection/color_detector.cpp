@@ -53,14 +53,31 @@ namespace boost
 BOOST_SERIALIZATION_SPLIT_FREE(cv::MatND);
 */
 
-object_detection::ColorDetector::ColorDetector(odat::ModelStorage::Ptr model_storage) : odat::Detector(model_storage),
-  num_hue_bins_(DEFAULT_NUM_HUE_BINS),
-  num_saturation_bins_(DEFAULT_NUM_SATURATION_BINS),
-  min_saturation_(DEFAULT_MIN_SATURATION),
-  min_value_(DEFAULT_MIN_VALUE),
-  morph_element_size_(DEFAULT_MORPH_ELEMENT_SIZE),
-  mean_filter_size_(DEFAULT_MEAN_FILTER_SIZE),
-  show_images_(false)
+
+object_detection::ColorDetector::Params::Params() : 
+  num_hue_bins(DEFAULT_NUM_HUE_BINS),
+  num_saturation_bins(DEFAULT_NUM_SATURATION_BINS),
+  min_saturation(DEFAULT_MIN_SATURATION),
+  min_value(DEFAULT_MIN_VALUE),
+  morph_element_size(DEFAULT_MORPH_ELEMENT_SIZE),
+  mean_filter_size(DEFAULT_MEAN_FILTER_SIZE),
+  show_images(false)
+{
+}
+
+std::ostream& operator<< (std::ostream& ostr, const object_detection::ColorDetector::Params& params)
+{
+  ostr << "  Number of Hue Bins       : " << params.num_hue_bins << std::endl
+       << "  Number of Saturation Bins: " << params.num_saturation_bins << std::endl
+       << "  Minimum Saturation       : " << params.min_saturation << std::endl
+       << "  Minimum Value            : " << params.min_value << std::endl
+       << "  Morph Element Size       : " << params.morph_element_size << std::endl
+       << "  Mean Filter Size         : " << params.mean_filter_size << std::endl
+       << "  Show Images              : " << (params.show_images == true ? "true" : "false");
+  return ostr;
+}
+
+object_detection::ColorDetector::ColorDetector(odat::ModelStorage::Ptr model_storage) : odat::Detector(model_storage)
 {
 }
 
@@ -72,20 +89,24 @@ cv::MatND object_detection::ColorDetector::adaptHistogram(const std::string& mod
   assert(model_histogram.rows == 180);
   assert(model_histogram.cols == 256);
   */
-  assert(model_histogram.rows == num_hue_bins_);
-  assert(model_histogram.cols == num_saturation_bins_);
+  
+  if (model_histogram.rows != params_.num_hue_bins ||
+      model_histogram.cols != params_.num_saturation_bins)
+  {
+    throw odat::Exception("Training data does not fit to actual parameters, you have to re-train with the same parameters!");
+  }
 
   cv::MatND adapted_histogram = model_histogram.clone();
   //cv::resize(model_histogram, adapted_histogram, cv::Size(num_saturation_bins_, num_hue_bins_));
 
   // set small saturations to zero
-  int black_sat_bins = min_saturation_ * num_saturation_bins_ / 256;
+  int black_sat_bins = params_.min_saturation * params_.num_saturation_bins / 256;
   for (int s = 0; s <= black_sat_bins; ++s)
   {
     adapted_histogram.col(s) = cv::Scalar::all(0);
   }
 
-  if (show_images_)
+  if (params_.show_images)
   {
     histogram_utilities::showHSHistogram(adapted_histogram, model_name + " adapted model histogram");
     cv::waitKey(5);
@@ -113,9 +134,9 @@ void object_detection::ColorDetector::detect()
     cv::Mat backprojection = histogram_utilities::calculateBackprojection(model_histogram, hsv_image);
 
     // filter out noise
-    if (mean_filter_size_ > 2)
+    if (params_.mean_filter_size > 2)
     {
-      cv::medianBlur(backprojection, backprojection, mean_filter_size_);
+      cv::medianBlur(backprojection, backprojection, params_.mean_filter_size);
     }
 
     // perform thresholding
@@ -123,7 +144,7 @@ void object_detection::ColorDetector::detect()
     cv::threshold(backprojection, binary, 127, 255, CV_THRESH_BINARY);
 
     // some opening
-    int element_size = morph_element_size_;
+    int element_size = params_.morph_element_size;
     cv::Mat element = cv::Mat::zeros(element_size, element_size, CV_8UC1);
     cv::circle(element, cv::Point(element_size / 2, element_size / 2), element_size / 2, cv::Scalar(255), -1);
     cv::Mat binary_morphed;
@@ -135,12 +156,12 @@ void object_detection::ColorDetector::detect()
     cv::Mat value = hsv_channels[2];
 
     cv::Mat min_value_mask;
-    cv::threshold(value, min_value_mask, min_value_, 255, CV_THRESH_BINARY);
+    cv::threshold(value, min_value_mask, params_.min_value, 255, CV_THRESH_BINARY);
 
     // mask out low values in binary image
     cv::bitwise_and(min_value_mask, binary_morphed, binary_morphed);
 
-    if (show_images_)
+    if (params_.show_images)
     {
       cv::namedWindow(model_name +"-backprojection", 0);
       cv::namedWindow(model_name + "-backprojection-thresholded", 0);
@@ -216,12 +237,6 @@ void object_detection::ColorDetector::trainInstance(const std::string& name, con
 
 void object_detection::ColorDetector::endTraining(const std::string& name)
 {
-  //// we create the full histogram for training, it will be adapted for
-  //// detection according to current parameters
-  //const int NUM_HUE_BINS = 180;
-  //const int NUM_SATURATION_BINS = 256;
-  const int NUM_HUE_BINS = num_hue_bins_;
-  const int NUM_SATURATION_BINS = num_saturation_bins_;
   assert(training_data_.find(name) != training_data_.end());
   cv::MatND image_histogram;
   cv::MatND object_histogram;
@@ -244,13 +259,13 @@ void object_detection::ColorDetector::endTraining(const std::string& name)
 
     if (i == 0)
     {
-      image_histogram = histogram_utilities::calculateHistogram(hsv_image, NUM_HUE_BINS, NUM_SATURATION_BINS, cv::Mat());
-      object_histogram = histogram_utilities::calculateHistogram(hsv_image, NUM_HUE_BINS, NUM_SATURATION_BINS, object_mask);
+      image_histogram = histogram_utilities::calculateHistogram(hsv_image, params_.num_hue_bins, params_.num_saturation_bins, cv::Mat());
+      object_histogram = histogram_utilities::calculateHistogram(hsv_image, params_.num_hue_bins, params_.num_saturation_bins, object_mask);
     }
     else
     {
-      histogram_utilities::accumulateHistogram(hsv_image, NUM_HUE_BINS, NUM_SATURATION_BINS, cv::Mat(), image_histogram);
-      histogram_utilities::accumulateHistogram(hsv_image, NUM_HUE_BINS, NUM_SATURATION_BINS, object_mask, object_histogram);
+      histogram_utilities::accumulateHistogram(hsv_image, params_.num_hue_bins, params_.num_saturation_bins, cv::Mat(), image_histogram);
+      histogram_utilities::accumulateHistogram(hsv_image, params_.num_hue_bins, params_.num_saturation_bins, object_mask, object_histogram);
     }
   }
   if (object_histogram.empty())
@@ -259,7 +274,7 @@ void object_detection::ColorDetector::endTraining(const std::string& name)
   }
   cv::MatND model_histogram = object_histogram / image_histogram * 255;
 
-  if (show_images_)
+  if (params_.show_images)
   {
     histogram_utilities::showHSHistogram(model_histogram, "model histogram");
     cv::waitKey(5);

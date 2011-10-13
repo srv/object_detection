@@ -53,21 +53,16 @@ namespace object_detection_ros {
 
       void loadSettings(ros::NodeHandle& nh)
       {
-        double matching_score_threshold, min_scale, max_scale;
-        if (nh.getParam("matching_score_threshold", matching_score_threshold)) shape_detector_->setMatchingScoreThreshold(matching_score_threshold);
-        if (nh.getParam("min_scale", min_scale)) shape_detector_->setMinScale(min_scale);
-        if (nh.getParam("max_scale", max_scale)) shape_detector_->setMaxScale(max_scale);
+        object_detection::ShapeDetector::Params params;
+        nh.getParam("matching_score_threshold", params.matching_score_threshold);
+        nh.getParam("min_scale", params.min_scale);
+        nh.getParam("max_scale", params.max_scale);
+        shape_detector_->setParams(params);
       }
 
       void printSettings()
       {
-        NODELET_INFO("Current ShapeDetector settings:\n"
-                     "  Matching Score Threshold : %f \n"
-                     "  Min Scale                : %f \n"
-                     "  Max Scale                : %f \n",
-                     shape_detector_->matchingScoreThreshold(),
-                     shape_detector_->minScale(),
-                     shape_detector_->maxScale());
+        NODELET_INFO_STREAM("Current ShapeDetector settings:\n" << shape_detector_->params());
       }
   };
 

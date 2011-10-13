@@ -34,7 +34,11 @@ color detector and compares the shapes of the detected blobs to stored model sha
 Using this comparison, the objects pose (odat::Pose2D) and scale can be estimated.
 
 \section Parameters
-Please refer to the following files to check and modify parameters:
+See the following structs for an explanation of the possible parameters:
+- \ref object_detection::ColorDetector::Params
+- \ref object_detection::ShapeDetector::Params
+
+To change the parameters, you can modify the files
 - object_detection/cfg/color_detector_params.xml
 - object_detection/cfg/shape_detector_params.xml
 

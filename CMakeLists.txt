@@ -100,9 +100,13 @@ target_link_libraries(detection_display odat_ros)
 rosbuild_add_executable(trainer_node src/nodes/trainer_node.cpp)
 target_link_libraries(trainer_node odat_ros ${PROJECT_NAME})
 
+rosbuild_add_executable(train_from_disk src/nodes/train_from_disk.cpp)
+target_link_libraries(train_from_disk odat_ros ${PROJECT_NAME})
 
 rosbuild_add_gtest(shape_matching_test test/shape_matching_test.cpp)
+rosbuild_add_gtest(shape_processing_test test/shape_processing_test.cpp)
 target_link_libraries(shape_matching_test ${PROJECT_NAME})
+target_link_libraries(shape_processing_test ${PROJECT_NAME})
 
 #rosbuild_add_library(object_detection ${LIB_SOURCES} ${NEW_LIB_SOURCES})
 #rosbuild_add_executable(object_detection_test src/object_detection_test/main.cpp)

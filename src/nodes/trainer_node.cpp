@@ -220,6 +220,7 @@ private:
 
         training_data_pub_.publish(training_data_msg);
         ROS_INFO("Training message published.");
+        cv::imwrite("training_image.png", image);
         ROS_INFO("Click left to see incoming images again.");
     }
 

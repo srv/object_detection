@@ -28,17 +28,19 @@ class TrainerNode
 public:
     enum Mode
     {
-        DISPLAY_VIDEO,
-        AWAITING_TRAINING_IMAGE,
         SHOWING_TRAINING_IMAGE,
         PAINTING,
         SELECTING_ORIGIN,
         SELECTING_DIRECTION
     };
 
-    TrainerNode() : nh_(), nh_priv_("~"), it_(nh_), current_mode_(DISPLAY_VIDEO)
+    TrainerNode(const std::string& image_file) : nh_(), nh_priv_("~"), current_mode_(PAINTING)
     {
-        image_sub_ = it_.subscribe("image", 1, &TrainerNode::imageCallback, this);
+        training_image_ = cv::imread(image_file);
+        if (training_image_.empty())
+        {
+          ROS_ERROR("Cannot open training image");
+        }
         training_data_pub_ = nh_priv_.advertise<vision_msgs::TrainingData>("training_data", 1);
 
         cv::namedWindow("Training GUI");
@@ -49,8 +51,6 @@ public:
         object_pose_.x = 0;
         object_pose_.y = 0;
         object_pose_.theta = 0;
-
-        ROS_INFO("Click left to select a training image.");
     }
 
     ~TrainerNode()
@@ -59,36 +59,6 @@ public:
     }
 
 private:
-
-    void imageCallback(const sensor_msgs::ImageConstPtr& image_msg)
-    {
-        cv::Mat image;
-
-        cv_bridge::CvImageConstPtr cv_ptr;
-        try
-        {
-            cv_ptr = cv_bridge::toCvShare(image_msg, enc::BGR8);
-            image = cv_ptr->image.clone();
-        }
-        catch (cv_bridge::Exception& e)
-        {
-            ROS_ERROR("cv_bridge exception: %s", e.what());
-            return;
-        }
-        if (current_mode_ == DISPLAY_VIDEO)
-        {
-           cv::imshow("Training GUI", image);
-           cv::waitKey(5);
-        }
-        else if (current_mode_ == AWAITING_TRAINING_IMAGE)
-        {
-            training_image_ = image.clone();
-            cv::imshow("Training GUI", training_image_);
-            cv::waitKey(5);
-            current_mode_ = PAINTING;
-            ROS_INFO("Entered painting mode, click left to select an object polygon. Click right when finished.");
-        }
-    }
 
     static void staticMouseCallback(int event, int x, int y, int flags, void* param)
     {
@@ -101,15 +71,7 @@ private:
     void mouseCallback(int event, int x, int y, int flags)
     {
         current_mouse_position_ = cv::Point(x, y);
-        if (current_mode_ == DISPLAY_VIDEO)
-        {
-            if (event == CV_EVENT_LBUTTONUP)
-            {
-                current_mode_ = AWAITING_TRAINING_IMAGE;
-                ROS_INFO("Taking next arriving image as training image...");
-            }
-        } 
-        else if (current_mode_ == PAINTING)
+        if (current_mode_ == PAINTING)
         {
             if (event == CV_EVENT_LBUTTONUP)
             {
@@ -121,7 +83,6 @@ private:
                 if (polygon_points_.size() > 2)
                 {
                     current_mode_ = SELECTING_ORIGIN;
-                    image_sub_.shutdown();
                     object_pose_.x = x;
                     object_pose_.y = y;
                     ROS_INFO("Select the object origin and click.");
@@ -158,50 +119,45 @@ private:
         {
             if (event == CV_EVENT_LBUTTONUP)
             {
-                current_mode_ = DISPLAY_VIDEO;
-                ROS_INFO("Entering display video mode.");
+                current_mode_ = PAINTING;
+                ROS_INFO("Entering display image mode.");
                 polygon_points_.clear();
                 object_pose_.x = 0;
                 object_pose_.y = 0;
                 object_pose_.theta = 0;
-                // subscribe to image topic again
-                image_sub_ = it_.subscribe("image", 1, &TrainerNode::imageCallback, this);
             }
         }
     }
 
     void repaint(const ros::TimerEvent&)
     {
-        if (current_mode_ != DISPLAY_VIDEO && current_mode_ != AWAITING_TRAINING_IMAGE)
+        std::vector<cv::Point> painting_polygon_points = polygon_points_;
+        if (current_mode_ == PAINTING)
         {
-            std::vector<cv::Point> painting_polygon_points = polygon_points_;
-            if (current_mode_ == PAINTING)
-            {
-                painting_polygon_points.push_back(current_mouse_position_);
-            }
-            cv::Mat canvas = training_image_.clone();
-
-            if (painting_polygon_points.size() > 1)
-            {
-                const cv::Point* point_data = painting_polygon_points.data();
-                int num_points = painting_polygon_points.size();
-                bool closed = true;
-                cv::polylines(canvas, &point_data, &num_points, 
-                        1, closed, cv::Scalar(0, 255, 0), 1);
-            }
-            // coordinate system
-            if (object_pose_.x != 0 && object_pose_.y != 0)
-            {
-              cv::Point origin(object_pose_.x, object_pose_.y);
-              double direction = object_pose_.theta;
-              cv::Point x_axis(50 * cos(direction), 50 * sin(direction));
-              cv::Point y_axis(50 * cos(direction + M_PI_2), 50 * sin(direction + M_PI_2));
-              cv::line(canvas, origin, origin + x_axis, cv::Scalar(0, 0, 255), 2);
-              cv::line(canvas, origin, origin + y_axis, cv::Scalar(0, 255, 0), 2);
-            }
-            cv::imshow("Training GUI", canvas);
-            cv::waitKey(5);
+            painting_polygon_points.push_back(current_mouse_position_);
         }
+        cv::Mat canvas = training_image_.clone();
+
+        if (painting_polygon_points.size() > 1)
+        {
+            const cv::Point* point_data = painting_polygon_points.data();
+            int num_points = painting_polygon_points.size();
+            bool closed = true;
+            cv::polylines(canvas, &point_data, &num_points, 
+                    1, closed, cv::Scalar(0, 255, 0), 1);
+        }
+        // coordinate system
+        if (object_pose_.x != 0 && object_pose_.y != 0)
+        {
+          cv::Point origin(object_pose_.x, object_pose_.y);
+          double direction = object_pose_.theta;
+          cv::Point x_axis(50 * cos(direction), 50 * sin(direction));
+          cv::Point y_axis(50 * cos(direction + M_PI_2), 50 * sin(direction + M_PI_2));
+          cv::line(canvas, origin, origin + x_axis, cv::Scalar(0, 0, 255), 2);
+          cv::line(canvas, origin, origin + y_axis, cv::Scalar(0, 255, 0), 2);
+        }
+        cv::imshow("Training GUI", canvas);
+        cv::waitKey(5);
     }
 
     void publishTrainingData(const cv::Mat& image, 
@@ -220,14 +176,10 @@ private:
 
         training_data_pub_.publish(training_data_msg);
         ROS_INFO("Training message published.");
-        cv::imwrite("training_image.png", image);
-        ROS_INFO("Click left to see incoming images again.");
     }
 
     ros::NodeHandle nh_;
     ros::NodeHandle nh_priv_;
-    image_transport::ImageTransport it_;
-    image_transport::Subscriber image_sub_;
     ros::Publisher training_data_pub_;
 
     cv::Mat training_image_;
@@ -243,7 +195,12 @@ private:
 int main(int argc, char** argv)
 {
   ros::init(argc, argv, "trainer_node");
-  TrainerNode trainer;
+  if (argc != 2)
+  {
+    ROS_ERROR_STREAM("Usage: " << argv[0] << " <training image file>");
+    return -1;
+  }
+  TrainerNode trainer(argv[1]);
   ros::spin();
   return 0;
 }

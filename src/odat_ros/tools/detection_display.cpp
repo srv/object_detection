@@ -129,12 +129,12 @@ namespace odat_ros
           copy_roi.y = dest_y;
           cv::Mat dest = image(copy_roi);
 
-          cv::add(dest, cv::Scalar(0, 80, 0), dest, source);
+          cv::add(dest, cv::Scalar(0, 50, 0), dest, source);
         }
 
-        int baseline = 0;
-        int X = x+3, Y = y+12;
-        cv::Size tsize = getTextSize(detections[i].label, cv::FONT_HERSHEY_SIMPLEX, 0.8, 2, &baseline);
+        /*
+        int X = x+3, Y = y-12;
+        cv::Size tsize = getTextSize(detections[i].label, cv::FONT_HERSHEY_SIMPLEX, 0.8, 2);
         if( Y + tsize.height + 2 >= image_height) { Y = image_height - y - 12 - 2 - tsize.height;}
         if(Y < 0) Y = 0;
         if(X + tsize.width + 2 >= image_width) { X = image_width - x - 3 - 2 - tsize.width;}
@@ -142,12 +142,20 @@ namespace odat_ros
         cv::putText(image, detections[i].label,cv::Point(X,Y),cv::FONT_HERSHEY_SIMPLEX,1.0,cv::Scalar(bl,gr,rd),2);
         std::string strscore = std::string("(") + tostr(detections[i].score) + std::string(")");
         X = x + 6; Y = y+24;
-        tsize = getTextSize(strscore,cv::FONT_HERSHEY_SIMPLEX, 0.4, 1, &baseline);
+        tsize = getTextSize(strscore,cv::FONT_HERSHEY_SIMPLEX, 0.4, 1);
         if( Y + tsize.height + 1 >= image_height) { Y = image_height - y - 24 - 1 - tsize.height;}
         if(Y < 0) Y = 0;
         if(X + tsize.width + 1 >= image_width) { X = image_width - x - 3 - 1 - tsize.width;}
         if(X < 0) X = 0;
         putText(image,strscore,cv::Point(X,Y),cv::FONT_HERSHEY_SIMPLEX,0.4,cv::Scalar(bl,gr,rd),1);
+        */
+        static const int FONT = CV_FONT_HERSHEY_SIMPLEX;
+        static const double TEXT_SCALE = 0.8;
+        int baseline;
+        cv::Size text_size = cv::getTextSize(detections[i].label, FONT, TEXT_SCALE, 2, &baseline);
+        cv::putText(image, detections[i].label, cv::Point(x + w + 10, y + 10 + text_size.height), FONT, TEXT_SCALE, cv::Scalar(bl, gr, rd), 2);
+        std::string strscore = std::string("score: ") + tostr(detections[i].score);
+        cv::putText(image, strscore, cv::Point(x + w + 10, y + 10 + 2 * text_size.height), FONT, 0.6, cv::Scalar(bl, gr, rd), 2);
 
         // coordinate system
         cv::Point origin;
@@ -159,6 +167,7 @@ namespace odat_ros
         cv::line(image, origin, origin + x_axis, cv::Scalar(0, 0, 255), 2);
         cv::line(image, origin, origin + y_axis, cv::Scalar(0, 255, 0), 2);
       }
+
       cv::imshow(window_name_, image);
       cv::waitKey(40);
 	}

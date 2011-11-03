@@ -5,4 +5,4 @@ min_scale: 0.5
 max_scale: 2.0
 
 # matching threshold to accept as detection
-matching_score_threshold: 0.7
+matching_score_threshold: 0.5

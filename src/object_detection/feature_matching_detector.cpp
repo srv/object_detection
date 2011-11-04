@@ -66,6 +66,7 @@ void object_detection::FeatureMatchingDetector::detect()
       int num_iterations = 100;
       float allowed_reprojection_error = 8.0; // used by ransac to classify inliers
       int min_inliers = model_features.world_points.size() / 2; // stop iteration if more inliers than this are found
+      if (min_inliers < 3) min_inliers = 3;
       cv::Mat inliers;
       cv::solvePnPRansac(world_points, image_points, camera_matrix_k_, distortion, 
           r_vec, t_vec, use_extrinsic_guess, num_iterations, allowed_reprojection_error, min_inliers, inliers);

@@ -53,9 +53,8 @@ The code is split into several libraries:
   ROS-Wrapper for odat, containing mainly conversion functions to convert from odat data structures to messages and vice versa.
 - object_detection\n
   Object detection algorithms.
-
-\subsection object_detection_ros object_detection_ros
-ROS-Wrapper for object detection algorithms (nodelets and nodes).
+- object_detection_ros\n
+  ROS-Wrapper for object detection algorithms (nodelets and nodes).
 
 <!--
 Provide links to specific auto-generated API documentation within your

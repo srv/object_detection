@@ -39,6 +39,10 @@ public:
 
   void determineCorrespondences(pcl::registration::Correspondences& correspondences);
 
+  void filterCorrespondences(
+      const pcl::registration::CorrespondencesConstPtr& original_correspondences,
+      pcl::registration::Correspondences& filtered_correspondences);
+
 private:
 
   ModelConstPtr source_model_;

@@ -106,6 +106,7 @@ rosbuild_add_gtest(shape_matching_test test/shape_matching_test.cpp)
 rosbuild_add_gtest(shape_processing_test test/shape_processing_test.cpp)
 rosbuild_add_gtest(model3d_test test/model3d_test.cpp)
 rosbuild_add_gtest(model3d_alignment_test test/model3d_alignment_test.cpp)
+rosbuild_add_gtest(model3d_fusion_test test/model3d_fusion_test.cpp)
 target_link_libraries(shape_matching_test ${PROJECT_NAME})
 target_link_libraries(shape_processing_test ${PROJECT_NAME})
 

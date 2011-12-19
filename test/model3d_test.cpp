@@ -38,6 +38,22 @@ TEST(Model3D, integrityTest)
         });
     EXPECT_EQ(point_index, i/3);
   }
+
+  EXPECT_THROW(model.getDescriptorIndicesForPointIndex(-1), std::runtime_error);
+  EXPECT_THROW(model.getDescriptorIndicesForPointIndex(10), std::runtime_error);
+
+  for (int i = 0; i < 10; ++i)
+  {
+    std::vector<int> descriptor_indices;
+    EXPECT_NO_THROW({
+        descriptor_indices = model.getDescriptorIndicesForPointIndex(i);
+        });
+    EXPECT_EQ(descriptor_indices.size(), 3);
+    for (size_t j = 0; j < descriptor_indices.size(); ++j)
+    {
+      EXPECT_EQ(descriptor_indices[j], 3 * i + j);
+    }
+  }
 }
 
 // Run all the tests that were declared with TEST()

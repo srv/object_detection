@@ -27,8 +27,9 @@ public:
   typedef typename DescriptorCloud::ConstPtr DescriptorCloudConstPtr;
 
   typedef std::map<int, int> IndexToIndexMap;
+  typedef std::map<int, std::vector<int> > IndexToIndicesMap;
   typedef boost::shared_ptr<IndexToIndexMap>  IndexToIndexMapPtr;
-  typedef boost::shared_ptr<const IndexToIndexMap>  IndexToIndexMapConstPtr;
+  typedef boost::shared_ptr<IndexToIndicesMap>  IndexToIndicesMapPtr;
 
   /**
    * Creates an empty model
@@ -38,6 +39,7 @@ public:
     point_cloud_.reset(new PointCloud());
     descriptor_cloud_.reset(new DescriptorCloud());
     descriptor_to_world_point_.reset(new IndexToIndexMap());
+    world_point_to_descriptors_.reset(new IndexToIndicesMap());
   }
 
   inline PointCloudConstPtr getPointCloud() const { return point_cloud_; }
@@ -45,6 +47,8 @@ public:
   inline DescriptorCloudConstPtr getDescriptorCloud() const { return descriptor_cloud_; }
 
   int getPointIndexForDescriptorIndex(int descriptor_index) const;
+
+  std::vector<int> getDescriptorIndicesForPointIndex(int point_index) const;
     
   void attachDescriptor(int world_point_index, const DescriptorT& descriptor);
 
@@ -59,9 +63,7 @@ private:
   DescriptorCloudPtr descriptor_cloud_;
 
   IndexToIndexMapPtr descriptor_to_world_point_;
-
-  std::map<int, std::vector<int> > world_point_to_descriptors_;
-
+  IndexToIndicesMapPtr world_point_to_descriptors_;
 };
 
 }

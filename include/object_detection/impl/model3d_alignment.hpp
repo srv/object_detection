@@ -17,30 +17,23 @@ void object_detection::Model3DAlignment<ModelT>::setTarget(const ModelConstPtr& 
 template <typename ModelT>
 void object_detection::Model3DAlignment<ModelT>::align(Eigen::Matrix4f& transformation_matrix)
 {
+  // determie correspondences
   pcl::registration::CorrespondencesPtr correspondences(new pcl::registration::Correspondences());
-
   determineCorrespondences(*correspondences);
-
   std::cout << "found " << correspondences->size() << " correspondences." << std::endl;
 
   // filter correspondences
-  typedef typename PointCloud::PointType PointType;
-  pcl::registration::CorrespondenceRejectorSampleConsensus<PointType> rejector;
-  rejector.setInputCloud(source_model_->getPointCloud());
-  rejector.setTargetCloud(target_model_->getPointCloud());
-  rejector.setMaxIterations(1000); //TODO setter
-  rejector.setInlierThreshold(0.05); // TODO setter
-  rejector.setInputCorrespondences(correspondences);
-
-  pcl::registration::Correspondences filtered_correspondences;
-  rejector.getCorrespondeces(filtered_correspondences);
+  pcl::registration::CorrespondencesPtr filtered_correspondences(new pcl::registration::Correspondences());
+  filterCorrespondences(correspondences, *filtered_correspondences);
+  std::cout << filtered_correspondences->size() << " correspondences survived filter." << std::endl;
 
   // determine rigid transformation
+  typedef typename PointCloud::PointType PointType;
   pcl::registration::TransformationEstimationSVD<PointType, PointType> transformation_estimator;
   transformation_estimator.estimateRigidTransformation(
       *(source_model_->getPointCloud()),
       *(target_model_->getPointCloud()),
-      filtered_correspondences,
+      *filtered_correspondences,
       transformation_matrix);
 }
 
@@ -74,7 +67,7 @@ void object_detection::Model3DAlignment<ModelT>::determineCorrespondences(pcl::r
       {
         match_found = true;
       }
-      else if (k_distances[0] / k_distances[1] < 0.8) // TODO setter for threshold
+      else if (k_distances[0] / k_distances[1] < 0.8 * 0.8) // TODO setter for threshold
       {
         match_found = true;
       }
@@ -106,4 +99,22 @@ void object_detection::Model3DAlignment<ModelT>::determineCorrespondences(pcl::r
     }
   }
 }
+
+template <typename ModelT>
+void object_detection::Model3DAlignment<ModelT>::filterCorrespondences(
+    const pcl::registration::CorrespondencesConstPtr& original_correspondences,
+    pcl::registration::Correspondences& filtered_correspondences)
+{
+  typedef typename PointCloud::PointType PointType;
+  pcl::registration::CorrespondenceRejectorSampleConsensus<PointType> rejector;
+  rejector.setInputCloud(source_model_->getPointCloud());
+  rejector.setTargetCloud(target_model_->getPointCloud());
+  rejector.setMaxIterations(1000); //TODO setter
+  rejector.setInlierThreshold(0.05); // TODO setter
+  rejector.setInputCorrespondences(original_correspondences);
+
+  filtered_correspondences.clear();
+  rejector.getCorrespondeces(filtered_correspondences);
+}
+
 

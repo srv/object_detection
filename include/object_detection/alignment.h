@@ -2,9 +2,11 @@
 #define ALIGNMENT_H_
 
 // PCL includes
-#include "pcl/registration/registration.h"
-#include "pcl/common/eigen.h"
-#include "pcl/features/feature.h"
+#include <pcl/registration/registration.h>
+#include <pcl/common/eigen.h>
+#include <pcl/features/feature.h>
+
+#include <boost/make_shared.hpp>
 
 // adapted from ia_ransac.h from pcl package
 

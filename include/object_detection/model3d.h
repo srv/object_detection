@@ -1,63 +1,72 @@
-#ifndef MODEL_H
-#define MODEL_H
+#ifndef MODEL3D_H
+#define MODEL3D_H
 
-#include <vector>
-#include <map>
-#include <ostream>
-
-#include "feature.h"
+#include <pcl/point_cloud.h>
 
 namespace object_detection {
 
 /**
- * \class Model
+ * \class Model3D
  * \author Stephan Wirth
  * \brief Data structure that defines a 3D model
  * The model is basically a 3d point set with feature descriptors attached.
  */
-class Model
+template <typename PointT, typename DescriptorT>
+class Model3D
 {
 
-  public:
+public:
 
-    /**
-    * Creates an empty model
-    */
-    Model();
+  typedef PointT PointType;
+  typedef DescriptorT DescriptorType;
+  typedef typename pcl::PointCloud<PointT> PointCloud;
+  typedef typename PointCloud::Ptr PointCloudPtr;
+  typedef typename PointCloud::ConstPtr PointCloudConstPtr;
+  typedef typename pcl::PointCloud<DescriptorT> DescriptorCloud;
+  typedef typename DescriptorCloud::Ptr DescriptorCloudPtr;
+  typedef typename DescriptorCloud::ConstPtr DescriptorCloudConstPtr;
 
-    /**
-    * \return all features in a floating point matrix, each row has
-    *         descriptor data from one feature.
-    */
-    cv::Mat getFeatureData() const;
+  typedef std::map<int, int> IndexToIndexMap;
+  typedef boost::shared_ptr<IndexToIndexMap>  IndexToIndexMapPtr;
+  typedef boost::shared_ptr<const IndexToIndexMap>  IndexToIndexMapConstPtr;
 
-    /**
-    * Add a new feature
-    */
-    void addFeature(const cv::Point3f& world_point, const Feature& feature);
+  /**
+   * Creates an empty model
+   */
+  Model3D()
+  {
+    point_cloud_.reset(new PointCloud());
+    descriptor_cloud_.reset(new DescriptorCloud());
+    descriptor_to_world_point_.reset(new IndexToIndexMap());
+  }
 
-    /**
-    * \feature_index the index of the feature for which the world point
-    *                is requested. Must be valid.
-    * \return the world point for the feature at given index
-    */
-    cv::Point3f getWorldPoint(int feature_index) const;
+  inline PointCloudConstPtr getPointCloud() const { return point_cloud_; }
 
-    friend std::ostream& operator<<(std::ostream& ostr, const Model& model);
+  inline DescriptorCloudConstPtr getDescriptorCloud() const { return descriptor_cloud_; }
 
-    void writeToPCD(const std::string& file_name);
+  int getPointIndexForDescriptorIndex(int descriptor_index) const;
+    
+  void attachDescriptor(int world_point_index, const DescriptorT& descriptor);
 
-  private:
+  void addNewPoint(const PointT& world_point, const std::vector<DescriptorT>& descriptors);
 
-    std::vector<cv::Point3f> world_points_;
-    std::vector<Feature> features_;
-    std::map<int, int> feature_index_to_world_point_index_;
+  typedef boost::shared_ptr<Model3D> Ptr;
+  typedef boost::shared_ptr<const Model3D> ConstPtr;
+
+private:
+
+  PointCloudPtr point_cloud_;
+  DescriptorCloudPtr descriptor_cloud_;
+
+  IndexToIndexMapPtr descriptor_to_world_point_;
+
+  std::map<int, std::vector<int> > world_point_to_descriptors_;
 
 };
 
-std::ostream& operator<<(std::ostream& ostr, const object_detection::Model& model);
 }
 
-    
-#endif /* MODEL_H */
+#include "object_detection/impl/model3d.hpp"
+
+#endif /* MODEL3D_H */
 

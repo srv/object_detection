@@ -100,7 +100,7 @@ bool FilesystemModelStorage::getModelList(const std::string& detector, std::vect
 	directory_iterator end_itr;
 	for ( directory_iterator itr( path(directory_)/detector ); itr != end_itr; ++itr ) {
 		if ( !is_directory( *itr ) ) {
-			model_list.push_back(itr->leaf());
+			model_list.push_back(itr->path().filename().string());
 		}
 	}
 	return true;

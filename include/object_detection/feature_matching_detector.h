@@ -5,6 +5,8 @@
 #include "odat/trainable.h"
 #include "odat/feature_set_3d.h"
 
+#include "object_detection/model3d.h"
+
 namespace object_detection
 {
   class FeatureMatchingDetector : public odat::Detector, public odat::Trainable
@@ -39,7 +41,7 @@ namespace object_detection
     private:
 
       /// the object models
-      std::map<std::string, odat::FeatureSet3D> model_features_;
+      // std::map<std::string, Model3D::Ptr> models_;
 
       /// training data temporal storage
       //std::map<std::string, std::vector<odat::TrainingData> > training_data_;

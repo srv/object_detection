@@ -1,3 +1,4 @@
+#include <pcl/registration/transforms.h>
 
 template <typename PointT, typename DescriptorT>
 int object_detection::Model3D<PointT, DescriptorT>::getPointIndexForDescriptorIndex(int descriptor_index) const
@@ -26,7 +27,8 @@ std::vector<int> object_detection::Model3D<PointT, DescriptorT>::getDescriptorIn
 template <typename PointT, typename DescriptorT>
 void object_detection::Model3D<PointT, DescriptorT>::attachDescriptor(int world_point_index, const DescriptorT& descriptor)
 {
-  assert(world_point_index >= 0 && world_point_index < point_cloud_->points.size());
+  assert(world_point_index >= 0 && 
+         world_point_index < static_cast<int>(point_cloud_->points.size()));
   descriptor_cloud_->push_back(descriptor);
   int descriptor_index = descriptor_cloud_->points.size() - 1;
   (*descriptor_to_world_point_)[descriptor_index] = world_point_index;
@@ -48,5 +50,19 @@ void object_detection::Model3D<PointT, DescriptorT>::addNewPoint(const PointT& w
     (*descriptor_to_world_point_)[descriptor_index] = point_index;
     (*world_point_to_descriptors_)[point_index].push_back(descriptor_index);
   }
+}
+
+template <typename PointT, typename DescriptorT>
+void object_detection::Model3D<PointT, DescriptorT>::addNewPoint(const PointT& world_point, const DescriptorT& descriptor)
+{
+  std::vector<DescriptorT> descriptors(1);
+  descriptors[0] = descriptor;
+  addNewPoint(world_point, descriptors);
+}
+
+template <typename PointT, typename DescriptorT>
+void object_detection::Model3D<PointT, DescriptorT>::transformPoints(const Eigen::Matrix4f& transform)
+{
+  pcl::transformPointCloud(*point_cloud_, *point_cloud_, transform);
 }
 

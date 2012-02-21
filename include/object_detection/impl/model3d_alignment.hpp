@@ -4,12 +4,18 @@
 template <typename ModelT>
 void object_detection::Model3DAlignment<ModelT>::setSource(const ModelConstPtr& source_model)
 {
+  if (source_model->getPointCloud()->points.size() < 3)
+    throw std::runtime_error("Model3DAlignment::setSource(): not enough points in source model!");
+
   source_model_ = source_model;
 }
 
 template <typename ModelT>
 void object_detection::Model3DAlignment<ModelT>::setTarget(const ModelConstPtr& target_model)
 {
+  if (target_model->getPointCloud()->points.size() < 3)
+    throw std::runtime_error("Model3DAlignment::setTarget(): not enough points in target model!");
+
   target_model_ = target_model;
   target_descriptor_tree_->setInputCloud(target_model_->getDescriptorCloud());
 }
@@ -17,6 +23,16 @@ void object_detection::Model3DAlignment<ModelT>::setTarget(const ModelConstPtr& 
 template <typename ModelT>
 void object_detection::Model3DAlignment<ModelT>::align(Eigen::Matrix4f& transformation_matrix)
 {
+  if (!source_model_)
+    throw std::runtime_error("Model3DAlignment::align(), source model missing!");
+  if (!target_model_)
+    throw std::runtime_error("Model3DAlignment::align(), target model missing!");
+
+  if (source_model_->getPointCloud()->points.size() < 3)
+    throw std::runtime_error("Model3DAlignment::setSource(): not enough points in source model!");
+  if (target_model_->getPointCloud()->points.size() < 3)
+    throw std::runtime_error("Model3DAlignment::setTarget(): not enough points in target model!");
+
   // determie correspondences
   pcl::registration::CorrespondencesPtr correspondences(new pcl::registration::Correspondences());
   determineCorrespondences(*correspondences);

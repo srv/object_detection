@@ -42,6 +42,12 @@ public:
     world_point_to_descriptors_.reset(new IndexToIndicesMap());
   }
 
+  void setName(const std::string& name) { name_ = name; }
+
+  std::string getName() const { return name_; }
+  
+  bool isEmpty() const { return point_cloud_->points.size() == 0; }
+
   inline PointCloudConstPtr getPointCloud() const { return point_cloud_; }
 
   inline DescriptorCloudConstPtr getDescriptorCloud() const { return descriptor_cloud_; }
@@ -54,6 +60,11 @@ public:
 
   void addNewPoint(const PointT& world_point, const std::vector<DescriptorT>& descriptors);
 
+  // add a new point that has only a single descriptor
+  void addNewPoint(const PointT& world_point, const DescriptorT& descriptor);
+
+  void transformPoints(const Eigen::Matrix4f& transformation);
+
   typedef boost::shared_ptr<Model3D> Ptr;
   typedef boost::shared_ptr<const Model3D> ConstPtr;
 
@@ -64,6 +75,9 @@ private:
 
   IndexToIndexMapPtr descriptor_to_world_point_;
   IndexToIndicesMapPtr world_point_to_descriptors_;
+
+  std::string name_;
+
 };
 
 }

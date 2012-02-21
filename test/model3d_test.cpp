@@ -13,6 +13,7 @@ TEST(Model3D, integrityTest)
   Model::DescriptorCloudConstPtr descriptors = model.getDescriptorCloud();
   EXPECT_EQ(points->size(), 0);
   EXPECT_EQ(descriptors->size(), 0);
+  EXPECT_EQ(model.isEmpty(), true);
 
   for (int i = 0; i < 10; ++i)
   {
@@ -26,6 +27,7 @@ TEST(Model3D, integrityTest)
 
   EXPECT_EQ(points->size(), 10);
   EXPECT_EQ(descriptors->size(), 30);
+  EXPECT_EQ(model.isEmpty(), false);
 
   EXPECT_THROW(model.getPointIndexForDescriptorIndex(-1), std::runtime_error);
   EXPECT_THROW(model.getPointIndexForDescriptorIndex(30), std::runtime_error);

@@ -21,6 +21,18 @@ PclDescriptor randomDescriptor()
   return descriptor;
 }
 
+TEST(Model3DAlignment, emptyTest)
+{  
+  typedef Model3D<pcl::PointXYZ, PclDescriptor> Model;
+  Model::Ptr model_source(new Model());
+  Model::Ptr model_target(new Model());
+  Model3DAlignment<Model> alignment;
+  EXPECT_THROW(alignment.setSource(model_source), std::runtime_error);
+  EXPECT_THROW(alignment.setTarget(model_target), std::runtime_error);
+  Eigen::Matrix4f transformation_matrix;
+  EXPECT_THROW(alignment.align(transformation_matrix), std::runtime_error);
+}
+
 TEST(Model3DAlignment, aligmentTest)
 {
   typedef Model3D<pcl::PointXYZ, PclDescriptor> Model;

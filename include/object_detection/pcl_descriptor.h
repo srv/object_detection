@@ -7,11 +7,24 @@
 
 namespace object_detection
 {
+
 struct PclDescriptor
 {
   float data[64];
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 } EIGEN_ALIGN16;
+
+inline std::ostream& operator<<(std::ostream& ostr, const PclDescriptor& desc)
+{
+  ostr << "(" << desc.data[0];
+  for (int i = 1; i < 64; ++i)
+  {
+    ostr << ", " << desc.data[i];
+  }
+  ostr << ")";
+  return ostr;
+}
+
 }
 
 POINT_CLOUD_REGISTER_POINT_STRUCT (object_detection::PclDescriptor,

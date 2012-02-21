@@ -56,8 +56,11 @@ void odat_ros::fromMsg(const vision_msgs::Features& features_msg, odat::FeatureS
     features.key_points[i].angle = features_msg.key_points[i].angle;
     features.key_points[i].response = features_msg.key_points[i].response;
     features.key_points[i].octave = features_msg.key_points[i].octave;
-    const cv::Mat descriptor_mat(features_msg.descriptor_data, true);
-    features.descriptors = descriptor_mat.reshape(0, features.key_points.size());
+
+    features.descriptors.create(features_msg.descriptor_data.rows, 
+        features_msg.descriptor_data.cols, features_msg.descriptor_data.type);
+    std::copy(features_msg.descriptor_data.data.begin(), 
+        features_msg.descriptor_data.data.end(), features.descriptors.data);
     features.descriptor_name = features_msg.descriptor_name;
   }
 }

@@ -5,7 +5,6 @@
 #include "odat/training_data.h"
 #include "odat/exceptions.h"
 
-#include "object_detection/histogram_utilities.h"
 #include "object_detection/shape_detector.h"
 #include "object_detection/shape_processing.h"
 #include "object_detection/shape_matching.h"

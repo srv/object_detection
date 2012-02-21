@@ -35,7 +35,7 @@ namespace odat {
     /// 3D rigid transformation
     cv::Mat pose;
 
-    /// describes the scaling of the object (in a 2D-based detection
+    /// describes the scaling of the object (in a 2D-based detection)
     double scale;
 
   };

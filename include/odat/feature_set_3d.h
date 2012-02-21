@@ -15,8 +15,12 @@ namespace odat
     FeatureSet features_left;
 
     // the estimated world points in camera coordinates,
-    // seen from the left camera, one for each matched feature
+    // seen from the left camera
     std::vector<cv::Point3f> world_points;
+
+    // mapping from feature descriptor index to world point index
+    std::vector<unsigned int> descriptor_index_to_world_point_index;
+
   };
 }
 

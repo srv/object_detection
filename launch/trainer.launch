@@ -1,8 +1,10 @@
 <launch>
   <arg name="image" default="camera_flex_wide/left/image_rect_color" />
+  <arg name="object_id" default="target" />
 
   <node name="trainer_node" pkg="object_detection" type="trainer_node" output="screen">
     <remap from="image" to="$(arg image)" />
+    <param name="object_id" value="$(arg object_id)" />
   </node>
 
 </launch>

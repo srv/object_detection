@@ -1,0 +1,20 @@
+<launch>
+
+  <arg name="image" />
+  <arg name="object_id" default="target" />
+
+  <include file="$(find object_detection)/launch/object_detector.launch">
+    <arg name="image" value="$(arg image)" />
+    <arg name="models" value="$(arg object_id)" />
+  </include>
+
+  <include file="$(find object_detection)/launch/trainer.launch">
+    <arg name="object_id" value="$(arg object_id)" />
+    <arg name="image" value="$(arg image)" />
+  </include>
+
+  <include file="$(find object_detection)/launch/detection_display.launch">
+    <arg name="image" value="$(arg image)" />
+  </include>
+
+</launch>

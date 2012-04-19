@@ -157,9 +157,9 @@ namespace object_detection_ros {
         NODELET_INFO("Training data received, running training.");
         odat::TrainingData training_data;
         odat_ros::fromMsg(*training_data_msg, training_data);
-        color_detector_->startTraining("target");
-        color_detector_->trainInstance("target", training_data);
-        color_detector_->endTraining("target");
+        color_detector_->startTraining(training_data_msg->object_id);
+        color_detector_->trainInstance(training_data_msg->object_id, training_data);
+        color_detector_->endTraining(training_data_msg->object_id);
         // run detection with color detector to get training data for shape detector
         color_detector_->setImage(training_data.image);
         color_detector_->detect();
@@ -173,7 +173,7 @@ namespace object_detection_ros {
         int index = -1;
         for (size_t i = 0; i < color_detections.size(); ++i)
         {
-          if (color_detections[i].label == "target")
+          if (color_detections[i].label == training_data_msg->object_id)
             index = i;
         }
         if (index < 0)
@@ -182,9 +182,9 @@ namespace object_detection_ros {
           return;
         }
         training_data.mask = color_detections[index].mask;
-        shape_detector_->startTraining("target");
-        shape_detector_->trainInstance("target", training_data);
-        shape_detector_->endTraining("target");
+        shape_detector_->startTraining(training_data_msg->object_id);
+        shape_detector_->trainInstance(training_data_msg->object_id, training_data);
+        shape_detector_->endTraining(training_data_msg->object_id);
         NODELET_INFO("Target trained.");
       }
      

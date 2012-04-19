@@ -41,6 +41,8 @@ public:
         image_sub_ = it_.subscribe("image", 1, &TrainerNode::imageCallback, this);
         training_data_pub_ = nh_priv_.advertise<vision_msgs::TrainingData>("training_data", 1);
 
+        nh_priv_.param("object_id", object_id_, std::string("target"));
+
         cv::namedWindow("Training GUI");
         cv::setMouseCallback("Training GUI", &TrainerNode::staticMouseCallback, this);
 
@@ -50,6 +52,7 @@ public:
         object_pose_.y = 0;
         object_pose_.theta = 0;
 
+        ROS_INFO("Trainig object '%s'.", object_id_.c_str());
         ROS_INFO("Click left to select a training image.");
     }
 
@@ -217,10 +220,11 @@ private:
 
         vision_msgs::TrainingData training_data_msg;
         odat_ros::toMsg(training_data, training_data_msg);
+        training_data_msg.object_id = object_id_;
 
         training_data_pub_.publish(training_data_msg);
         ROS_INFO("Training message published.");
-        cv::imwrite("training_image.png", image);
+        cv::imwrite("training_image_" + object_id_ + ".png", image);
         ROS_INFO("Click left to see incoming images again.");
     }
 
@@ -237,6 +241,8 @@ private:
 
     ros::Timer loop_timer_;
     cv::Point current_mouse_position_;
+
+    std::string object_id_;
 
 };
 

@@ -13,8 +13,9 @@
     <arg name="image" value="$(arg image)" />
   </include>
 
-  <include file="$(find object_detection)/launch/detection_display.launch">
-    <arg name="image" value="$(arg image)" />
-  </include>
+  <node name="detection_display" pkg="object_detection" type="detection_display" output="screen" >
+    <remap from="image" to="$(arg image)" />
+    <remap from="detections" to="object_detector/detections" />
+  </node>
 
 </launch>

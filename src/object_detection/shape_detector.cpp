@@ -109,12 +109,14 @@ void object_detection::ShapeDetector::loadModels(const std::vector<std::string>&
 {
   for (size_t i = 0; i < models.size(); ++i) {
     std::string model_blob;
-    model_storage_->loadModel(models[i], getName(), model_blob);
-    std::istringstream istr(model_blob);
-    boost::archive::text_iarchive archive(istr);
-    std::vector<cv::Point> shape;
-    archive >> shape;
-    model_shapes_[models[i]] = shape;
+    if (model_storage_->loadModel(models[i], getName(), model_blob))
+    {
+      std::istringstream istr(model_blob);
+      boost::archive::text_iarchive archive(istr);
+      std::vector<cv::Point> shape;
+      archive >> shape;
+      model_shapes_[models[i]] = shape;
+    }
   }
 }
 

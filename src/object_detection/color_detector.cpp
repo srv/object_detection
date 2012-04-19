@@ -196,12 +196,14 @@ void object_detection::ColorDetector::loadModels(const std::vector<std::string>&
 {
   for (size_t i = 0; i < models.size(); ++i) {
     std::string model_blob;
-    model_storage_->loadModel(models[i], getName(), model_blob);
-    std::istringstream istr(model_blob);
-    boost::archive::text_iarchive archive(istr);
-    cv::MatND histogram;
-    archive >> histogram;
-    model_histograms_[models[i]] = histogram;
+    if (model_storage_->loadModel(models[i], getName(), model_blob))
+    {
+      std::istringstream istr(model_blob);
+      boost::archive::text_iarchive archive(istr);
+      cv::MatND histogram;
+      archive >> histogram;
+      model_histograms_[models[i]] = histogram;
+    }
   }
 }
 

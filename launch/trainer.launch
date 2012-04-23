@@ -1,5 +1,5 @@
 <launch>
-  <arg name="image" default="camera_flex_wide/left/image_rect_color" />
+  <arg name="image" default="stereo_down/left/image_rect_color" />
   <arg name="object_id" default="target" />
 
   <node name="trainer_node" pkg="object_detection" type="trainer_node" output="screen">

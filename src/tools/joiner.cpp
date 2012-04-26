@@ -1,5 +1,7 @@
 #include <iostream>
 
+#define BOOST_FILESYSTEM_VERSION 2
+
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/algorithm/string.hpp>
@@ -29,13 +31,13 @@ std::vector<std::string> getModelList(const std::string& dir_name)
   {
     if (is_regular_file(*iter))
     {
-      if (starts_with(iter->path().filename().string(), "points"))
+      if (starts_with(iter->path().filename(), "points"))
       {
         const std::string descriptors_filename = replace_last_copy(iter->path().string(), "points", "descriptors");
         path descriptors_path(descriptors_filename);
         if (is_regular_file(descriptors_path))
         {
-          std::string model_name = iter->path().filename().string().substr(6);
+          std::string model_name = iter->path().filename().substr(6);
           model_name.resize(model_name.length() - 4); // get rid of ".pcd"
           model_list.push_back(model_name);
           std::cout << "found model " << model_name << std::endl;
@@ -99,7 +101,7 @@ int main(int argc, char** argv)
   // Declare the supported options.
   po::options_description desc("Allowed options");
   desc.add_options()
-    ("data_dir,D", po::value<std::string>()->required(), "Directory with input data")
+    ("data_dir,D", po::value<std::string>(), "Directory with input data")
   ;
 
   po::variables_map vm;

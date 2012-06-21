@@ -103,12 +103,16 @@ rosbuild_add_executable(incremental_mapping_node src/nodes/incremental_mapping_n
 
 rosbuild_add_executable(odometer3d_node src/nodes/odometer3d_node.cpp)
 
+rosbuild_add_executable(feature_matching_detector_node src/nodes/feature_matching_detector_node.cpp)
+
 rosbuild_add_executable(train_from_disk src/nodes/train_from_disk.cpp)
 target_link_libraries(train_from_disk odat_ros ${PROJECT_NAME})
 
 rosbuild_add_executable(joiner src/tools/joiner.cpp)
 rosbuild_link_boost(joiner filesystem system program_options)
 target_link_libraries(joiner /opt/ros/electric/stacks/perception_pcl_addons/pcl_visualization/lib/libpcl_visualization.so) 
+
+rosbuild_add_executable(features_to_pcd src/tools/features_to_pcd.cpp)
 
 rosbuild_add_gtest(shape_matching_test test/shape_matching_test.cpp)
 rosbuild_add_gtest(shape_processing_test test/shape_processing_test.cpp)

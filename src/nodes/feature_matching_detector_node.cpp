@@ -40,6 +40,7 @@ class FeatureMatchingDetectorNode
 
   double matching_threshold_;
   std::string model_filename_;
+  double sqr_unify_feature_distance_;
 
   tf::TransformBroadcaster tf_broadcaster_;
 
@@ -54,12 +55,15 @@ public:
     nh_private_.param("feature_detector", feature_detector, std::string("SURF"));
     nh_private_.param("descriptor_extractor", descriptor_extractor, std::string("SURF"));
     nh_private_.param("descriptor_matcher", descriptor_matcher, std::string("BruteForce"));
+    double unify_feature_distance;
+    nh_private_.param("unify_feature_distance", unify_feature_distance, 0.02);
+    sqr_unify_feature_distance_ = unify_feature_distance * unify_feature_distance;
 
     feature_detector_ = cv::FeatureDetector::create(feature_detector);
     descriptor_extractor_ = cv::DescriptorExtractor::create(descriptor_extractor);
     descriptor_matcher_ = cv::DescriptorMatcher::create(descriptor_matcher);
 
-    nh_private_.param("matching_threshold", matching_threshold_, 0.6);
+    nh_private_.param("matching_threshold", matching_threshold_, 0.8);
     nh_private_.param("model_filename", model_filename_, std::string("model.yaml"));
 
     ROS_INFO_STREAM("Settings:" << std::endl
@@ -77,10 +81,13 @@ public:
     pose_pub_ = nh_private_.advertise<geometry_msgs::PoseStamped>("target_pose", 1);
 
     ROS_INFO("Listening to %s", nh_.resolveName("image").c_str());
+
+    cv::namedWindow("Features", 0);
   }
 
   ~FeatureMatchingDetectorNode()
   {
+    cv::destroyWindow("Features");
   }
 
   void loadModel()
@@ -118,7 +125,15 @@ public:
     feature_detector_->detect(image, keypoints);
     cv::Mat descriptors;
     descriptor_extractor_->compute(image, keypoints, descriptors);
-    
+
+    // display
+    cv::Mat canvas;
+    cv::drawKeypoints(image, keypoints, canvas, 
+        cv::Scalar(0, 255, 0), 4);
+    cv::imshow("Features", canvas);
+    cv::waitKey(3);
+
+
     double t2 = (double)cv::getTickCount();
     // match with model
     std::vector<std::vector<cv::DMatch> > knn_matches;
@@ -131,7 +146,13 @@ public:
       if (knn_matches[i].size() == 2)
       {
          float score = knn_matches[i][0].distance / knn_matches[i][1].distance;
-         if (score < matching_threshold_)
+         cv::Point3f wp1 = model_points_[knn_matches[i][0].trainIdx];
+         cv::Point3f wp2 = model_points_[knn_matches[i][1].trainIdx];
+         float x_diff = wp1.x - wp2.x;
+         float y_diff = wp1.y - wp2.x;
+         float z_diff = wp1.z - wp2.x;
+         float sqr_distance = x_diff * x_diff + y_diff * y_diff + z_diff * z_diff;
+         if (score < matching_threshold_ || sqr_distance < sqr_unify_feature_distance_)
          {
            image_points.push_back(keypoints[knn_matches[i][0].queryIdx].pt);
            world_points.push_back(model_points_[knn_matches[i][0].trainIdx]);
@@ -150,12 +171,13 @@ public:
       bool use_extrinsic_guess = false;
       int num_iterations = 100;
       float allowed_reprojection_error = 8.0; // used by ransac to classify inliers
-      int min_inliers = 100; // stop iteration if more inliers than this are found
+      int max_inliers = 100; // stop iteration if more inliers than this are found
       cv::Mat inliers;
       cv::solvePnPRansac(world_points, image_points, camera_matrix_k, 
           distortion, r_vec, t_vec, use_extrinsic_guess, num_iterations, 
-          allowed_reprojection_error, min_inliers, inliers);
+          allowed_reprojection_error, max_inliers, inliers);
       int num_inliers = cv::countNonZero(inliers);
+      int min_inliers = 8;
       if (num_inliers >= min_inliers)
       {
         std::cout << "Found transform with " << num_inliers 
@@ -171,12 +193,13 @@ public:
       }
       else
       {
-        ROS_INFO("Not enough inliers.");
+        ROS_INFO("Not enough inliers (%i) in %zu matches. Minimum is %i.", 
+            num_inliers, world_points.size(), min_inliers);
       }
     } 
     else
     {
-      ROS_INFO("Not enough matches.");
+      ROS_INFO("Not enough matches (%zu).", world_points.size());
     }
 
     double t4 = (double)cv::getTickCount();

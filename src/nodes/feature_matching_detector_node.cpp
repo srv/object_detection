@@ -19,6 +19,8 @@
 
 #include <tf/transform_broadcaster.h>
 
+#include <vision_msgs/Detection.h>
+
 #include "object_detection/features_io.h"
 
 namespace enc = sensor_msgs::image_encodings;
@@ -45,6 +47,7 @@ class FeatureMatchingDetectorNode
   tf::TransformBroadcaster tf_broadcaster_;
 
   ros::Publisher pose_pub_;
+  ros::Publisher detection_pub_;
 
 public:
   FeatureMatchingDetectorNode()
@@ -79,6 +82,7 @@ public:
         &FeatureMatchingDetectorNode::imageCb, this);
 
     pose_pub_ = nh_private_.advertise<geometry_msgs::PoseStamped>("target_pose", 1);
+    detection_pub_ = nh_private_.advertise<vision_msgs::Detection>("detection", 1);
 
     ROS_INFO("Listening to %s", nh_.resolveName("image").c_str());
 
@@ -235,6 +239,14 @@ public:
     tf::poseTFToMsg(transform, pose_msg.pose);
 
     pose_pub_.publish(pose_msg);
+
+    vision_msgs::Detection detection_msg;
+    detection_msg.header.stamp = stamp;
+    detection_msg.header.frame_id = camera_frame_id;
+    detection_msg.label = model_filename_;
+    detection_msg.detector = "feature_matching_detector";
+    detection_msg.pose.pose = pose_msg.pose;
+    detection_pub_.publish(detection_msg);
   }
 
 };

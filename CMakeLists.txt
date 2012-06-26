@@ -104,6 +104,7 @@ rosbuild_add_executable(incremental_mapping_node src/nodes/incremental_mapping_n
 rosbuild_add_executable(odometer3d_node src/nodes/odometer3d_node.cpp)
 
 rosbuild_add_executable(feature_matching_detector_node src/nodes/feature_matching_detector_node.cpp)
+rosbuild_add_executable(detection_tracker src/nodes/detection_tracker.cpp)
 
 rosbuild_add_executable(train_from_disk src/nodes/train_from_disk.cpp)
 target_link_libraries(train_from_disk odat_ros ${PROJECT_NAME})
@@ -139,8 +140,8 @@ target_link_libraries(shape_processing_test ${PROJECT_NAME})
 #rosbuild_add_executable(object_detector_node src/nodes/object_detector_node.cpp)
 #rosbuild_add_executable(trainer_node src/nodes/trainer_node.cpp)
 #rosbuild_add_executable(stereo_trainer_node src/nodes/stereo_trainer_node.cpp)
-#rosbuild_add_executable(keypoint_detector_node src/nodes/keypoint_detector_node.cpp)
-#rosbuild_add_executable(detection_display_node src/nodes/detection_display_node.cpp)
+rosbuild_add_executable(keypoint_detector_node src/nodes/keypoint_detector_node.cpp)
+rosbuild_add_executable(detection_display_node src/nodes/detection_display_node.cpp)
 #rosbuild_add_executable(movement_calculator_node src/nodes/movement_calculator_node.cpp)
 #rosbuild_add_executable(model_fitting_node src/nodes/model_fitting_node.cpp)
 #rosbuild_add_executable(transformation_estimator src/tools/transformation_estimator.cpp)

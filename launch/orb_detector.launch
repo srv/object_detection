@@ -1,0 +1,14 @@
+<launch>
+
+  <node name="object_detector" pkg="object_detection" 
+        type="feature_matching_detector_node" output="screen">
+    <remap from="image" to="/camera_flex_wide/left/image_rect" />
+    <param name="model_filename" value="/home/stwirth/models_ORB/bb_features.yaml" /> 
+    <param name="feature_detector" value="ORB" />
+    <param name="descriptor_extractor" value="ORB" />
+    <param name="descriptor_matcher" value="BruteForce-Hamming" />
+    <param name="matching_threshold" value="0.9" />
+  </node>
+
+</launch>
+

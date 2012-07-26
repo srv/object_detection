@@ -1,159 +1,118 @@
 #include <ros/ros.h>
 #include <image_transport/image_transport.h>
-#include <image_transport/subscriber_filter.h>
-#include <message_filters/subscriber.h>
-#include <message_filters/time_synchronizer.h>
+#include <image_transport/camera_subscriber.h>
+#include <image_geometry/pinhole_camera_model.h>
 
-#if ROS_VERSION_MINIMUM(1,4,5)
-    #include <cv_bridge/cv_bridge.h>
-#else
-    #include <cv_bridge/CvBridge.h>
-#endif
+#include <cv_bridge/cv_bridge.h>
 
 #include <opencv2/highgui/highgui.hpp>
 #include <sensor_msgs/image_encodings.h>
 
-#include "object_detection/utilities.h"
-#include "vision_msgs/DetectionStamped.h"
-
-namespace enc = sensor_msgs::image_encodings;
-
+#include <vision_msgs/Detection.h>
 
 
 class DetectionDisplayNode
 {
-    ros::NodeHandle nh_;
-    ros::NodeHandle nh_private_;
-    image_transport::ImageTransport it_;
-    image_transport::SubscriberFilter image_sub_;
+  ros::NodeHandle nh_;
+  ros::NodeHandle nh_private_;
+  image_transport::ImageTransport it_;
 
-    message_filters::Subscriber<vision_msgs::DetectionStamped> detection_sub_;
-    
-    message_filters::TimeSynchronizer<sensor_msgs::Image, vision_msgs::DetectionStamped> synchronizer_;
+  ros::Subscriber detection_sub_;
+  image_transport::CameraSubscriber camera_sub_;
 
-#if ROS_VERSION_MINIMUM(1,4,5)
-#else
-    sensor_msgs::CvBridge bridge_;
-#endif
-
-    bool paint_rectangle_;
-    bool paint_direction_;
-    bool paint_outline_;
-    bool paint_text_;
+  std::map<std::string, vision_msgs::DetectionConstPtr> detections_;
 
 public:
-    DetectionDisplayNode() :
-        nh_private_("~"),
-        it_(nh_),
-        image_sub_(it_, "image", 1),
-        detection_sub_(nh_, "detection", 1),
-        // we have to wait for some images here because detection might be slow
-        synchronizer_(image_sub_, detection_sub_, 150)
+  DetectionDisplayNode() :
+    nh_private_("~"),
+    it_(nh_)
+  {
+    detection_sub_ = 
+      nh_.subscribe("detection", 1, &DetectionDisplayNode::detectionCallback, this);
+    camera_sub_ = 
+      it_.subscribeCamera("image", 1, &DetectionDisplayNode::imageCallback, this);
+  }
 
+  ~DetectionDisplayNode()
+  {
+  }
+
+  void detectionCallback(const vision_msgs::DetectionConstPtr& detection_msg)
+  {
+    detections_[detection_msg->label] = detection_msg;
+  }
+
+  void imageCallback(const sensor_msgs::ImageConstPtr& image_msg,
+                     const sensor_msgs::CameraInfoConstPtr& camera_info_msg)
+  {
+    cv::Mat image_with_detections;
+    cv_bridge::CvImageConstPtr cv_ptr;
+    try
     {
-        nh_private_.param<bool>("paint_rectangle", paint_rectangle_, true);
-        nh_private_.param<bool>("paint_direction", paint_direction_, true);
-        nh_private_.param<bool>("paint_outline", paint_outline_, true);
-        nh_private_.param<bool>("paint_text", paint_text_, true);
-        synchronizer_.registerCallback(boost::bind(&DetectionDisplayNode::detectionCallback, this, _1, _2));
+      namespace enc = sensor_msgs::image_encodings;
+      cv_ptr = cv_bridge::toCvShare(image_msg, enc::BGR8);
+      image_with_detections = cv_ptr->image.clone();
+    }
+    catch (cv_bridge::Exception& e)
+    {
+      ROS_ERROR("cv_bridge exception: %s", e.what());
+      return;
     }
 
-    ~DetectionDisplayNode()
+    std::map<std::string, vision_msgs::DetectionConstPtr>::const_iterator iter;
+    for (iter = detections_.begin(); iter != detections_.end(); ++iter)
     {
+      if (iter->second->header.stamp + ros::Duration(5.0) > ros::Time::now())
+      {
+        paintDetection(image_with_detections, camera_info_msg, iter->second);
+      }
     }
+    cv::namedWindow("Detection Display");
+    cv::imshow("Detection Display", image_with_detections);
+    cv::waitKey(3);
+  }
 
-    void detectionCallback(const sensor_msgs::ImageConstPtr& image_msg,
-            const vision_msgs::DetectionStampedConstPtr& detection_msg)
+  void paintDetection(cv::Mat& image, 
+      const sensor_msgs::CameraInfoConstPtr& camera_info_msg,
+      const vision_msgs::DetectionConstPtr& detection_msg)
+  {
+    cv::Point2d text_origin;
+    if (detection_msg->pose.pose.position.z != 0)   // valid pose
     {
-
-        cv::Mat image_with_detection;
-
-#if ROS_VERSION_MINIMUM(1,4,5)
-        cv_bridge::CvImageConstPtr cv_ptr;
-        try
-        {
-            cv_ptr = cv_bridge::toCvShare(image_msg, enc::BGR8);
-            image_with_detection = cv_ptr->image.clone();
-        }
-        catch (cv_bridge::Exception& e)
-        {
-        ROS_ERROR("cv_bridge exception: %s", e.what());
-        return;
-        }
-#else
-        try
-        {
-            IplImage *cv_image = NULL;
-            cv_image = bridge_.imgMsgToCv(image_msg, "bgr8");
-            image_with_detection = cv::cvarrToMat(cv_image).clone();
-        }
-        catch (sensor_msgs::CvBridgeException& e)
-        {
-            ROS_ERROR("CvBridgeException: %s", e.what());
-            return;
-        }
-#endif
-
-        paintDetection(image_with_detection, detection_msg->detection);
-
-        cv::namedWindow("Detection Display");
-        cv::imshow("Detection Display", image_with_detection);
-        cv::waitKey(3);
+      image_geometry::PinholeCameraModel camera_model;
+      camera_model.fromCameraInfo(camera_info_msg);
+      cv::Point3d origin;
+      origin.x = detection_msg->pose.pose.position.x;
+      origin.y = detection_msg->pose.pose.position.y;
+      origin.z = detection_msg->pose.pose.position.z;
+      cv::Point2d origin2d = camera_model.project3dToPixel(origin);
+      static const int RADIUS = 3;
+      cv::circle(image, origin2d, RADIUS, CV_RGB(255,0,0), -1);
+      text_origin = origin2d;
     }
-
-    void paintDetection(cv::Mat& image, const vision_msgs::Detection& detection)
+    if (detection_msg->image_pose.x != 0 || detection_msg->image_pose.y != 0) // valid 2D pose
     {
-        cv::Point center(detection.pose2D.x, detection.pose2D.y);
-        if (paint_rectangle_)
-        {
-            cv::RotatedRect rect(center, 
-                    cv::Size(50 * detection.scale, 50 * detection.scale), 
-                    detection.pose2D.theta / M_PI * 180.0);
-            object_detection::paintRotatedRectangle(image, rect, cv::Scalar(0, 255, 0), 2);
-        }
+      cv::Point center(detection_msg->image_pose.x, detection_msg->image_pose.y);
+      cv::RotatedRect rect(center,
+        cv::Size(50 * detection_msg->scale, 50 * detection_msg->scale),
+        detection_msg->image_pose.theta / M_PI * 180.0);
+      cv::ellipse(image, rect, cv::Scalar(0, 255, 0), 2);
 
-        if (paint_direction_)
-        {
-            double radius = 20;
-            cv::Point direction_point(radius * cos(detection.pose2D.theta), 
-                    radius * sin(detection.pose2D.theta));
-            cv::line(image, center, center + direction_point, cv::Scalar(0, 255, 0), 3);
-            cv::line(image, center, center + direction_point, cv::Scalar(0, 0, 255), 2);
-        }
-
-        if (paint_outline_)
-        {
-            for (size_t i = 0; i < detection.outline.points.size(); ++i)
-            {
-                cv::Point point1;
-                point1.x = detection.outline.points[i].x;
-                point1.y = detection.outline.points[i].y;
-                cv::Point point2;
-                point2.x = detection.outline.points[(i+1) % detection.outline.points.size()].x;
-                point2.y = detection.outline.points[(i+1) % detection.outline.points.size()].y;
-                cv::line(image, point1, point2, cv::Scalar(0, 0, 255), 2);
-            }
-        }
-
-        if (paint_text_)
-        {
-            static const int FONT = CV_FONT_HERSHEY_PLAIN;
-            cv::putText(image, detection.id, center, 
-                    FONT, 0.8, cv::Scalar(0, 255, 0));
-            std::ostringstream ostr;
-            ostr << "scale: " << detection.scale;
-            cv::putText(image, ostr.str(), center + cv::Point(5, 10), 
-                    FONT, 0.8, cv::Scalar(0, 255, 0));
-            ostr.str("");
-            ostr << "score: " << detection.score;
-            cv::putText(image, ostr.str(), center + cv::Point(5, 20), 
-                    FONT, 0.8, cv::Scalar(0, 255, 0));
-            ostr.str("");
-            ostr << "angle: " << detection.pose2D.theta / M_PI * 180.0;
-            cv::putText(image, ostr.str(), center + cv::Point(5, 30), 
-                    FONT, 0.8, cv::Scalar(0, 255, 0));
-        }
+      double radius = 20;
+      cv::Point direction_point(radius * cos(detection_msg->image_pose.theta),
+                                radius * sin(detection_msg->image_pose.theta));
+      cv::line(image, center, center + direction_point, cv::Scalar(0, 255, 0), 3);
+      cv::line(image, center, center + direction_point, cv::Scalar(0, 0, 255), 2);
+      text_origin = center;
     }
+    int baseline;
+    static const int FONT = CV_FONT_HERSHEY_PLAIN;
+    cv::Size text_size = 
+      cv::getTextSize(detection_msg->label, FONT, 1.0, 1.0, &baseline);
+    cv::Point origin(text_origin.x - text_size.width / 2,
+                     text_origin.y - 3 - baseline - 3);
+    cv::putText(image, detection_msg->label, origin, FONT, 1.0, CV_RGB(255,0,0));
+  }
 };
 
 int main(int argc, char** argv)

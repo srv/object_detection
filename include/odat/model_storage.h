@@ -50,8 +50,6 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/archive/text_iarchive.hpp>
 #include <boost/archive/text_oarchive.hpp>
-#include <boost/archive/binary_iarchive.hpp>
-#include <boost/archive/binary_oarchive.hpp>
 
 #include "odat/serialization_support.h"
 
@@ -100,7 +98,7 @@ public:
 	void save(const std::string& name, const std::string& detector, const ModelType& model)
 	{
 		std::ostringstream ostream;
-		boost::archive::binary_oarchive oa(ostream);
+		boost::archive::text_oarchive oa(ostream);
 		oa << model;
 		saveModel(name, detector, ostream.str());
 	}
@@ -119,7 +117,7 @@ public:
 			return false;
 		}
 		std::istringstream istream(model_blob);
-		boost::archive::binary_iarchive ia(istream);
+		boost::archive::text_iarchive ia(istream);
 		ia >> model;
 		return true;
 	}

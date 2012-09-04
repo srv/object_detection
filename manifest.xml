@@ -12,7 +12,6 @@
 
   <depend package="std_msgs"/>
   <depend package="sensor_msgs"/>
-  <depend package="vision_msgs" />
   <depend package="nav_msgs" />
 
   <depend package="opencv2"/>
@@ -26,6 +25,8 @@
   <depend package="tf" />
   <depend package="nodelet" />
 
+  <depend package="vision_msgs" />
+  <depend package="feature_extraction" />
   <export>
     <nodelet plugin="${prefix}/nodelet_plugins.xml" />
   </export>

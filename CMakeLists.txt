@@ -105,6 +105,7 @@ target_link_libraries(trainer_node odat_ros ${PROJECT_NAME})
 #rosbuild_add_executable(odometer3d_node src/nodes/odometer3d_node.cpp)
 
 rosbuild_add_executable(feature_matching_detector_node src/nodes/feature_matching_detector_node.cpp)
+rosbuild_add_executable(features2d_matching_detector_node src/nodes/features2d_matching_detector_node.cpp)
 rosbuild_add_executable(detection_tracker src/nodes/detection_tracker.cpp)
 rosbuild_link_boost(detection_tracker signals)
 

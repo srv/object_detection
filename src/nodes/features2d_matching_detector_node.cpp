@@ -17,7 +17,9 @@
 
 #include <tf/transform_broadcaster.h>
 
-#include <vision_msgs/Detection.h>
+#include <vision_msgs/DetectionArray.h>
+
+#include "odat_ros/conversions.h"
 
 namespace enc = sensor_msgs::image_encodings;
 
@@ -52,7 +54,7 @@ class Features2DMatchingDetectorNode
   tf::TransformBroadcaster tf_broadcaster_;
 
   ros::Publisher pose_pub_;
-  ros::Publisher detection_pub_;
+  ros::Publisher detections_pub_;
 
   Model2D model_;
 
@@ -86,7 +88,7 @@ public:
         &Features2DMatchingDetectorNode::imageCb, this);
 
     pose_pub_ = nh_private_.advertise<geometry_msgs::PoseStamped>("target_pose", 1);
-    detection_pub_ = nh_private_.advertise<vision_msgs::Detection>("detection", 1);
+    detections_pub_ = nh_.advertise<vision_msgs::DetectionArray>("detections", 1);
 
     ROS_INFO("Listening to %s", nh_.resolveName("image").c_str());
 
@@ -208,11 +210,29 @@ public:
       
       cv::line(canvas, transformed_points[0], transformed_points[1], cv::Scalar(0, 0, 255), 2);
       cv::line(canvas, transformed_points[0], transformed_points[2], cv::Scalar(0, 255, 0), 2);
+
+      publishDetection(transformed_points[0], homography, image_msg->header);
     }
 
     imshow("Features", canvas);
     cv::waitKey(3);
-}
+  }
+
+  void publishDetection(const cv::Point2f& origin, const cv::Mat& homography, const std_msgs::Header& header)
+  {
+    std::vector<odat::Detection> detections;
+    odat::Detection detection;
+    detection.detector = "Features2D";
+    detection.image_pose.x = origin.x;
+    detection.image_pose.y = origin.y;
+    detection.image_pose.theta = 0.0;
+    detection.scale = 1.0; // 1 - sqrt(det);
+    detections.push_back(detection);
+    vision_msgs::DetectionArrayPtr detections_msg(new vision_msgs::DetectionArray());
+    odat_ros::toMsg(detections, *detections_msg);
+    detections_msg->header = header;
+    detections_pub_.publish(detections_msg);
+  }
 
 /*
 

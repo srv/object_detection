@@ -243,9 +243,9 @@ public:
     vision_msgs::Detection detection_msg;
     detection_msg.header.stamp = stamp;
     detection_msg.header.frame_id = camera_frame_id;
-    detection_msg.label = model_filename_;
+    detection_msg.object_id = model_filename_;
     detection_msg.detector = "feature_matching_detector";
-    detection_msg.pose.pose = pose_msg.pose;
+    detection_msg.training_pose = pose_msg.pose;
     detection_pub_.publish(detection_msg);
   }
 

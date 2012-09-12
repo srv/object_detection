@@ -173,7 +173,7 @@ namespace object_detection_ros {
         int index = -1;
         for (size_t i = 0; i < color_detections.size(); ++i)
         {
-          if (color_detections[i].label == training_data_msg->object_id)
+          if (color_detections[i].object_id == training_data_msg->object_id)
             index = i;
         }
         if (index < 0)

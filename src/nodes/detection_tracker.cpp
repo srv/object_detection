@@ -69,12 +69,12 @@ public:
       tf::Pose pose_at_detection;
       tf::poseMsgToTF(last_detection_odometry_->pose.pose, pose_at_detection);
       tf::Pose object_pose;
-      tf::poseMsgToTF(last_detection_->pose.pose, object_pose);
+      tf::poseMsgToTF(last_detection_->training_pose, object_pose);
       object_pose = current_pose.inverse() * pose_at_detection * object_pose;
       // create new detection msg with updated pose
       vision_msgs::Detection detection_msg = *last_detection_;
       detection_msg.header.stamp = odometry_msg->header.stamp;
-      tf::poseTFToMsg(object_pose, detection_msg.pose.pose);
+      tf::poseTFToMsg(object_pose, detection_msg.training_pose);
 
       detection_pub_.publish(detection_msg);
 

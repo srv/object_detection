@@ -152,8 +152,8 @@ namespace odat_ros
         static const int FONT = CV_FONT_HERSHEY_SIMPLEX;
         static const double TEXT_SCALE = 0.8;
         int baseline;
-        cv::Size text_size = cv::getTextSize(detections[i].label, FONT, TEXT_SCALE, 2, &baseline);
-        cv::putText(image, detections[i].label, cv::Point(x + w + 10, y + 10 + text_size.height), FONT, TEXT_SCALE, cv::Scalar(bl, gr, rd), 2);
+        cv::Size text_size = cv::getTextSize(detections[i].object_id, FONT, TEXT_SCALE, 2, &baseline);
+        cv::putText(image, detections[i].object_id, cv::Point(x + w + 10, y + 10 + text_size.height), FONT, TEXT_SCALE, cv::Scalar(bl, gr, rd), 2);
         std::string strscore = std::string("score: ") + tostr(detections[i].score);
         cv::putText(image, strscore, cv::Point(x + w + 10, y + 10 + 2 * text_size.height), FONT, 0.6, cv::Scalar(bl, gr, rd), 2);
 

@@ -1,8 +1,3 @@
-
-#include <ros/ros.h>
-#include <image_transport/image_transport.h>
-#include <image_transport/camera_subscriber.h>
-
 #include <cv_bridge/cv_bridge.h>
 
 #include <sensor_msgs/image_encodings.h>
@@ -17,33 +12,26 @@
 
 #include <tf/transform_broadcaster.h>
 
-#include <vision_msgs/DetectionArray.h>
-
-#include "odat_ros/conversions.h"
+#include "mono_detector.h"
 
 namespace enc = sensor_msgs::image_encodings;
 
 /**
  * Node that matches 2D features of the current image to 2D features
  * of a model. Works only on mostly planar objects/environments.
- * If a detection was made, the output is x/y/theta/scale.
+ * If a detection was made, the output is a homography.
  */
-class Features2DMatchingDetectorNode
+class Features2DMatchingDetectorNode : public MonoDetector
 {
   ros::NodeHandle nh_;
   ros::NodeHandle nh_private_;
-
-  image_transport::ImageTransport it_;
-  image_transport::CameraSubscriber camera_sub_;
 
   struct Model2D
   {
     cv::Mat image;
     cv::Mat descriptors;
     std::vector<cv::KeyPoint> key_points;
-    std::vector<cv::Point> outline;
-    cv::Point origin;
-    double theta;
+    std::vector<cv::Point2f> outline;
   };
 
   feature_extraction::KeyPointDetector::Ptr key_point_detector_;
@@ -60,12 +48,12 @@ class Features2DMatchingDetectorNode
 
 public:
   Features2DMatchingDetectorNode()
-    : nh_private_("~"), it_(nh_)
+    : MonoDetector(), nh_private_("~")
   {
 
     std::string key_point_detector, descriptor_extractor;
-    nh_private_.param("key_point_detector", key_point_detector, std::string("SmartSURF"));
-    nh_private_.param("descriptor_extractor", descriptor_extractor, std::string("SmartSURF"));
+    nh_private_.param("key_point_detector", key_point_detector, std::string("CvORB"));
+    nh_private_.param("descriptor_extractor", descriptor_extractor, std::string("CvORB"));
 
     key_point_detector_ = 
       feature_extraction::KeyPointDetectorFactory::create(key_point_detector);
@@ -84,13 +72,7 @@ public:
 
     loadModel(model_name);
 
-    camera_sub_ = it_.subscribeCamera("image", 1, 
-        &Features2DMatchingDetectorNode::imageCb, this);
-
     pose_pub_ = nh_private_.advertise<geometry_msgs::PoseStamped>("target_pose", 1);
-    detections_pub_ = nh_.advertise<vision_msgs::DetectionArray>("detections", 1);
-
-    ROS_INFO("Listening to %s", nh_.resolveName("image").c_str());
 
     cv::namedWindow("Features", 0);
   }
@@ -98,6 +80,71 @@ public:
   ~Features2DMatchingDetectorNode()
   {
     cv::destroyWindow("Features");
+  }
+
+  virtual bool train(
+      vision_msgs::TrainDetector::Request& training_request,
+      vision_msgs::TrainDetector::Response& training_response)
+  {
+    if (training_request.outline.points.size() < 3)
+    {
+      training_response.success = false;
+      training_response.message = "Not enough points in object outline polygon.";
+      return false;
+    }
+    try
+    {
+      boost::shared_ptr<void const> tracked_object;
+      cv_bridge::CvImageConstPtr cv_ptr;
+      cv_ptr = cv_bridge::toCvShare(training_request.image_left, tracked_object, enc::MONO8);
+      cv::Mat image = cv_ptr->image;
+      std::vector<cv::KeyPoint> key_points;
+      cv::Mat descriptors;
+      key_point_detector_->detect(image, key_points);
+
+      // create mask to filter key points 
+      std::vector<cv::Point> points(training_request.outline.points.size());
+      std::vector<cv::Point2f> pointsf(training_request.outline.points.size());
+      for (size_t i = 0; i < training_request.outline.points.size(); ++i)
+      {
+        points[i].x = static_cast<int>(training_request.outline.points[i].x);
+        points[i].y = static_cast<int>(training_request.outline.points[i].y);
+        pointsf[i].x = training_request.outline.points[i].x;
+        pointsf[i].y = training_request.outline.points[i].y;
+      }
+      cv::Mat mask(image.rows, image.cols, CV_8UC1, cv::Scalar::all(0));
+      const cv::Point* point_data = points.data();
+      int size = points.size();
+      cv::Scalar color = cv::Scalar::all(255);
+      cv::fillPoly(mask, &point_data, &size, 1, color);
+      // filter key points
+      cv::KeyPointsFilter::runByPixelsMask(key_points, mask);
+      descriptor_extractor_->extract(image, key_points, descriptors);
+      ROS_INFO("Training image has %zu features.", key_points.size());
+      if (key_points.size() > 5)
+      {
+        model_.image = image;
+        model_.key_points = key_points;
+        model_.descriptors = descriptors;
+        model_.outline = pointsf;
+        training_response.success = true;
+        training_response.message = "Model trained.";
+        return true;
+      }
+      else
+      {
+        training_response.success = false;
+        training_response.message = "Too few features in model.";
+        return true;
+      }
+    }
+    catch (cv_bridge::Exception& e)
+    {
+      ROS_ERROR("cv_bridge exception: %s", e.what());
+      training_response.success = false;
+      training_response.message = "Training data invalid, could not read left image.";
+      return false;
+    }
   }
 
   void loadModel(const std::string& model_name)
@@ -108,23 +155,16 @@ public:
     descriptor_extractor_->extract(model_.image, model_.key_points, 
         model_.descriptors);
     ROS_INFO("Model has %zu features.", model_.key_points.size());
-    model_.origin.x = model_.image.cols / 2;
-    model_.origin.y = model_.image.rows / 2;
-    /*
-    ROS_INFO("Loading model from '%s'", model_filename_.c_str());
-    if (object_detection::features_io::loadFeatures(
-          model_filename_, model_points_, model_descriptors_))
-    {
-      ROS_INFO("Loaded %zu points with %i descriptors.", model_points_.size(), model_descriptors_.rows);
-    } else
-    {
-      ROS_ERROR("Could not load model!");
-    }
-    */
+    model_.outline.push_back(cv::Point(0,0));
+    model_.outline.push_back(cv::Point(0,model_.image.rows - 1));
+    model_.outline.push_back(cv::Point(model_.image.cols - 1,model_.image.rows - 1));
+    model_.outline.push_back(cv::Point(model_.image.cols - 1,0));
   }
 
-  void imageCb(const sensor_msgs::ImageConstPtr& image_msg, 
-      const sensor_msgs::CameraInfoConstPtr& camera_info_msg)
+  virtual void detect(
+      const sensor_msgs::ImageConstPtr& image_msg, 
+      const sensor_msgs::CameraInfoConstPtr& camera_info_msg,
+      vision_msgs::DetectionArray& detections_array)
   {
     cv::Mat image;
     cv_bridge::CvImageConstPtr cv_ptr;
@@ -197,105 +237,24 @@ public:
 
     if(!homography.empty())
     {
-      cv::Point2f origin = model_.origin;
-      double direction = model_.theta;
-      cv::Point2f x_axis(50 * cos(direction), 50 * sin(direction));
-      cv::Point2f y_axis(50 * cos(direction + M_PI_2), 50 * sin(direction + M_PI_2));
-      std::vector<cv::Point2f> points(3);
-      points[0] = origin;
-      points[1] = origin + x_axis;
-      points[2] = origin + y_axis;
       std::vector<cv::Point2f> transformed_points;
-      cv::perspectiveTransform(points, transformed_points, homography);
-      
-      cv::line(canvas, transformed_points[0], transformed_points[1], cv::Scalar(0, 0, 255), 2);
-      cv::line(canvas, transformed_points[0], transformed_points[2], cv::Scalar(0, 255, 0), 2);
-
-      publishDetection(transformed_points[0], homography, image_msg->header);
+      cv::perspectiveTransform(model_.outline, transformed_points, homography);
+      vision_msgs::Detection detection;
+      detection.detector = "Features2D";
+      detection.outline.points.resize(transformed_points.size());
+      for (size_t i = 0; i < transformed_points.size(); ++i)
+      {
+        detection.outline.points[i].x = transformed_points[i].x;
+        detection.outline.points[i].y = transformed_points[i].y;
+        detection.outline.points[i].z = 0.0;
+      }
+      detections_array.detections.push_back(detection);
+      detections_array.header = image_msg->header;
     }
 
     imshow("Features", canvas);
     cv::waitKey(3);
   }
-
-  void publishDetection(const cv::Point2f& origin, const cv::Mat& homography, const std_msgs::Header& header)
-  {
-    std::vector<odat::Detection> detections;
-    odat::Detection detection;
-    detection.detector = "Features2D";
-    detection.image_pose.x = origin.x;
-    detection.image_pose.y = origin.y;
-    detection.image_pose.theta = 0.0;
-    detection.scale = 1.0; // 1 - sqrt(det);
-    detections.push_back(detection);
-    vision_msgs::DetectionArrayPtr detections_msg(new vision_msgs::DetectionArray());
-    odat_ros::toMsg(detections, *detections_msg);
-    detections_msg->header = header;
-    detections_pub_.publish(detections_msg);
-  }
-
-/*
-
-        // publish result
-        ros::Time stamp = image_msg->header.stamp;
-        if (stamp.toSec()==0.0)
-          stamp = ros::Time::now();
-        sendMessageAndTransform(t_vec, r_vec, stamp, image_msg->header.frame_id);
-      }
-      else
-      {
-        ROS_INFO("Not enough inliers (%i) in %zu matches. Minimum is %i.", 
-            num_inliers, world_points.size(), min_inliers);
-      }
-    } 
-    else
-    {
-      ROS_INFO("Not enough matches (%zu).", world_points.size());
-    }
-
-    double t4 = (double)cv::getTickCount();
-    double detect_time   = (t2 - t1) / cv::getTickFrequency() * 1000;
-    double match_time    = (t3 - t2) / cv::getTickFrequency() * 1000;
-    double pose_est_time = (t4 - t3) / cv::getTickFrequency() * 1000;
-
-    double total = (t4 - t1) / cv::getTickFrequency() * 1000;
-
-    ROS_INFO_STREAM("Times (total: " << total << "ms): detection: " << detect_time
-        << "ms, matching: " << match_time << ", pose estimation: " << pose_est_time);
-  }
-
-  void sendMessageAndTransform(const cv::Mat& t_vec, const cv::Mat& r_vec, 
-      const ros::Time& stamp, const std::string& camera_frame_id)
-  {
-    tf::Vector3 axis(
-        r_vec.at<double>(0, 0), r_vec.at<double>(1, 0), r_vec.at<double>(2, 0));
-    double angle = cv::norm(r_vec);
-    tf::Quaternion quaternion(axis, angle);
-    
-    tf::Vector3 translation(
-        t_vec.at<double>(0, 0), t_vec.at<double>(1, 0), t_vec.at<double>(2, 0));
-
-    tf::Transform transform(quaternion, translation);
-    tf::StampedTransform stamped_transform(
-        transform, stamp, camera_frame_id, "/target");
-    tf_broadcaster_.sendTransform(stamped_transform);
-
-    geometry_msgs::PoseStamped pose_msg;
-    pose_msg.header.stamp = stamp;
-    pose_msg.header.frame_id = camera_frame_id;
-    tf::poseTFToMsg(transform, pose_msg.pose);
-
-    pose_pub_.publish(pose_msg);
-
-    vision_msgs::Detection detection_msg;
-    detection_msg.header.stamp = stamp;
-    detection_msg.header.frame_id = camera_frame_id;
-    detection_msg.label = model_filename_;
-    detection_msg.detector = "feature_matching_detector";
-    detection_msg.pose.pose = pose_msg.pose;
-    detection_pub_.publish(detection_msg);
-  }
-  */
 
 };
 

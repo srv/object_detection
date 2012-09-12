@@ -7,10 +7,12 @@
 
 #include <cv_bridge/cv_bridge.h>
 
+#include <vision_msgs/TrainingData.h>
+#include <vision_msgs/TrainDetector.h>
+
 #include "odat/training_data.h"
 #include "odat_ros/conversions.h"
 #include "object_detection/shape_processing.h"
-#include "vision_msgs/TrainingData.h"
 
 namespace enc = sensor_msgs::image_encodings;
 
@@ -40,6 +42,9 @@ public:
     {
         image_sub_ = it_.subscribe("image", 1, &TrainerNode::imageCallback, this);
         training_data_pub_ = nh_priv_.advertise<vision_msgs::TrainingData>("training_data", 1);
+
+        training_service_client_ = nh_.serviceClient<vision_msgs::TrainDetector>("train");
+        ROS_INFO("Training service topic: %s", training_service_client_.getService().c_str());
 
         nh_priv_.param("object_id", object_id_, std::string("target"));
 
@@ -86,6 +91,7 @@ private:
         else if (current_mode_ == AWAITING_TRAINING_IMAGE)
         {
             training_image_ = image.clone();
+            training_image_msg_ = image_msg;
             cv::imshow("Training GUI", training_image_);
             cv::waitKey(5);
             current_mode_ = PAINTING;
@@ -155,6 +161,14 @@ private:
             {
               current_mode_ = SHOWING_TRAINING_IMAGE;
               publishTrainingData(training_image_, polygon_points_, object_pose_);
+              if (!training_service_client_.exists())
+              {
+                ROS_WARN("No traning service server found.");
+              }
+              else
+              {
+                callTrainingService(training_image_msg_, polygon_points_);
+              }
             }
         }
         else if (current_mode_ == SHOWING_TRAINING_IMAGE)
@@ -208,7 +222,7 @@ private:
     }
 
     void publishTrainingData(const cv::Mat& image, 
-            const std::vector<cv::Point> polygon_points,
+            const std::vector<cv::Point>& polygon_points,
             const odat::Pose2D& object_pose)
     {
         odat::TrainingData training_data;
@@ -228,13 +242,47 @@ private:
         ROS_INFO("Click left to see incoming images again.");
     }
 
+    void callTrainingService(const sensor_msgs::ImageConstPtr image_msg,
+        const std::vector<cv::Point>& polygon_points)
+    {
+      vision_msgs::TrainDetector training;
+      training.request.object_id = object_id_;
+      training.request.image_left = *image_msg;
+      training.request.outline.points.resize(polygon_points.size());
+      for (size_t i = 0; i < polygon_points.size(); ++i)
+      {
+        training.request.outline.points[i].x = polygon_points[i].x;
+        training.request.outline.points[i].y = polygon_points[i].y;
+        training.request.outline.points[i].z = 0;
+      }
+      if (training_service_client_.call(training))
+      {
+        if (training.response.success == false)
+        {
+          ROS_ERROR("Training failed: %s",
+            training.response.message.c_str());
+        }
+        else
+        {
+          ROS_INFO("Training succeeded: %s",
+            training.response.message.c_str());
+        }
+      }
+      else
+      {
+        ROS_ERROR("Training service call failed!");
+      }
+    }
+
     ros::NodeHandle nh_;
     ros::NodeHandle nh_priv_;
     image_transport::ImageTransport it_;
     image_transport::Subscriber image_sub_;
     ros::Publisher training_data_pub_;
+    ros::ServiceClient training_service_client_;
 
     cv::Mat training_image_;
+    sensor_msgs::ImageConstPtr training_image_msg_;
     std::vector<cv::Point> polygon_points_;
     odat::Pose2D object_pose_;
     Mode current_mode_;
@@ -243,7 +291,6 @@ private:
     cv::Point current_mouse_position_;
 
     std::string object_id_;
-
 };
 
 int main(int argc, char** argv)

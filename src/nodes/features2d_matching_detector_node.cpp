@@ -239,6 +239,17 @@ public:
     {
       std::vector<cv::Point2f> transformed_points;
       cv::perspectiveTransform(model_.outline, transformed_points, homography);
+      std::vector<cv::Point> paint_points(transformed_points.size());
+      for (size_t i = 0; i < transformed_points.size(); ++i)
+      {
+        paint_points[i].x = static_cast<int>(transformed_points[i].x);
+        paint_points[i].y = static_cast<int>(transformed_points[i].y);
+      }
+      const cv::Point* point_data = &(paint_points[0]);
+      int num_points = paint_points.size();
+      cv::Scalar color(0, 255, 0);
+      bool is_closed = true;
+      cv::polylines(canvas, &point_data, &num_points, 1, is_closed, color);
       vision_msgs::Detection detection;
       detection.detector = "Features2D";
       detection.outline.points.resize(transformed_points.size());

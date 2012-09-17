@@ -286,15 +286,15 @@ public:
           r_vec, t_vec, false /* no extrinsic guess */,
           100 /* iterations */, 8.0 /* reproj. error */,
           100 /* min inliers */, inliers_pnp);
-      ROS_INFO("Found camera pose with %i inliers", cv::countNonZero(inliers_pnp));
       if (cv::countNonZero(inliers_pnp) > 5)
       {
+        ROS_INFO("Found camera pose with %i inliers", cv::countNonZero(inliers_pnp));
         tf::Vector3 axis(r_vec.at<double>(0, 0), r_vec.at<double>(1, 0), r_vec.at<double>(2, 0));
         double angle = cv::norm(r_vec);
         tf::Quaternion quaternion(axis, angle);
         tf::Vector3 translation(t_vec.at<double>(0, 0), t_vec.at<double>(1, 0), t_vec.at<double>(2, 0));
         tf::Transform transform(quaternion, translation);
-        tf::poseTFToMsg(transform, detection.training_pose);
+        tf::poseTFToMsg(transform.inverse(), detection.training_pose);
         detection_ok = true;
       }
     }

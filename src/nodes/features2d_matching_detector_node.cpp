@@ -32,6 +32,8 @@ class Features2DMatchingDetectorNode : public MonoDetector
     cv::Mat descriptors;
     std::vector<cv::KeyPoint> key_points;
     std::vector<cv::Point2f> outline;
+    cv::Point2f origin;
+    double theta;
   };
 
   feature_extraction::KeyPointDetector::Ptr key_point_detector_;
@@ -40,9 +42,6 @@ class Features2DMatchingDetectorNode : public MonoDetector
   double matching_threshold_;
 
   tf::TransformBroadcaster tf_broadcaster_;
-
-  ros::Publisher pose_pub_;
-  ros::Publisher detections_pub_;
 
   Model2D model_;
 
@@ -62,7 +61,7 @@ public:
 
     nh_private_.param("matching_threshold", matching_threshold_, 0.8);
     std::string model_name;
-    nh_private_.param("model", model_name, std::string("target"));
+    nh_private_.param("model", model_name, std::string(""));
 
     ROS_INFO_STREAM("Settings:" << std::endl
         << "  model               : " << model_name << std::endl
@@ -70,9 +69,10 @@ public:
         << "  descriptor_extractor: " << descriptor_extractor << std::endl
         << "  matching_threshold  : " << matching_threshold_ << std::endl);
 
-    loadModel(model_name);
-
-    pose_pub_ = nh_private_.advertise<geometry_msgs::PoseStamped>("target_pose", 1);
+    if (model_name != "")
+    {
+      loadModel(model_name);
+    }
 
     cv::namedWindow("Features", 0);
   }
@@ -127,6 +127,9 @@ public:
         model_.key_points = key_points;
         model_.descriptors = descriptors;
         model_.outline = pointsf;
+        model_.origin.x = training_request.image_pose.x;
+        model_.origin.y = training_request.image_pose.y;
+        model_.theta = training_request.image_pose.theta;
         training_response.success = true;
         training_response.message = "Model trained.";
         return true;
@@ -166,6 +169,11 @@ public:
       const sensor_msgs::CameraInfoConstPtr& camera_info_msg,
       vision_msgs::DetectionArray& detections_array)
   {
+    if (model_.image.empty())
+    {
+      ROS_WARN("Detector has no model!");
+      return;
+    }
     cv::Mat image;
     cv_bridge::CvImageConstPtr cv_ptr;
     try
@@ -180,14 +188,11 @@ public:
     }
 
     // detect features on image
-    double t1 = (double)cv::getTickCount();
     std::vector<cv::KeyPoint> key_points;
     key_point_detector_->detect(image, key_points);
     cv::Mat descriptors;
     descriptor_extractor_->extract(image, key_points, descriptors);
 
-
-    double t2 = (double)cv::getTickCount();
     // match with model
     std::vector<cv::DMatch> matches;
     cv::Mat match_mask;
@@ -201,7 +206,6 @@ public:
       train_indices[i] = matches[i].trainIdx;
     }
 
-    double t3 = (double)cv::getTickCount();
     cv::Mat inliers;
     cv::Mat homography;
     if (matches.size() > 10)
@@ -221,13 +225,11 @@ public:
 
 
     cv::Mat canvas;
-      
     // draw all matches
     cv::drawMatches(
         image, key_points, model_.image, model_.key_points, matches, canvas, 
         CV_RGB(255, 0, 0), CV_RGB(255, 0, 0), std::vector<char>(),
         cv::DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS);
-
     // draw inliers
     cv::drawMatches(
         image, key_points, model_.image, model_.key_points, matches, canvas, 
@@ -235,12 +237,14 @@ public:
         cv::DrawMatchesFlags::DRAW_OVER_OUTIMG /*| 
         cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS*/);
 
-    if(!homography.empty())
+    if (!homography.empty())
     {
+      std::vector<cv::Point2f> original_points = model_.outline;
+      original_points.push_back(model_.origin);
       std::vector<cv::Point2f> transformed_points;
-      cv::perspectiveTransform(model_.outline, transformed_points, homography);
-      std::vector<cv::Point> paint_points(transformed_points.size());
-      for (size_t i = 0; i < transformed_points.size(); ++i)
+      cv::perspectiveTransform(original_points, transformed_points, homography);
+      std::vector<cv::Point> paint_points(transformed_points.size() - 1);
+      for (size_t i = 0; i < transformed_points.size() - 1; ++i)
       {
         paint_points[i].x = static_cast<int>(transformed_points[i].x);
         paint_points[i].y = static_cast<int>(transformed_points[i].y);
@@ -259,6 +263,17 @@ public:
         detection.outline.points[i].y = transformed_points[i].y;
         detection.outline.points[i].z = 0.0;
       }
+      detection.homography.resize(homography.rows * homography.cols);
+      for (int i = 0; i < homography.rows * homography.cols; ++i)
+        detection.homography[i] = homography.at<double>(i);
+      detection.image_pose.x = transformed_points[transformed_points.size() - 1].x;
+      detection.image_pose.y = transformed_points[transformed_points.size() - 1].y;
+      detection.image_pose.theta = 
+        atan2(homography.at<double>(1, 0) - homography.at<double>(0, 1), 
+              homography.at<double>(0, 0) + homography.at<double>(1, 1)) +
+        model_.theta;
+      if (detection.image_pose.theta > M_PI) detection.image_pose.theta -= 2*M_PI;
+      if (detection.image_pose.theta < -M_PI) detection.image_pose.theta += 2*M_PI;
       detections_array.detections.push_back(detection);
       detections_array.header = image_msg->header;
     }
@@ -271,7 +286,7 @@ public:
 
 int main(int argc, char** argv)
 {
-  ros::init(argc, argv, "object_detector");
+  ros::init(argc, argv, "features2d_object_detector");
   Features2DMatchingDetectorNode detector;
   ros::spin();
   return 0;

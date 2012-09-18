@@ -81,12 +81,12 @@ public:
       loadModel(model_name);
     }
 
-    cv::namedWindow("Features", 0);
+    //cv::namedWindow("Features", 0);
   }
 
   ~Features2D3DMatchingDetectorNode()
   {
-    cv::destroyWindow("Features");
+    //cv::destroyWindow("Features");
   }
 
   virtual bool train(
@@ -366,8 +366,8 @@ public:
       detection_array.detections.push_back(detection);
     }
     detection_array.header = l_image_msg->header;
-    imshow("Features", canvas);
-    cv::waitKey(3);
+    //imshow("Features", canvas);
+    //cv::waitKey(3);
   }
 
 };

@@ -8,7 +8,7 @@ class MonoDetector :
   public ImageProcessor
 {
  public:
-   MonoDetector() : TrainingService(), ImageProcessor()
+   MonoDetector() : TrainingService(), ImageProcessor(), nh_("~")
    {
      detections_pub_ = nh_.advertise<vision_msgs::DetectionArray>("detections", 1);
    }
@@ -24,6 +24,7 @@ class MonoDetector :
    {
      vision_msgs::DetectionArray detections;
      detect(image_msg, camera_info_msg, detections);
+     detections.header = image_msg->header;
      detections_pub_.publish(detections);
    }
    

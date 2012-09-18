@@ -8,7 +8,7 @@ class StereoDetector :
   public object_detection::StereoImageProcessor
 {
  public:
-  StereoDetector() : TrainingService(), object_detection::StereoImageProcessor("raw")
+  StereoDetector() : TrainingService(), object_detection::StereoImageProcessor("raw"), nh_("~")
   {
     detections_pub_ = nh_.advertise<vision_msgs::DetectionArray>("detections", 1);
   }
@@ -31,6 +31,7 @@ class StereoDetector :
     vision_msgs::DetectionArray detections;
     detect(l_image_msg, r_image_msg, 
         l_camera_info_msg, r_camera_info_msg, detections);
+    detections.header = l_image_msg->header;
     detections_pub_.publish(detections);
   }
    

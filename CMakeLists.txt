@@ -60,7 +60,7 @@ rosbuild_add_library(${PROJECT_NAME}_ros
     )
 target_link_libraries(${PROJECT_NAME}_ros ${PROJECT_NAME} odat_ros)
 
-rosbuild_add_executable(detection_display src/odat_ros/tools/detection_display.cpp)
+rosbuild_add_executable(detection_display src/nodes/detection_display.cpp)
 rosbuild_link_boost(detection_display signals)
 
 rosbuild_add_executable(trainer_node src/nodes/trainer_node.cpp)

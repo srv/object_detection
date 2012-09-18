@@ -1,45 +1,3 @@
-/*
- * Software License Agreement (BSD License)
- *
- *  Copyright (c) 2009, Willow Garage, Inc.
- *  All rights reserved.
- *
- *  Redistribution and use in source and binary forms, with or without
- *  modification, are permitted provided that the following conditions
- *  are met:
- *
- *   * Redistributions of source code must retain the above copyright
- *     notice, this list of conditions and the following disclaimer.
- *   * Redistributions in binary form must reproduce the above
- *     copyright notice, this list of conditions and the following
- *     disclaimer in the documentation and/or other materials provided
- *     with the distribution.
- *   * Neither the name of Willow Garage, Inc. nor the names of its
- *     contributors may be used to endorse or promote products derived
- *     from this software without specific prior written permission.
- *
- *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- *  FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- *  COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- *  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- *  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- *  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
- *  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- *  LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- *  POSSIBILITY OF SUCH DAMAGE.
- *
- * $Id$
- *
- */
-
-/**
-\author Marius Muja
-\author Stephan Wirth
- **/
-
 #include <sstream>
 
 #include <ros/ros.h>
@@ -51,9 +9,10 @@
 #include <message_filters/subscriber.h>
 #include <message_filters/time_synchronizer.h>
 
+#include <sensor_msgs/image_encodings.h>
 #include <vision_msgs/DetectionArray.h>
 
-#include "odat_ros/conversions.h"
+namespace enc = sensor_msgs::image_encodings;
 
 template <typename T>
 std::string tostr(const T& t)
@@ -84,86 +43,50 @@ namespace odat_ros
       }
 
 
-	void detectionCallback(const sensor_msgs::ImageConstPtr& img_msg,
+	void detectionCallback(const sensor_msgs::ImageConstPtr& image_msg,
 			const vision_msgs::DetectionArrayConstPtr& detections_msg)
 	{
-      cv::Mat image = cv_bridge::toCvCopy(img_msg, "bgr8")->image;
- 
-      int image_width = image.cols;
-      int image_height = image.rows;
-
-      std::vector<odat::Detection> detections;
-      odat_ros::fromMsg(*detections_msg, detections);
-
-      for (size_t i = 0; i < detections.size(); ++i) 
+      cv::Mat image;
+      cv_bridge::CvImageConstPtr cv_ptr;
+      try
       {
-        int x = detections[i].mask.roi.x;
-        int y = detections[i].mask.roi.y;
-        int w = detections[i].mask.roi.width;
-        int h = detections[i].mask.roi.height;
+          cv_ptr = cv_bridge::toCvShare(image_msg, enc::BGR8);
+          image = cv_ptr->image.clone();
+      }
+      catch (cv_bridge::Exception& e)
+      {
+          ROS_ERROR("cv_bridge exception: %s", e.what());
+          return;
+      }
 
-//        int bl = (2*2555)%200;
-//        int gr = (2*433)%224;
-//        int rd = (2*2020)%210;
-        int bl = 0;
-        int gr = 255;
-        int rd = 170;
-        cv::rectangle(image, detections[i].mask.roi.tl(), detections[i].mask.roi.br(), cv::Scalar(bl,gr,rd), 2);
+      for (size_t i = 0; i < detections_msg->detections.size(); ++i) 
+      {
+        const vision_msgs::Detection& detection = detections_msg->detections[i];
+        int x = detection.mask.roi.x;
+        int y = detection.mask.roi.y;
+        int w = detection.mask.roi.width;
+        int h = detection.mask.roi.height;
 
-        cv::Mat mask = detections[i].mask.mask;
-        if (mask.data != NULL) {
-          int source_x = x < 0 ? -x : 0;
-          int source_y = y < 0 ? -y : 0;
-          int dest_x = x < 0 ? 0 : x;
-          int dest_y = y < 0 ? 0 : y;
-          int width = w;
-          int height = h;
-          if (x < 0) width += x;
-          if (y < 0) height += y;
-          if (dest_x + width >= image_width) width = image_width - dest_x - 1;
-          if (dest_y + height >= image_height) height = image_height - dest_y - 1;
+        cv::Scalar color(0, 255, 170);
+        cv::Point top_left(x, y);
+        cv::Point bottom_right = top_left + cv::Point(w, h);
+        cv::rectangle(image, top_left, bottom_right, color, 2);
 
-          cv::Rect copy_roi(source_x, source_y, width, height);
-          cv::Mat source = mask(copy_roi);
-          copy_roi.x = dest_x;
-          copy_roi.y = dest_y;
-          cv::Mat dest = image(copy_roi);
-
-          cv::add(dest, cv::Scalar(0, 50, 0), dest, source);
-        }
-
-        /*
-        int X = x+3, Y = y-12;
-        cv::Size tsize = getTextSize(detections[i].label, cv::FONT_HERSHEY_SIMPLEX, 0.8, 2);
-        if( Y + tsize.height + 2 >= image_height) { Y = image_height - y - 12 - 2 - tsize.height;}
-        if(Y < 0) Y = 0;
-        if(X + tsize.width + 2 >= image_width) { X = image_width - x - 3 - 2 - tsize.width;}
-        if(X < 0) X = 0;
-        cv::putText(image, detections[i].label,cv::Point(X,Y),cv::FONT_HERSHEY_SIMPLEX,1.0,cv::Scalar(bl,gr,rd),2);
-        std::string strscore = std::string("(") + tostr(detections[i].score) + std::string(")");
-        X = x + 6; Y = y+24;
-        tsize = getTextSize(strscore,cv::FONT_HERSHEY_SIMPLEX, 0.4, 1);
-        if( Y + tsize.height + 1 >= image_height) { Y = image_height - y - 24 - 1 - tsize.height;}
-        if(Y < 0) Y = 0;
-        if(X + tsize.width + 1 >= image_width) { X = image_width - x - 3 - 1 - tsize.width;}
-        if(X < 0) X = 0;
-        putText(image,strscore,cv::Point(X,Y),cv::FONT_HERSHEY_SIMPLEX,0.4,cv::Scalar(bl,gr,rd),1);
-        */
         static const int FONT = CV_FONT_HERSHEY_SIMPLEX;
         static const double TEXT_SCALE = 0.8;
         int baseline;
-        cv::Size text_size = cv::getTextSize(detections[i].object_id, FONT, TEXT_SCALE, 2, &baseline);
-        cv::putText(image, detections[i].object_id, cv::Point(x + w + 10, y + 10 + text_size.height), FONT, TEXT_SCALE, cv::Scalar(bl, gr, rd), 2);
-        std::string strscore = std::string("score: ") + tostr(detections[i].score);
-        cv::putText(image, strscore, cv::Point(x + w + 10, y + 10 + 2 * text_size.height), FONT, 0.6, cv::Scalar(bl, gr, rd), 2);
+        cv::Size text_size = cv::getTextSize(detection.object_id, FONT, TEXT_SCALE, 2, &baseline);
+        cv::putText(image, detection.object_id, cv::Point(x + w + 10, y + 10 + text_size.height), FONT, TEXT_SCALE, color, 2);
+        std::string strscore = std::string("score: ") + tostr(detection.score);
+        cv::putText(image, strscore, cv::Point(x + w + 10, y + 10 + 2 * text_size.height), FONT, 0.6, color, 2);
 
         // coordinate system
         cv::Point origin;
-        origin.x = detections[i].image_pose.x;
-        origin.y = detections[i].image_pose.y;
-        double direction = detections[i].image_pose.theta;
-        cv::Point x_axis(20 * detections[i].scale * cos(direction), 20 * detections[i].scale * sin(direction));
-        cv::Point y_axis(20 * detections[i].scale * cos(direction + M_PI_2), 20 * detections[i].scale * sin(direction + M_PI_2));
+        origin.x = detection.image_pose.x;
+        origin.y = detection.image_pose.y;
+        double direction = detection.image_pose.theta;
+        cv::Point x_axis(20 * detection.scale * cos(direction), 20 * detection.scale * sin(direction));
+        cv::Point y_axis(20 * detection.scale * cos(direction + M_PI_2), 20 * detection.scale * sin(direction + M_PI_2));
         cv::line(image, origin, origin + x_axis, cv::Scalar(0, 0, 255), 2);
         cv::line(image, origin, origin + y_axis, cv::Scalar(0, 255, 0), 2);
       }

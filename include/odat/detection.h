@@ -18,8 +18,8 @@ namespace odat {
     /// mask that defines the location
     Mask mask;
 
-    /// label to identify an object
-    std::string label;
+    /// unique label to identify an object
+    std::string object_id;
 
     /// names the detector that produced the detection
     std::string detector;

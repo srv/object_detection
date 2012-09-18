@@ -73,7 +73,7 @@ void object_detection::ShapeDetector::detect()
     {
       const std::string& model_name = iter->first;
       // skip models that don't match the input detection
-      if (model_name != input_detections_[i].label)
+      if (model_name != input_detections_[i].object_id)
       {
         continue;
       }
@@ -90,7 +90,7 @@ void object_detection::ShapeDetector::detect()
         //detection.mask.roi = input_detections_[i].mask.roi;
         detection.mask.roi = shape_processing::boundingRect(candidate_shape);
         detection.mask.mask = shape_processing::minimalMask(candidate_shape);
-        detection.label = model_name;
+        detection.object_id = model_name;
         detection.detector = getName();
         detection.score = score;
         // we have to invert here because we want the transformation from the

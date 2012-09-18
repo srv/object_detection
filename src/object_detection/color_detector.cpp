@@ -184,7 +184,7 @@ void object_detection::ColorDetector::detect()
       odat::Detection detection;
       detection.mask.roi = shape_processing::boundingRect(biggest_shapes[0]);
       detection.mask.mask = shape_processing::minimalMask(biggest_shapes[0]);
-      detection.label = model_name;
+      detection.object_id = model_name;
       detection.detector = getName();
       detection.score = 1;
       detections_.push_back(detection);

@@ -37,6 +37,7 @@ class Features2D3DMatchingDetectorNode : public StereoDetector
     std::vector<cv::Point2f> outline;
     cv::Point2f origin;
     double theta;
+    std::string object_id;
   };
 
   feature_extraction::KeyPointDetector::Ptr key_point_detector_;
@@ -123,6 +124,7 @@ public:
         model_.origin.x = training_request.image_pose.x;
         model_.origin.y = training_request.image_pose.y;
         model_.theta = training_request.image_pose.theta;
+        model_.object_id = training_request.object_id;
         training_response.success = true;
         training_response.message = "Model trained.";
         return true;
@@ -266,6 +268,8 @@ public:
     cv::Mat inliers;
     cv::Mat homography;
     vision_msgs::Detection detection;
+    detection.object_id = model_.object_id;
+    detection.detector = "Features2D";
     if (matches.size() > 10)
     {
       double reprojection_threshold = 2;
@@ -291,7 +295,8 @@ public:
           r_vec, t_vec, false /* no extrinsic guess */,
           100 /* iterations */, 8.0 /* reproj. error */,
           100 /* min inliers */, inliers_pnp);
-      if (cv::countNonZero(inliers_pnp) > 5)
+      int inliers_pnp_count = cv::countNonZero(inliers_pnp);
+      if (inliers_pnp_count > 5)
       {
         ROS_INFO("Found camera pose with %i inliers", cv::countNonZero(inliers_pnp));
         tf::Vector3 axis(r_vec.at<double>(0, 0), r_vec.at<double>(1, 0), r_vec.at<double>(2, 0));
@@ -300,6 +305,7 @@ public:
         tf::Vector3 translation(t_vec.at<double>(0, 0), t_vec.at<double>(1, 0), t_vec.at<double>(2, 0));
         tf::Transform transform(quaternion, translation);
         tf::poseTFToMsg(transform.inverse(), detection.training_pose);
+        detection.score = 1.0f * inliers_pnp_count / model_.key_points.size();
         detection_ok = true;
       }
     }
@@ -321,22 +327,11 @@ public:
       std::vector<cv::Point2f> original_points = model_.outline;
       original_points.push_back(model_.origin);
       cv::Point2f x_direction(model_.origin);
-      x_direction.x += 100 * cos(model_.theta) + 100 * sin(model_.theta);
+      x_direction.x += 100 * cos(model_.theta);
+      x_direction.y += 100 * sin(model_.theta);
       original_points.push_back(x_direction);
       std::vector<cv::Point2f> transformed_points;
       cv::perspectiveTransform(original_points, transformed_points, homography);
-      std::vector<cv::Point> paint_points(transformed_points.size() - 2);
-      for (size_t i = 0; i < transformed_points.size() - 2; ++i)
-      {
-        paint_points[i].x = static_cast<int>(transformed_points[i].x);
-        paint_points[i].y = static_cast<int>(transformed_points[i].y);
-      }
-      const cv::Point* point_data = &(paint_points[0]);
-      int num_points = paint_points.size();
-      cv::Scalar color(0, 255, 0);
-      bool is_closed = true;
-      cv::polylines(canvas, &point_data, &num_points, 1, is_closed, color);
-      detection.detector = "Features2D";
       detection.outline.points.resize(transformed_points.size() - 2);
       for (size_t i = 0; i < transformed_points.size() - 2; ++i)
       {
@@ -353,9 +348,10 @@ public:
       cv::Point2f transformed_x_axis =
         transformed_x_direction - transformed_origin;
       detection.image_pose.theta = 
-        atan2(transformed_x_axis.x, transformed_x_axis.y);
-      detection.scale = sqrt(transformed_x_axis.x * transformed_x_axis.x +
-                             transformed_x_axis.y * transformed_x_axis.y) / 10000.0;
+        atan2(transformed_x_axis.y, transformed_x_axis.x);
+      double length = sqrt(transformed_x_axis.x * transformed_x_axis.x +
+                           transformed_x_axis.y * transformed_x_axis.y);
+      detection.scale = length / 100.0; // 100 was the untransformed length
       detection.homography.resize(homography.rows * homography.cols);
       for (int i = 0; i < homography.rows * homography.cols; ++i)
         detection.homography[i] = homography.at<double>(i);

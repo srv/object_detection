@@ -353,8 +353,11 @@ public:
                            transformed_x_axis.y * transformed_x_axis.y);
       detection.scale = length / 100.0; // 100 was the untransformed length
       detection.homography.resize(homography.rows * homography.cols);
-      for (int i = 0; i < homography.rows * homography.cols; ++i)
-        detection.homography[i] = homography.at<double>(i);
+      assert(homography.type() == CV_64FC1);
+      for (int i = 0; i < homography.rows; ++i)
+        for (int j = 0; j < homography.cols; ++j)
+          detection.homography[i * homography.cols + j] = 
+            homography.at<double>(i, j);
       detection_ok = true;
     }
 

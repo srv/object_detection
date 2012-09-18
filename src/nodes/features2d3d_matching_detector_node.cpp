@@ -35,6 +35,8 @@ class Features2D3DMatchingDetectorNode : public StereoDetector
     cv::Mat descriptors;
     std::vector<cv::KeyPoint> key_points;
     std::vector<cv::Point2f> outline;
+    cv::Point2f origin;
+    double theta;
   };
 
   feature_extraction::KeyPointDetector::Ptr key_point_detector_;
@@ -118,6 +120,9 @@ public:
           model_.outline[i].x = training_request.outline.points[i].x;
           model_.outline[i].y = training_request.outline.points[i].y;
         }
+        model_.origin.x = training_request.image_pose.x;
+        model_.origin.y = training_request.image_pose.y;
+        model_.theta = training_request.image_pose.theta;
         training_response.success = true;
         training_response.message = "Model trained.";
         return true;
@@ -314,10 +319,14 @@ public:
     if (!homography.empty())
     {
       std::vector<cv::Point2f> original_points = model_.outline;
+      original_points.push_back(model_.origin);
+      cv::Point2f x_direction(model_.origin);
+      x_direction.x += 100 * cos(model_.theta) + 100 * sin(model_.theta);
+      original_points.push_back(x_direction);
       std::vector<cv::Point2f> transformed_points;
       cv::perspectiveTransform(original_points, transformed_points, homography);
-      std::vector<cv::Point> paint_points(transformed_points.size());
-      for (size_t i = 0; i < transformed_points.size(); ++i)
+      std::vector<cv::Point> paint_points(transformed_points.size() - 2);
+      for (size_t i = 0; i < transformed_points.size() - 2; ++i)
       {
         paint_points[i].x = static_cast<int>(transformed_points[i].x);
         paint_points[i].y = static_cast<int>(transformed_points[i].y);
@@ -328,13 +337,25 @@ public:
       bool is_closed = true;
       cv::polylines(canvas, &point_data, &num_points, 1, is_closed, color);
       detection.detector = "Features2D";
-      detection.outline.points.resize(transformed_points.size());
-      for (size_t i = 0; i < transformed_points.size(); ++i)
+      detection.outline.points.resize(transformed_points.size() - 2);
+      for (size_t i = 0; i < transformed_points.size() - 2; ++i)
       {
         detection.outline.points[i].x = transformed_points[i].x;
         detection.outline.points[i].y = transformed_points[i].y;
         detection.outline.points[i].z = 0.0;
       }
+      const cv::Point2f& transformed_origin = 
+        transformed_points[transformed_points.size() - 2];
+      const cv::Point2f& transformed_x_direction =
+        transformed_points[transformed_points.size() - 1];
+      detection.image_pose.x = transformed_origin.x;
+      detection.image_pose.y = transformed_origin.y;
+      cv::Point2f transformed_x_axis =
+        transformed_x_direction - transformed_origin;
+      detection.image_pose.theta = 
+        atan2(transformed_x_axis.x, transformed_x_axis.y);
+      detection.scale = sqrt(transformed_x_axis.x * transformed_x_axis.x +
+                             transformed_x_axis.y * transformed_x_axis.y) / 10000.0;
       detection.homography.resize(homography.rows * homography.cols);
       for (int i = 0; i < homography.rows * homography.cols; ++i)
         detection.homography[i] = homography.at<double>(i);

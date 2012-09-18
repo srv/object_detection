@@ -255,6 +255,9 @@ private:
         training.request.outline.points[i].y = polygon_points[i].y;
         training.request.outline.points[i].z = 0;
       }
+      training.request.image_pose.x = object_pose_.x;
+      training.request.image_pose.y = object_pose_.y;
+      training.request.image_pose.theta = object_pose_.theta;
       if (training_service_client_.call(training))
       {
         if (training.response.success == false)

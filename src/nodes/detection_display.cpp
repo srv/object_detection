@@ -67,28 +67,45 @@ namespace odat_ros
         int w = detection.mask.roi.width;
         int h = detection.mask.roi.height;
 
+        // mask
         cv::Scalar color(0, 255, 170);
         cv::Point top_left(x, y);
         cv::Point bottom_right = top_left + cv::Point(w, h);
         cv::rectangle(image, top_left, bottom_right, color, 2);
 
+        cv::Point origin;
+        origin.x = detection.image_pose.x;
+        origin.y = detection.image_pose.y;
+
+        // text
         static const int FONT = CV_FONT_HERSHEY_SIMPLEX;
         static const double TEXT_SCALE = 0.8;
         int baseline;
         cv::Size text_size = cv::getTextSize(detection.object_id, FONT, TEXT_SCALE, 2, &baseline);
-        cv::putText(image, detection.object_id, cv::Point(x + w + 10, y + 10 + text_size.height), FONT, TEXT_SCALE, color, 2);
+        cv::putText(image, detection.object_id, origin + cv::Point(10, 10 + text_size.height), FONT, TEXT_SCALE, color, 2);
         std::string strscore = std::string("score: ") + tostr(detection.score);
-        cv::putText(image, strscore, cv::Point(x + w + 10, y + 10 + 2 * text_size.height), FONT, 0.6, color, 2);
+        cv::putText(image, strscore, origin + cv::Point(10, 10 + 2 * text_size.height), FONT, 0.6, color, 2);
+        std::string strscale = std::string("scale: ") + tostr(detection.scale);
+        cv::putText(image, strscale, origin + cv::Point(10, 10 + 3 * text_size.height), FONT, 0.6, color, 2);
 
         // coordinate system
-        cv::Point origin;
-        origin.x = detection.image_pose.x;
-        origin.y = detection.image_pose.y;
         double direction = detection.image_pose.theta;
         cv::Point x_axis(20 * detection.scale * cos(direction), 20 * detection.scale * sin(direction));
         cv::Point y_axis(20 * detection.scale * cos(direction + M_PI_2), 20 * detection.scale * sin(direction + M_PI_2));
         cv::line(image, origin, origin + x_axis, cv::Scalar(0, 0, 255), 2);
         cv::line(image, origin, origin + y_axis, cv::Scalar(0, 255, 0), 2);
+
+        // outline
+        std::vector<cv::Point> paint_points(detection.outline.points.size());
+        for (size_t i = 0; i < paint_points.size(); ++i)
+        {
+          paint_points[i].x = static_cast<int>(detection.outline.points[i].x);
+          paint_points[i].y = static_cast<int>(detection.outline.points[i].y);
+        }
+        const cv::Point* point_data = &(paint_points[0]);
+        int num_points = paint_points.size();
+        bool is_closed = true;
+        cv::polylines(image, &point_data, &num_points, 1, is_closed, color);
       }
 
       cv::imshow(window_name_, image);

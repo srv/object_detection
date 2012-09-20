@@ -29,6 +29,8 @@ class Features2D3DMatchingDetectorNode : public StereoDetector
   ros::NodeHandle nh_;
   ros::NodeHandle nh_private_;
 
+  ros::Publisher features_image_pub_;
+
   struct Model2D
   {
     cv::Mat image;
@@ -45,6 +47,7 @@ class Features2D3DMatchingDetectorNode : public StereoDetector
 
   double matching_threshold_;
   double stereo_matching_threshold_;
+  int min_model_features_count_;
 
   tf::TransformBroadcaster tf_broadcaster_;
 
@@ -58,6 +61,9 @@ public:
     std::string key_point_detector, descriptor_extractor;
     nh_private_.param("key_point_detector", key_point_detector, std::string("CvORB"));
     nh_private_.param("descriptor_extractor", descriptor_extractor, std::string("CvORB"));
+    nh_private_.param("min_model_features_count", min_model_features_count_, 20);
+
+    features_image_pub_ = nh_private_.advertise<sensor_msgs::Image>("features", 1);
 
     key_point_detector_ = 
       feature_extraction::KeyPointDetectorFactory::create(key_point_detector);
@@ -80,13 +86,10 @@ public:
     {
       loadModel(model_name);
     }
-
-    //cv::namedWindow("Features", 0);
   }
 
   ~Features2D3DMatchingDetectorNode()
   {
-    //cv::destroyWindow("Features");
   }
 
   virtual bool train(
@@ -110,7 +113,7 @@ public:
       key_point_detector_->detect(image, key_points);
       descriptor_extractor_->extract(image, key_points, descriptors);
       ROS_INFO("Training image has %zu features.", key_points.size());
-      if (key_points.size() > 5)
+      if (static_cast<int>(key_points.size()) >= min_model_features_count_)
       {
         model_.image = image;
         model_.key_points = key_points;
@@ -296,31 +299,47 @@ public:
           100 /* iterations */, 8.0 /* reproj. error */,
           100 /* min inliers */, inliers_pnp);
       int inliers_pnp_count = cv::countNonZero(inliers_pnp);
-      if (inliers_pnp_count > 5)
+      ROS_INFO("Found camera pose with %i inliers", cv::countNonZero(inliers_pnp));
+      if (inliers_pnp_count > 0)
       {
-        ROS_INFO("Found camera pose with %i inliers", cv::countNonZero(inliers_pnp));
         tf::Vector3 axis(r_vec.at<double>(0, 0), r_vec.at<double>(1, 0), r_vec.at<double>(2, 0));
         double angle = cv::norm(r_vec);
         tf::Quaternion quaternion(axis, angle);
         tf::Vector3 translation(t_vec.at<double>(0, 0), t_vec.at<double>(1, 0), t_vec.at<double>(2, 0));
         tf::Transform transform(quaternion, translation);
         tf::poseTFToMsg(transform.inverse(), detection.training_pose);
-        detection.score = 1.0f * inliers_pnp_count / model_.key_points.size();
+        if (inliers_pnp_count >= 100)
+        {
+          detection.score = 1.0;
+        }
+        else
+        {
+          detection.score = inliers_pnp_count / 100.0;
+        }
         detection_ok = true;
       }
     }
-    cv::Mat canvas;
-    // draw all matches
-    cv::drawMatches(
-        image_left, key_points, model_.image, model_.key_points, matches, canvas, 
-        CV_RGB(255, 0, 0), CV_RGB(255, 0, 0), std::vector<char>(),
-        cv::DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS);
-    // draw inliers
-    cv::drawMatches(
-        image_left, key_points, model_.image, model_.key_points, matches, canvas, 
-        CV_RGB(0, 255, 0), CV_RGB(0, 0, 255), inliers,
-        cv::DrawMatchesFlags::DRAW_OVER_OUTIMG /*| 
-        cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS*/);
+
+    if (features_image_pub_.getNumSubscribers() > 0)
+    {
+      cv::Mat canvas;
+      // draw all matches
+      cv::drawMatches(
+          image_left, key_points, model_.image, model_.key_points, matches, canvas, 
+          CV_RGB(255, 0, 0), CV_RGB(255, 0, 0), std::vector<char>(),
+          cv::DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS);
+      // draw inliers
+      cv::drawMatches(
+          image_left, key_points, model_.image, model_.key_points, matches, canvas, 
+          CV_RGB(0, 255, 0), CV_RGB(0, 0, 255), inliers,
+          cv::DrawMatchesFlags::DRAW_OVER_OUTIMG /*| 
+          cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS*/);
+      cv_bridge::CvImage cv_image;
+      cv_image.header = l_image_msg->header;
+      cv_image.encoding = enc::RGB8;
+      cv_image.image = canvas;
+      features_image_pub_.publish(cv_image.toImageMsg());
+    }
 
     if (!homography.empty())
     {
@@ -358,7 +377,6 @@ public:
         for (int j = 0; j < homography.cols; ++j)
           detection.homography[i * homography.cols + j] = 
             homography.at<double>(i, j);
-      detection_ok = true;
     }
 
     if (detection_ok)
@@ -366,8 +384,6 @@ public:
       detection_array.detections.push_back(detection);
     }
     detection_array.header = l_image_msg->header;
-    //imshow("Features", canvas);
-    //cv::waitKey(3);
   }
 
 };

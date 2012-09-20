@@ -218,7 +218,7 @@ public:
   {
     if (model_.image.empty())
     {
-      ROS_WARN("Detector has no model!");
+      ROS_WARN_THROTTLE(10.0, "Detector has no model!");
       return;
     }
     cv::Mat image_left, image_right;

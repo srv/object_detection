@@ -1,5 +1,5 @@
 <launch>
-  <arg name="image" default="stereo_down/left/image_rect_color" />
+  <arg name="image" default="stereo_down/scaled/left/image_rect_color" />
   <arg name="detections" default="object_detector/detections" />
 
   <node name="detection_display" pkg="object_detection" type="detection_display" output="screen">

@@ -1,5 +1,5 @@
 <launch>
-  <arg name="stereo" default="stereo_down" />
+  <arg name="stereo" default="stereo_down/scaled" />
   <arg name="image" default="image_rect" />
 
   <node name="object_detector" pkg="object_detection" 

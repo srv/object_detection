@@ -82,11 +82,11 @@ namespace odat_ros
         static const double TEXT_SCALE = 0.8;
         int baseline;
         cv::Size text_size = cv::getTextSize(detection.object_id, FONT, TEXT_SCALE, 2, &baseline);
-        cv::putText(image, detection.object_id, origin + cv::Point(10, 10 + text_size.height), FONT, TEXT_SCALE, color, 2);
+        cv::putText(image, detection.object_id, cv::Point(10, 10 + text_size.height), FONT, TEXT_SCALE, color, 2);
         std::string strscore = std::string("score: ") + tostr(detection.score);
-        cv::putText(image, strscore, origin + cv::Point(10, 10 + 2 * text_size.height), FONT, 0.6, color, 2);
+        cv::putText(image, strscore, cv::Point(10, 10 + 2 * text_size.height), FONT, 0.6, color, 2);
         std::string strscale = std::string("scale: ") + tostr(detection.scale);
-        cv::putText(image, strscale, origin + cv::Point(10, 10 + 3 * text_size.height), FONT, 0.6, color, 2);
+        cv::putText(image, strscale, cv::Point(10, 10 + 3 * text_size.height), FONT, 0.6, color, 2);
 
         // coordinate system
         double direction = detection.image_pose.theta;

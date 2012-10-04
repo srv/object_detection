@@ -13,7 +13,7 @@ class DetectionTracker
   ros::NodeHandle nh_;
   ros::NodeHandle nh_private_;
 
-  message_filters::Subscriber<vision_msgs::DetectionArray> sync_detection_sub_;
+  message_filters::Subscriber<vision_msgs::DetectionArray> sync_detections_sub_;
   message_filters::Subscriber<nav_msgs::Odometry> sync_odometry_sub_;
   message_filters::TimeSynchronizer<vision_msgs::DetectionArray, nav_msgs::Odometry> synchronizer_;
 
@@ -30,9 +30,9 @@ class DetectionTracker
 public:
   DetectionTracker() :
     nh_private_("~"),
-    sync_detection_sub_(nh_, "detection", 1),
+    sync_detections_sub_(nh_, "detections", 1),
     sync_odometry_sub_(nh_, "odometry", 1),
-    synchronizer_(sync_detection_sub_, sync_odometry_sub_, 20)
+    synchronizer_(sync_detections_sub_, sync_odometry_sub_, 20)
   {
     synchronizer_.registerCallback(
         boost::bind(&DetectionTracker::detectionCallback, this, _1, _2));
@@ -80,6 +80,8 @@ public:
         tf::poseTFToMsg(training_pose, detection_msg.training_pose);
         tracked_detections_msg.detections.push_back(detection_msg);
       }
+      tracked_detections_msg.header = last_detections_->header;
+      tracked_detections_msg.header.stamp = odometry_msg->header.stamp;
       detections_pub_.publish(tracked_detections_msg);
 
       // publish tf

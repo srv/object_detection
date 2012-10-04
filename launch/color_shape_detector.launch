@@ -2,7 +2,7 @@
   <arg name="manager" default="object_detector_manager" />
   <arg name="standalone" default="true" />
   <arg name="image" default="stereo_down/scaled/left/image_rect_color" />
-  <arg name="training_data" default="trainer/training_data" />
+  <arg name="training_data" default="/trainer_node/training_data" />
   <arg name="show_images" default="false" />
   <arg name="models" default="target" />
 

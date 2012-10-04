@@ -12,7 +12,7 @@
 #include <feature_matching/stereo_feature_matcher.h>
 #include <feature_matching/stereo_depth_estimator.h>
 
-#include <tf/transform_broadcaster.h>
+#include <tf/transform_datatypes.h>
 
 #include "stereo_detector.h"
 
@@ -50,8 +50,7 @@ class Features2D3DMatchingDetectorNode : public StereoDetector
   int min_model_features_count_;
   bool equalize_histogram_;
   bool normalize_illumination_;
-
-  tf::TransformBroadcaster tf_broadcaster_;
+  int min_num_matches_;
 
   Model2D model_;
 
@@ -69,6 +68,12 @@ public:
     nh_private_.param("min_model_features_count", min_model_features_count_, 20);
     nh_private_.param("equalize_histogram", equalize_histogram_, false);
     nh_private_.param("normalize_illumination", normalize_illumination_, false);
+    nh_private_.param("min_num_matches", min_num_matches_, 7);
+    if (min_num_matches_ < 4)
+    {
+      ROS_WARN("min_num_matches must be > 4, setting to 4!");
+      min_num_matches_ = 4;
+    }
 
     features_image_pub_ = nh_private_.advertise<sensor_msgs::Image>("features", 1);
 
@@ -87,7 +92,10 @@ public:
         << "  key_point_detector         : " << key_point_detector << std::endl
         << "  descriptor_extractor       : " << descriptor_extractor << std::endl
         << "  matching_threshold         : " << matching_threshold_ << std::endl
-        << "  stereo_matching_threshold  : " << matching_threshold_ << std::endl);
+        << "  stereo_matching_threshold  : " << matching_threshold_ << std::endl
+        << "  equalize_histogram         : " << equalize_histogram_ << std::endl
+        << "  normalize_illumination     : " << normalize_illumination_ << std::endl
+        << "  min_num_matches            : " << min_num_matches_ << std::endl);
 
     if (model_name != "")
     {
@@ -315,7 +323,7 @@ public:
     vision_msgs::Detection detection;
     detection.object_id = model_.object_id;
     detection.detector = "Features2D";
-    if (matches.size() > 7)
+    if (static_cast<int>(matches.size()) >= min_num_matches_)
     {
       double reprojection_threshold = 2;
       homography = cv::findHomography(

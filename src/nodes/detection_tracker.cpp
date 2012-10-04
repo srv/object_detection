@@ -54,15 +54,21 @@ public:
     const vision_msgs::DetectionArrayConstPtr& detections_msg,
     const nav_msgs::OdometryConstPtr& odometry_msg)
   {
-    last_detections_ = detections_msg;
-    last_detections_odometry_ = odometry_msg;
+    ROS_INFO("received detection and odometry synced");
+    if (detections_msg->detections.size() > 0)
+    {
+      last_detections_ = detections_msg;
+      last_detections_odometry_ = odometry_msg;
+    }
   }
 
   void odometryCallback(const nav_msgs::OdometryConstPtr& odometry_msg)
   {
+    ROS_INFO("received odometry");
     if (!last_detections_) return;
     if (last_detections_->header.stamp + ros::Duration(timeout_) > odometry_msg->header.stamp)
     {
+      ROS_INFO("updating last detection");
       // detection still valid, compute current transform to detection
       tf::Pose current_pose;
       tf::poseMsgToTF(odometry_msg->pose.pose, current_pose);
@@ -91,6 +97,10 @@ public:
           detection_msg.header.frame_id, "/target_tracked");
       tf_broadcaster_.sendTransform(stamped_transform);
       */
+    }
+    else
+    {
+      ROS_INFO("last detection too old, not updating using odometry.");
     }
   }
 };

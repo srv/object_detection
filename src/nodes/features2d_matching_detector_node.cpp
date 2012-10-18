@@ -220,7 +220,7 @@ public:
           inliers);
     }
 
-    ROS_INFO("%4zu features, %4zu matches, %4zu inliers.", 
+    ROS_INFO("%4zu features, %4zu matches, %i inliers.", 
         key_points.size(), matches.size(), cv::countNonZero(inliers));
 
 

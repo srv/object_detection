@@ -72,6 +72,7 @@ rosbuild_add_executable(features2d3d_matching_detector_node src/nodes/features2d
 rosbuild_add_executable(detection_tracker src/nodes/detection_tracker.cpp)
 rosbuild_link_boost(detection_tracker signals)
 target_link_libraries(features2d_matching_detector_node odat_ros)
+rosbuild_link_boost(features2d3d_matching_detector_node signals)
 
 rosbuild_add_executable(train_from_disk src/nodes/train_from_disk.cpp)
 target_link_libraries(train_from_disk odat_ros ${PROJECT_NAME})

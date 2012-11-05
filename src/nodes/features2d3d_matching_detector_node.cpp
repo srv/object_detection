@@ -12,7 +12,7 @@
 #include <feature_matching/stereo_feature_matcher.h>
 #include <feature_matching/stereo_depth_estimator.h>
 
-#include <tf/transform_broadcaster.h>
+#include <tf/transform_datatypes.h>
 
 #include "stereo_detector.h"
 
@@ -48,10 +48,14 @@ class Features2D3DMatchingDetectorNode : public StereoDetector
   double matching_threshold_;
   double stereo_matching_threshold_;
   int min_model_features_count_;
-
-  tf::TransformBroadcaster tf_broadcaster_;
+  bool equalize_histogram_;
+  bool normalize_illumination_;
+  int min_num_matches_;
 
   Model2D model_;
+
+  cv::Mat illumination_;
+  cv::Scalar mean_illumination_;
 
 public:
   Features2D3DMatchingDetectorNode()
@@ -62,6 +66,14 @@ public:
     nh_private_.param("key_point_detector", key_point_detector, std::string("CvORB"));
     nh_private_.param("descriptor_extractor", descriptor_extractor, std::string("CvORB"));
     nh_private_.param("min_model_features_count", min_model_features_count_, 20);
+    nh_private_.param("equalize_histogram", equalize_histogram_, false);
+    nh_private_.param("normalize_illumination", normalize_illumination_, false);
+    nh_private_.param("min_num_matches", min_num_matches_, 7);
+    if (min_num_matches_ < 4)
+    {
+      ROS_WARN("min_num_matches must be > 4, setting to 4!");
+      min_num_matches_ = 4;
+    }
 
     features_image_pub_ = nh_private_.advertise<sensor_msgs::Image>("features", 1);
 
@@ -80,7 +92,10 @@ public:
         << "  key_point_detector         : " << key_point_detector << std::endl
         << "  descriptor_extractor       : " << descriptor_extractor << std::endl
         << "  matching_threshold         : " << matching_threshold_ << std::endl
-        << "  stereo_matching_threshold  : " << matching_threshold_ << std::endl);
+        << "  stereo_matching_threshold  : " << matching_threshold_ << std::endl
+        << "  equalize_histogram         : " << equalize_histogram_ << std::endl
+        << "  normalize_illumination     : " << normalize_illumination_ << std::endl
+        << "  min_num_matches            : " << min_num_matches_ << std::endl);
 
     if (model_name != "")
     {
@@ -108,6 +123,25 @@ public:
       cv_bridge::CvImageConstPtr cv_ptr;
       cv_ptr = cv_bridge::toCvShare(training_request.image_left, tracked_object, enc::MONO8);
       cv::Mat image = cv_ptr->image;
+
+      if (normalize_illumination_)
+      {
+        int k_size = image.cols/2;
+        if (k_size % 2 == 0) k_size += 1;
+        ROS_INFO("k_size = %i", k_size);
+        cv::GaussianBlur(image, illumination_, cv::Size(k_size, k_size), 0);
+        mean_illumination_ = cv::mean(image);
+        image = image - illumination_ + mean_illumination_;
+        cv::imwrite("/home/user/illumination.png", illumination_);
+      }
+
+      if (equalize_histogram_)
+      {
+        cv::Mat equalized_image;
+        cv::equalizeHist(image, equalized_image);
+        image = equalized_image;
+      }
+
       std::vector<cv::KeyPoint> key_points;
       cv::Mat descriptors;
       key_point_detector_->detect(image, key_points);
@@ -239,6 +273,22 @@ public:
       return;
     }
 
+    if (normalize_illumination_)
+    {
+      image_right = image_right - illumination_ + mean_illumination_;
+      image_left = image_left - illumination_ + mean_illumination_;
+    }
+
+    if (equalize_histogram_)
+    {
+      cv::Mat image_right_equalized;
+      cv::equalizeHist(image_right, image_right_equalized);
+      image_right = image_right_equalized;
+      cv::Mat image_left_equalized;
+      cv::equalizeHist(image_left, image_left_equalized);
+      image_left = image_left_equalized;
+    }
+
     // detect stereo features
     std::vector<cv::KeyPoint> key_points;
     cv::Mat descriptors;
@@ -273,7 +323,7 @@ public:
     vision_msgs::Detection detection;
     detection.object_id = model_.object_id;
     detection.detector = "Features2D";
-    if (matches.size() > 10)
+    if (static_cast<int>(matches.size()) >= min_num_matches_)
     {
       double reprojection_threshold = 2;
       homography = cv::findHomography(
@@ -381,6 +431,7 @@ public:
 
     if (detection_ok)
     {
+      detection.header = l_image_msg->header;
       detection_array.detections.push_back(detection);
     }
     detection_array.header = l_image_msg->header;

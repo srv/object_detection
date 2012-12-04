@@ -274,6 +274,7 @@ public:
         model_.theta;
       if (detection.image_pose.theta > M_PI) detection.image_pose.theta -= 2*M_PI;
       if (detection.image_pose.theta < -M_PI) detection.image_pose.theta += 2*M_PI;
+      detection.score = std::min(1.0, cv::countNonZero(inliers) * 0.01);
       detections_array.detections.push_back(detection);
       detections_array.header = image_msg->header;
     }

@@ -1,13 +1,11 @@
 <launch>
-  <arg name="train" default="object_detector/train" />
-  <arg name="training_data" default="object_detector/training_data" />
+  <arg name="detector" default="object_detector" />
   <arg name="image" default="stereo_down/scaled/left/image_rect_color" />
   <arg name="object_id" default="target" />
 
   <node name="trainer" pkg="object_detection" type="trainer_node" output="screen">
     <remap from="image" to="$(arg image)" />
-    <remap from="train" to="$(arg train)" />
-    <remap from="training_data" to="$(arg training_data)" />
+    <remap from="train" to="$(arg detector)/train" />
     <param name="object_id" value="$(arg object_id)" />
   </node>
 

@@ -133,17 +133,16 @@ public:
       vision_msgs::TrainDetector::Request& training_request,
       vision_msgs::TrainDetector::Response& training_response)
   {
+    training_response.success = false;
     ROS_INFO("Training service call received, running training.");
     if (training_request.outline.points.size() < 3)
     {
-      training_response.success = false;
       training_response.message = "Not enough points in object outline polygon.";
       ROS_ERROR_STREAM(training_response.message);
       return false;
     }
     if (!sensor_msgs::image_encodings::isColor(training_request.image_left.encoding))
     {
-      training_response.success = false;
       training_response.message = "Training image must be color!";
       ROS_ERROR_STREAM(training_response.message);
       return false;
@@ -204,6 +203,7 @@ public:
     shape_detector_->trainInstance(training_request.object_id, training_data);
     shape_detector_->endTraining(training_request.object_id);
     training_response.message = "Target trained.";
+    training_response.success = true;
     ROS_INFO_STREAM(training_response.message);
     return true;
   }

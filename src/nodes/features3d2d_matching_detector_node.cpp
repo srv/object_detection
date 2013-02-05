@@ -22,16 +22,13 @@
 #include <vision_msgs/Detection.h>
 
 #include "object_detection/features_io.h"
+#include "mono_detector.h"
 
 namespace enc = sensor_msgs::image_encodings;
 
-class FeatureMatchingDetectorNode
+class FeatureMatchingDetectorNode : public MonoDetector
 {
-  ros::NodeHandle nh_;
   ros::NodeHandle nh_private_;
-
-  image_transport::ImageTransport it_;
-  image_transport::CameraSubscriber camera_sub_;
 
   cv::Mat model_descriptors_;
   std::vector<cv::Point3f> model_points_;
@@ -47,11 +44,10 @@ class FeatureMatchingDetectorNode
   tf::TransformBroadcaster tf_broadcaster_;
 
   ros::Publisher pose_pub_;
-  ros::Publisher detection_pub_;
 
 public:
   FeatureMatchingDetectorNode()
-    : nh_private_("~"), it_(nh_)
+    : nh_private_("~")
   {
 
     std::string feature_detector, descriptor_extractor, descriptor_matcher;
@@ -78,13 +74,7 @@ public:
 
     loadModel();
 
-    camera_sub_ = it_.subscribeCamera("image", 1, 
-        &FeatureMatchingDetectorNode::imageCb, this);
-
     pose_pub_ = nh_private_.advertise<geometry_msgs::PoseStamped>("target_pose", 1);
-    detection_pub_ = nh_private_.advertise<vision_msgs::Detection>("detection", 1);
-
-    ROS_INFO("Listening to %s", nh_.resolveName("image").c_str());
 
     cv::namedWindow("Features", 0);
   }
@@ -107,8 +97,10 @@ public:
     }
   }
 
-  void imageCb(const sensor_msgs::ImageConstPtr& image_msg, 
-      const sensor_msgs::CameraInfoConstPtr& camera_info_msg)
+  virtual void detect(
+      const sensor_msgs::ImageConstPtr& image_msg, 
+      const sensor_msgs::CameraInfoConstPtr& camera_info_msg,
+      vision_msgs::DetectionArray& detections_array)
   {
     cv::Mat image;
     cv_bridge::CvImageConstPtr cv_ptr;
@@ -194,6 +186,8 @@ public:
         if (stamp.toSec()==0.0)
           stamp = ros::Time::now();
         sendMessageAndTransform(t_vec, r_vec, stamp, image_msg->header.frame_id);
+
+        //TODO fill detection array message
       }
       else
       {
@@ -239,15 +233,17 @@ public:
     tf::poseTFToMsg(transform, pose_msg.pose);
 
     pose_pub_.publish(pose_msg);
-
-    vision_msgs::Detection detection_msg;
-    detection_msg.header.stamp = stamp;
-    detection_msg.header.frame_id = camera_frame_id;
-    detection_msg.object_id = model_filename_;
-    detection_msg.detector = "feature_matching_detector";
-    detection_msg.training_pose = pose_msg.pose;
-    detection_pub_.publish(detection_msg);
   }
+
+  virtual bool train(
+      vision_msgs::TrainDetector::Request& training_request,
+      vision_msgs::TrainDetector::Response& training_response)
+  {
+    training_response.success = false;
+    training_response.message = "Training not implemented for features3d detector.";
+    return false;
+  }
+ 
 
 };
 

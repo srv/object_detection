@@ -54,18 +54,13 @@ rosbuild_add_library(${PROJECT_NAME}
     )
 target_link_libraries(${PROJECT_NAME} odat)
 
-# ros adapter to object detection library
-rosbuild_add_library(${PROJECT_NAME}_ros
-    src/object_detection_ros/detector_nodelet.cpp
-    )
-target_link_libraries(${PROJECT_NAME}_ros ${PROJECT_NAME} odat_ros)
-
 rosbuild_add_executable(detection_display src/nodes/detection_display.cpp)
 rosbuild_link_boost(detection_display signals)
 
 rosbuild_add_executable(trainer_node src/nodes/trainer_node.cpp)
 target_link_libraries(trainer_node odat_ros ${PROJECT_NAME})
 
+rosbuild_add_executable(color_shape_detector_node src/nodes/color_shape_detector_node.cpp)
 rosbuild_add_executable(feature_matching_detector_node src/nodes/feature_matching_detector_node.cpp)
 rosbuild_add_executable(features2d_matching_detector_node src/nodes/features2d_matching_detector_node.cpp)
 rosbuild_add_executable(features2d3d_matching_detector_node src/nodes/features2d3d_matching_detector_node.cpp)
@@ -73,10 +68,8 @@ rosbuild_link_boost(features2d3d_matching_detector_node signals)
 rosbuild_add_executable(detection_tracker src/nodes/detection_tracker.cpp)
 rosbuild_link_boost(detection_tracker signals)
 target_link_libraries(features2d_matching_detector_node odat_ros)
+target_link_libraries(color_shape_detector_node ${PROJECT_NAME} odat_ros)
 rosbuild_link_boost(features2d3d_matching_detector_node signals)
-
-rosbuild_add_executable(train_from_disk src/nodes/train_from_disk.cpp)
-target_link_libraries(train_from_disk odat_ros ${PROJECT_NAME})
 
 rosbuild_add_executable(features_to_pcd src/tools/features_to_pcd.cpp)
 

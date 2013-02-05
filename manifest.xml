@@ -27,10 +27,6 @@
 
   <depend package="vision_msgs" />
   <depend package="feature_extraction" />
-  <export>
-    <nodelet plugin="${prefix}/nodelet_plugins.xml" />
-  </export>
-
  
 </package>
 

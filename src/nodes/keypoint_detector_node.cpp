@@ -25,6 +25,9 @@ using std_msgs::Header;
 
 static const std::string WINDOW_NAME = "Keypoint Matching";
 
+/**
+ * OpenCV sample "descriptor_extractor_matcher.cpp" ROSified.
+ */
 class KeypointDetectorNode
 {
 

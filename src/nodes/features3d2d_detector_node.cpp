@@ -26,6 +26,14 @@
 
 namespace enc = sensor_msgs::image_encodings;
 
+/**
+ * Detector that matches 2D features from incoming (mono) images
+ * to a 3D model. By minimizing the reprojection error, 
+ * a 6DOF object pose can be found.
+ *
+ * This detector is in prototype stage, some necessary things like
+ * online training are not implemented yet.
+ */
 class Features3D2DDetectorNode : public MonoDetectorNode
 {
   ros::NodeHandle nh_private_;

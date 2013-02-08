@@ -21,7 +21,7 @@ namespace enc = sensor_msgs::image_encodings;
 /**
  * Node that matches 3D features of the current image pair to 2D features
  * of a model. If the object/environment is mostly planar, a homography
- * will be computed. In all cases the pose of the camera taking the
+ * will be computed. In all cases the pose of the camera while taking the
  * training image will be estimated and published.
  */
 class Features2D3DDetectorNode : public StereoDetectorNode

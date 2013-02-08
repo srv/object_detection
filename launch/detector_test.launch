@@ -3,7 +3,7 @@
   <arg name="image" default="image_rect" />
 
   <node name="object_detector" pkg="object_detection" 
-        type="features2d3d_matching_detector_node" output="screen" >
+        type="features2d3d_detector_node" output="screen" >
     <remap from="stereo" to="$(arg stereo)" />
     <remap from="image" to="$(arg image)" />
     <param name="normalize_illumination" value="true" />

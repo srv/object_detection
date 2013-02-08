@@ -1,16 +1,16 @@
 #include <vision_msgs/DetectionArray.h>
 
-#include "detector.h"
+#include "detector_node.h"
 #include "training_service.h"
 #include "image_processor.h"
 
-class MonoDetector :
-  public Detector, 
+class MonoDetectorNode :
+  public DetectorNode, 
   public TrainingService,
   public ImageProcessor
 {
  public:
-   MonoDetector() : Detector(), TrainingService(), ImageProcessor(), nh_("~")
+   MonoDetectorNode() : DetectorNode(), TrainingService(), ImageProcessor(), nh_("~")
    {
      detections_pub_ = nh_.advertise<vision_msgs::DetectionArray>("detections", 1);
    }

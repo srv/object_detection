@@ -22,11 +22,11 @@
 #include <vision_msgs/Detection.h>
 
 #include "object_detection/features_io.h"
-#include "mono_detector.h"
+#include "mono_detector_node.h"
 
 namespace enc = sensor_msgs::image_encodings;
 
-class Features3D2DDetectorNode : public MonoDetector
+class Features3D2DDetectorNode : public MonoDetectorNode
 {
   ros::NodeHandle nh_private_;
 

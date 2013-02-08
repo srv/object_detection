@@ -14,7 +14,7 @@
 
 #include <tf/transform_datatypes.h>
 
-#include "stereo_detector.h"
+#include "stereo_detector_node.h"
 
 namespace enc = sensor_msgs::image_encodings;
 
@@ -24,7 +24,7 @@ namespace enc = sensor_msgs::image_encodings;
  * will be computed. In all cases the pose of the camera taking the
  * training image will be estimated and published.
  */
-class Features2D3DDetectorNode : public StereoDetector
+class Features2D3DDetectorNode : public StereoDetectorNode
 {
   ros::NodeHandle nh_;
   ros::NodeHandle nh_private_;
@@ -59,7 +59,7 @@ class Features2D3DDetectorNode : public StereoDetector
 
 public:
   Features2D3DDetectorNode()
-    : StereoDetector(), nh_private_("~")
+    : StereoDetectorNode(), nh_private_("~")
   {
 
     std::string key_point_detector, descriptor_extractor;

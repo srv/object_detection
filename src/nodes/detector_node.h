@@ -4,10 +4,10 @@
 /**
  * Base class for all detector nodes.
  */
-class Detector
+class DetectorNode
 {
 public:
-  virtual ~Detector() {}
+  virtual ~DetectorNode() {}
 
   /**
    * @return name of the directory where the detector models are stored.

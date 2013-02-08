@@ -12,9 +12,21 @@
 #include "object_detection/color_detector.h"
 #include "object_detection/shape_detector.h"
 
-#include "mono_detector.h"
+#include "mono_detector_node.h"
 
-class ColorShapeDetectorNode : public MonoDetector
+/**
+ * @brief Detector based on color and shape.
+ *
+ * This detector uses a Hue-Saturation histogram to classify pixels into
+ * two classes: object and background. Once each pixel is classified, 
+ * blobs are extracted from the binary image. The biggest blob is chosen
+ * as object representative and its form is compared to the form of
+ * the trained object.
+ *
+ * For details on the implementation, see object_detection::ColorDetector
+ * and object_detection::ShapeDetector.
+ */
+class ColorShapeDetectorNode : public MonoDetectorNode
 {
 private:
   boost::shared_ptr<object_detection::ColorDetector> color_detector_;

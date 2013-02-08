@@ -13,7 +13,7 @@
 #include <feature_extraction/descriptor_extractor_factory.h>
 #include <feature_matching/matching_methods.h>
 
-#include "mono_detector.h"
+#include "mono_detector_node.h"
 
 namespace enc = sensor_msgs::image_encodings;
 
@@ -22,7 +22,7 @@ namespace enc = sensor_msgs::image_encodings;
  * of a model. Works only on mostly planar objects/environments.
  * If a detection was made, the output is a homography.
  */
-class Features2D2DDetectorNode : public MonoDetector
+class Features2D2DDetectorNode : public MonoDetectorNode
 {
   ros::NodeHandle nh_;
   ros::NodeHandle nh_private_;
@@ -47,7 +47,7 @@ class Features2D2DDetectorNode : public MonoDetector
 
 public:
   Features2D2DDetectorNode()
-    : MonoDetector(), nh_private_("~")
+    : MonoDetectorNode(), nh_private_("~")
   {
 
     std::string key_point_detector, descriptor_extractor;

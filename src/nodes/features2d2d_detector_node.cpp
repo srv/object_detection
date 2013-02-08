@@ -1,5 +1,8 @@
+#include <boost/foreach.hpp>
 #include <cv_bridge/cv_bridge.h>
 
+#include <rosbag/bag.h>
+#include <rosbag/view.h>
 #include <sensor_msgs/image_encodings.h>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/features2d/features2d.hpp>
@@ -9,8 +12,6 @@
 #include <feature_extraction/key_point_detector_factory.h>
 #include <feature_extraction/descriptor_extractor_factory.h>
 #include <feature_matching/matching_methods.h>
-
-#include <tf/transform_broadcaster.h>
 
 #include "mono_detector.h"
 
@@ -29,8 +30,8 @@ class Features2D2DDetectorNode : public MonoDetector
   struct Model2D
   {
     cv::Mat image;
-    cv::Mat descriptors;
     std::vector<cv::KeyPoint> key_points;
+    cv::Mat descriptors;
     std::vector<cv::Point2f> outline;
     cv::Point2f origin;
     double theta;
@@ -39,9 +40,8 @@ class Features2D2DDetectorNode : public MonoDetector
   feature_extraction::KeyPointDetector::Ptr key_point_detector_;
   feature_extraction::DescriptorExtractor::Ptr descriptor_extractor_;
 
+  int min_num_model_features_;
   double matching_threshold_;
-
-  tf::TransformBroadcaster tf_broadcaster_;
 
   Model2D model_;
 
@@ -53,6 +53,7 @@ public:
     std::string key_point_detector, descriptor_extractor;
     nh_private_.param("key_point_detector", key_point_detector, std::string("CvORB"));
     nh_private_.param("descriptor_extractor", descriptor_extractor, std::string("CvORB"));
+    nh_private_.param("min_num_model_features", min_num_model_features_, 5);
 
     key_point_detector_ = 
       feature_extraction::KeyPointDetectorFactory::create(key_point_detector);
@@ -64,10 +65,11 @@ public:
     nh_private_.param("model", model_name, std::string(""));
 
     ROS_INFO_STREAM("Settings:" << std::endl
-        << "  model               : " << model_name << std::endl
-        << "  key_point_detector  : " << key_point_detector << std::endl
-        << "  descriptor_extractor: " << descriptor_extractor << std::endl
-        << "  matching_threshold  : " << matching_threshold_ << std::endl);
+        << "  model                 : " << model_name << std::endl
+        << "  key_point_detector    : " << key_point_detector << std::endl
+        << "  descriptor_extractor  : " << descriptor_extractor << std::endl
+        << "  min_num_model_features: " << min_num_model_features_ << std::endl
+        << "  matching_threshold    : " << matching_threshold_ << std::endl);
 
     if (model_name != "")
     {
@@ -121,7 +123,7 @@ public:
       cv::KeyPointsFilter::runByPixelsMask(key_points, mask);
       descriptor_extractor_->extract(image, key_points, descriptors);
       ROS_INFO("Training image has %zu features.", key_points.size());
-      if (key_points.size() > 5)
+      if (static_cast<int>(key_points.size()) >= min_num_model_features_)
       {
         model_.image = image;
         model_.key_points = key_points;
@@ -132,6 +134,7 @@ public:
         model_.theta = training_request.image_pose.theta;
         training_response.success = true;
         training_response.message = "Model trained.";
+        saveModel(training_request);
         return true;
       }
       else
@@ -152,16 +155,44 @@ public:
 
   void loadModel(const std::string& model_name)
   {
-    model_.image = cv::imread(model_name, 0);
-    assert(!model_.image.empty());
-    key_point_detector_->detect(model_.image, model_.key_points);
-    descriptor_extractor_->extract(model_.image, model_.key_points, 
-        model_.descriptors);
-    ROS_INFO("Model has %zu features.", model_.key_points.size());
-    model_.outline.push_back(cv::Point(0,0));
-    model_.outline.push_back(cv::Point(0,model_.image.rows - 1));
-    model_.outline.push_back(cv::Point(model_.image.cols - 1,model_.image.rows - 1));
-    model_.outline.push_back(cv::Point(model_.image.cols - 1,0));
+    rosbag::Bag bag;
+    std::string filename = 
+      getModelDir() + "Features2D2DDetector" + "/" + model_name + ".bag";
+    ROS_INFO("Loading model from %s...", filename.c_str());
+    bag.open(filename, rosbag::bagmode::Read);
+    std::vector<std::string> topics;
+    topics.push_back(std::string("train_request"));
+
+    vision_msgs::TrainDetector::Request train_request;
+    bool found = false;
+    rosbag::View view(bag, rosbag::TopicQuery(topics));
+    BOOST_FOREACH(rosbag::MessageInstance m, view)
+    {
+      vision_msgs::TrainDetector::Request::ConstPtr msg = 
+        m.instantiate<vision_msgs::TrainDetector::Request>();
+      if (msg != NULL)
+      {
+        train_request = *msg;
+        found = true;
+      }
+    }
+    if (found)
+    {
+      vision_msgs::TrainDetector::Response train_response;
+      train(train_request, train_response);
+    }
+  }
+
+  void saveModel(
+      const vision_msgs::TrainDetector::Request& train_request)
+  {
+    rosbag::Bag bag;
+    std::string filename = 
+      getModelDir() + "Features2D2DDetector" + "/" + train_request.object_id + ".bag";
+    bag.open(filename, rosbag::bagmode::Write);
+    ROS_INFO("Saving model to %s...", filename.c_str());
+    bag.write("train_request", ros::Time::now(), train_request);
+    bag.close();
   }
 
   virtual void detect(

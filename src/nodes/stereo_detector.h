@@ -1,14 +1,16 @@
 #include <vision_msgs/DetectionArray.h>
 
+#include "detector.h"
 #include "training_service.h"
 #include "stereo_processor.h"
 
 class StereoDetector :
+  public Detector, 
   public TrainingService,
   public object_detection::StereoImageProcessor
 {
  public:
-  StereoDetector() : TrainingService(), object_detection::StereoImageProcessor("raw"), nh_("~")
+  StereoDetector() : Detector(), TrainingService(), object_detection::StereoImageProcessor("raw"), nh_("~")
   {
     detections_pub_ = nh_.advertise<vision_msgs::DetectionArray>("detections", 1);
   }

@@ -1,0 +1,14 @@
+<launch>
+  <arg name="image" default="stereo_down/scaled/image_rect" />
+
+  <node name="object_detector" pkg="object_detection" 
+        type="features2d2d_detector_node" output="screen" >
+    <remap from="image" to="$(arg image)" />
+    <param name="key_point_detector" value="CvORB" />
+    <param name="descriptor_extractor" value="CvORB" />
+    <param name="min_num_model_features" value="5" />
+    <param name="matching_threshold" value="0.8" />
+    <param name="model" value="target" />
+  </node>
+
+</launch>

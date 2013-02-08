@@ -26,7 +26,7 @@
 
 namespace enc = sensor_msgs::image_encodings;
 
-class FeatureMatchingDetectorNode : public MonoDetector
+class Features3D2DDetectorNode : public MonoDetector
 {
   ros::NodeHandle nh_private_;
 
@@ -46,7 +46,7 @@ class FeatureMatchingDetectorNode : public MonoDetector
   ros::Publisher pose_pub_;
 
 public:
-  FeatureMatchingDetectorNode()
+  Features3D2DDetectorNode()
     : nh_private_("~")
   {
 
@@ -79,7 +79,7 @@ public:
     cv::namedWindow("Features", 0);
   }
 
-  ~FeatureMatchingDetectorNode()
+  ~Features3D2DDetectorNode()
   {
     cv::destroyWindow("Features");
   }
@@ -240,7 +240,7 @@ public:
       vision_msgs::TrainDetector::Response& training_response)
   {
     training_response.success = false;
-    training_response.message = "Training not implemented for features3d detector.";
+    training_response.message = "Training not implemented for features3d2d detector.";
     return false;
   }
  
@@ -249,8 +249,8 @@ public:
 
 int main(int argc, char** argv)
 {
-  ros::init(argc, argv, "object_detector");
-  FeatureMatchingDetectorNode detector;
+  ros::init(argc, argv, "features3d2d_object_detector");
+  Features3D2DDetectorNode detector;
   ros::spin();
   return 0;
 }

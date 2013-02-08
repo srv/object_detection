@@ -24,7 +24,7 @@ namespace enc = sensor_msgs::image_encodings;
  * will be computed. In all cases the pose of the camera taking the
  * training image will be estimated and published.
  */
-class Features2D3DMatchingDetectorNode : public StereoDetector
+class Features2D3DDetectorNode : public StereoDetector
 {
   ros::NodeHandle nh_;
   ros::NodeHandle nh_private_;
@@ -58,7 +58,7 @@ class Features2D3DMatchingDetectorNode : public StereoDetector
   cv::Scalar mean_illumination_;
 
 public:
-  Features2D3DMatchingDetectorNode()
+  Features2D3DDetectorNode()
     : StereoDetector(), nh_private_("~")
   {
 
@@ -103,7 +103,7 @@ public:
     }
   }
 
-  ~Features2D3DMatchingDetectorNode()
+  ~Features2D3DDetectorNode()
   {
   }
 
@@ -442,7 +442,7 @@ public:
 int main(int argc, char** argv)
 {
   ros::init(argc, argv, "features2d3d_object_detector");
-  Features2D3DMatchingDetectorNode detector;
+  Features2D3DDetectorNode detector;
   ros::spin();
   return 0;
 }

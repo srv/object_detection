@@ -21,7 +21,7 @@ namespace enc = sensor_msgs::image_encodings;
  * of a model. Works only on mostly planar objects/environments.
  * If a detection was made, the output is a homography.
  */
-class Features2D2DMatchingDetectorNode : public MonoDetector
+class Features2D2DDetectorNode : public MonoDetector
 {
   ros::NodeHandle nh_;
   ros::NodeHandle nh_private_;
@@ -46,7 +46,7 @@ class Features2D2DMatchingDetectorNode : public MonoDetector
   Model2D model_;
 
 public:
-  Features2D2DMatchingDetectorNode()
+  Features2D2DDetectorNode()
     : MonoDetector(), nh_private_("~")
   {
 
@@ -77,7 +77,7 @@ public:
     cv::namedWindow("Features", 0);
   }
 
-  ~Features2D2DMatchingDetectorNode()
+  ~Features2D2DDetectorNode()
   {
     cv::destroyWindow("Features");
   }
@@ -287,8 +287,8 @@ public:
 
 int main(int argc, char** argv)
 {
-  ros::init(argc, argv, "features2d_object_detector");
-  Features2D2DMatchingDetectorNode detector;
+  ros::init(argc, argv, "features2d2d_object_detector");
+  Features2D2DDetectorNode detector;
   ros::spin();
   return 0;
 }

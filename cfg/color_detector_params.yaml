@@ -5,7 +5,7 @@ num_hue_bins: 32
 num_saturation_bins: 16
 
 # minimum saturation to accept
-min_saturation: 50
+min_saturation: 30
 
 # minimum value to accept
 min_value: 20 

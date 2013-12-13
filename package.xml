@@ -1,0 +1,52 @@
+<package>
+  <name>object_detection</name>
+  <version>1.0.0</version>
+  <description>A package for object detection.</description>
+  <author>Stephan Wirth</author>
+  <maintainer email="pl.negre@uib.cat">Pep Lluis Negre</maintainer>
+  <license>BSD</license>
+  <url type="website">http://ros.org/wiki/object_detection</url>
+  <url type="bugtracker">https://github.com/srv/object_detection/issues</url> 
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <build_depend>std_msgs</build_depend>
+  <build_depend>sensor_msgs</build_depend>
+  <build_depend>nav_msgs</build_depend> 
+  <build_depend>opencv2</build_depend> 
+  <build_depend>cv_bridge</build_depend> 
+  <build_depend>roscpp</build_depend>
+  <build_depend>image_transport</build_depend>
+  <build_depend>image_geometry</build_depend>
+  <build_depend>camera_info_manager</build_depend>
+  <build_depend>pcl</build_depend>
+  <build_depend>pcl_ros</build_depend> 
+  <build_depend>tf</build_depend> 
+  <build_depend>nodelet</build_depend>
+  <build_depend>vision_msgs</build_depend>
+  <build_depend>feature_extraction</build_depend>
+  
+  <run_depend>std_msgs</run_depend>
+  <run_depend>sensor_msgs</run_depend>
+  <run_depend>nav_msgs</run_depend> 
+  <run_depend>opencv2</run_depend> 
+  <run_depend>cv_bridge</run_depend> 
+  <run_depend>roscpp</run_depend>
+  <run_depend>image_transport</run_depend>
+  <run_depend>image_geometry</run_depend>
+  <run_depend>camera_info_manager</run_depend>
+  <run_depend>pcl</run_depend>
+  <run_depend>pcl_ros</run_depend> 
+  <run_depend>tf</run_depend> 
+  <run_depend>nodelet</run_depend>
+  <run_depend>vision_msgs</run_depend>
+  <run_depend>feature_extraction</run_depend>
+  <run_depend>feature_matching</run_depend>
+
+  <export>
+    <nodelet plugin="${prefix}/nodelet_plugins.xml" />
+  </export>
+
+</package>
+
+

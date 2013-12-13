@@ -1,50 +1,40 @@
-cmake_minimum_required(VERSION 2.4.6)
-include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
+cmake_minimum_required(VERSION 2.8.3)
+project(object_detection)
 
-# Set the build type.  Options are:
-#  Coverage       : w/ debug symbols, w/o optimization, w/ code-coverage
-#  Debug          : w/ debug symbols, w/o optimization
-#  Release        : w/o debug symbols, w/ optimization
-#  RelWithDebInfo : w/ debug symbols, w/ optimization
-#  MinSizeRel     : w/o debug symbols, w/ optimization, stripped binaries
-#set(ROS_BUILD_TYPE RelWithDebInfo)
+find_package(catkin REQUIRED COMPONENTS 
+    std_msgs 
+    sensor_msgs
+    nav_msgs 
+    OpenCV
+    cv_bridge 
+    roscpp
+    image_transport
+    image_geometry
+    camera_info_manager
+    pcl_ros 
+    tf 
+    nodelet
+    vision_msgs
+    feature_extraction)
+find_package(pcl REQUIRED)
+find_package(Boost REQUIRED COMPONENTS program_options system filesystem serialization signals system)
 
-rosbuild_init()
+catkin_package(CATKIN_DEPENDS feature_extraction feature_matching)
 
-#set the default path for built executables to the "bin" directory
-set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
-#set the default path for built libraries to the "lib" directory
-set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
+include_directories(${Boost_INCLUDE_DIRS} ${catkin_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS} ${pcl_INCLUDE_DIRS} include)
 
-#uncomment if you have defined messages
-#rosbuild_genmsg()
-#uncomment if you have defined services
-#rosbuild_gensrv()
-
-#common commands for building c++ executables and libraries
-#rosbuild_add_library(${PROJECT_NAME} example/example.cpp)
-#target_link_libraries(${PROJECT_NAME} another_library)
-#rosbuild_add_boost_directories()
-#rosbuild_link_boost(${PROJECT_NAME} thread)
-#rosbuild_add_executable(example examples/example.cpp)
-#target_link_libraries(example ${PROJECT_NAME})
-
-# object detection and tracking library
-rosbuild_add_library(odat
+# LIBRARIES
+add_library(odat
     src/odat/fs_model_storage.cpp
     src/odat/detection.cpp
     src/odat/detector.cpp
     )
-rosbuild_link_boost(odat serialization)
+target_link_libraries(odat ${Boost_LIBRARIES})
 
-# adapter to ros
-rosbuild_add_library(odat_ros
-    src/odat_ros/conversions.cpp
-    )
+add_library(odat_ros src/odat_ros/conversions.cpp)
 target_link_libraries(odat_ros odat)
 
-# object detection library
-rosbuild_add_library(${PROJECT_NAME}
+add_library(${PROJECT_NAME}
     src/object_detection/shape_processing.cpp
     src/object_detection/shape_matching.cpp
     src/object_detection/histogram_utilities.cpp 
@@ -54,36 +44,40 @@ rosbuild_add_library(${PROJECT_NAME}
     )
 target_link_libraries(${PROJECT_NAME} odat)
 
-# ros adapter to object detection library
-rosbuild_add_library(${PROJECT_NAME}_ros
-    src/object_detection_ros/detector_nodelet.cpp
-    )
+add_library(${PROJECT_NAME}_ros src/object_detection_ros/detector_nodelet.cpp)
 target_link_libraries(${PROJECT_NAME}_ros ${PROJECT_NAME} odat_ros)
 
-rosbuild_add_executable(detection_display src/nodes/detection_display.cpp)
-rosbuild_link_boost(detection_display signals)
+# EXECUTABLES
+add_executable(detection_display src/nodes/detection_display.cpp)
+target_link_libraries(detection_display ${Boost_LIBRARIES} ${catkin_LIBRARIES})
 
-rosbuild_add_executable(trainer_node src/nodes/trainer_node.cpp)
-target_link_libraries(trainer_node odat_ros ${PROJECT_NAME})
+add_executable(trainer_node src/nodes/trainer_node.cpp)
+target_link_libraries(trainer_node odat_ros ${PROJECT_NAME} ${catkin_LIBRARIES})
 
-rosbuild_add_executable(feature_matching_detector_node src/nodes/feature_matching_detector_node.cpp)
-rosbuild_add_executable(features2d_matching_detector_node src/nodes/features2d_matching_detector_node.cpp)
-rosbuild_add_executable(features2d3d_matching_detector_node src/nodes/features2d3d_matching_detector_node.cpp)
-rosbuild_link_boost(features2d3d_matching_detector_node signals)
-rosbuild_add_executable(detection_tracker src/nodes/detection_tracker.cpp)
-rosbuild_link_boost(detection_tracker signals)
-target_link_libraries(features2d_matching_detector_node odat_ros)
-rosbuild_link_boost(features2d3d_matching_detector_node signals)
+add_executable(feature_matching_detector_node src/nodes/feature_matching_detector_node.cpp)
+target_link_libraries(feature_matching_detector_node ${Boost_LIBRARIES} ${OpenCV_LIBS} ${catkin_LIBRARIES})
 
-rosbuild_add_executable(train_from_disk src/nodes/train_from_disk.cpp)
-target_link_libraries(train_from_disk odat_ros ${PROJECT_NAME})
+add_executable(features2d_matching_detector_node src/nodes/features2d_matching_detector_node.cpp)
+target_link_libraries(features2d_matching_detector_node odat_ros ${Boost_LIBRARIES} ${OpenCV_LIBRARIES} ${catkin_LIBRARIES})
 
-rosbuild_add_executable(features_to_pcd src/tools/features_to_pcd.cpp)
+add_executable(features2d3d_matching_detector_node src/nodes/features2d3d_matching_detector_node.cpp)
+target_link_libraries(features2d3d_matching_detector_node ${Boost_LIBRARIES} ${OpenCV_LIBS} ${catkin_LIBRARIES})
 
-rosbuild_add_gtest(shape_matching_test test/shape_matching_test.cpp)
-rosbuild_add_gtest(shape_processing_test test/shape_processing_test.cpp)
-target_link_libraries(shape_matching_test ${PROJECT_NAME})
-target_link_libraries(shape_processing_test ${PROJECT_NAME})
+add_executable(detection_tracker src/nodes/detection_tracker.cpp)
+target_link_libraries(detection_tracker ${Boost_LIBRARIES} ${OpenCV_LIBS} ${catkin_LIBRARIES})
 
-rosbuild_add_executable(keypoint_detector_node src/nodes/keypoint_detector_node.cpp)
+add_executable(train_from_disk src/nodes/train_from_disk.cpp)
+target_link_libraries(train_from_disk odat_ros ${PROJECT_NAME} ${Boost_LIBRARIES} ${OpenCV_LIBS} ${catkin_LIBRARIES})
+
+add_executable(features_to_pcd src/tools/features_to_pcd.cpp)
+target_link_libraries(features_to_pcd ${OpenCV_LIBS} ${pcl_LIBRARIES} ${catkin_LIBRARIES})
+
+catkin_add_gtest(shape_matching_test test/shape_matching_test.cpp)
+target_link_libraries(shape_matching_test ${PROJECT_NAME} ${Boost_LIBRARIES} ${OpenCV_LIBS} ${catkin_LIBRARIES})
+
+catkin_add_gtest(shape_processing_test test/shape_processing_test.cpp)
+target_link_libraries(shape_processing_test ${PROJECT_NAME} ${Boost_LIBRARIES} ${OpenCV_LIBS} ${catkin_LIBRARIES})
+
+add_executable(keypoint_detector_node src/nodes/keypoint_detector_node.cpp)
+target_link_libraries(keypoint_detector_node ${Boost_LIBRARIES} ${OpenCV_LIBS} ${catkin_LIBRARIES})
 

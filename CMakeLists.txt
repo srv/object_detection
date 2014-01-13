@@ -5,7 +5,6 @@ find_package(catkin REQUIRED COMPONENTS
     std_msgs 
     sensor_msgs
     nav_msgs 
-    OpenCV
     cv_bridge 
     roscpp
     image_transport
@@ -16,12 +15,13 @@ find_package(catkin REQUIRED COMPONENTS
     nodelet
     vision_msgs
     feature_extraction)
-find_package(pcl REQUIRED)
+find_package(PCL REQUIRED)
+find_package(OpenCV REQUIRED)
 find_package(Boost REQUIRED COMPONENTS program_options system filesystem serialization signals system)
 
 catkin_package(CATKIN_DEPENDS feature_extraction feature_matching)
 
-include_directories(${Boost_INCLUDE_DIRS} ${catkin_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS} ${pcl_INCLUDE_DIRS} include)
+include_directories(${Boost_INCLUDE_DIRS} ${catkin_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS} ${PCL_INCLUDE_DIRS} include)
 
 # LIBRARIES
 add_library(odat
@@ -70,7 +70,7 @@ add_executable(train_from_disk src/nodes/train_from_disk.cpp)
 target_link_libraries(train_from_disk odat_ros ${PROJECT_NAME} ${Boost_LIBRARIES} ${OpenCV_LIBS} ${catkin_LIBRARIES})
 
 add_executable(features_to_pcd src/tools/features_to_pcd.cpp)
-target_link_libraries(features_to_pcd ${OpenCV_LIBS} ${pcl_LIBRARIES} ${catkin_LIBRARIES})
+target_link_libraries(features_to_pcd ${OpenCV_LIBS} ${PCL_LIBRARIES} ${catkin_LIBRARIES})
 
 catkin_add_gtest(shape_matching_test test/shape_matching_test.cpp)
 target_link_libraries(shape_matching_test ${PROJECT_NAME} ${Boost_LIBRARIES} ${OpenCV_LIBS} ${catkin_LIBRARIES})
